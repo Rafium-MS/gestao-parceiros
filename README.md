@@ -1,4 +1,4 @@
-# Sistema de Gestão de Entregas
+# Sistema de Gestão de Parceiro
 
 Um sistema desktop para gerenciamento de parceiros, lojas atendidas, comprovantes de entregas e geração de relatórios.
 
