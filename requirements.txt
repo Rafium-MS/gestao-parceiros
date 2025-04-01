@@ -1,0 +1,19 @@
+# Sistema de Gestão de Entregas - Dependências
+
+# Interface gráfica
+Pillow>=9.0.0       # Para processamento de imagens
+ttkthemes>=3.2.0    # Temas adicionais para tkinter
+
+# Exportação de dados
+pandas>=1.5.0       # Para manipulação de dados tabulares
+openpyxl>=3.0.10    # Para exportação para Excel
+reportlab>=3.6.11   # Para geração de relatórios em PDF
+xlsxwriter>=3.0.3   # Para formatação avançada em Excel
+
+# Validação de dados
+validate-docbr>=1.10.0  # Para validação de documentos brasileiros (CPF, CNPJ)
+email-validator>=1.3.0  # Para validação de endereços de email
+
+# Utilitários
+python-dateutil>=2.8.2  # Para manipulação de datas
+tkcalendar>=1.6.1       # Widget de calendário para tkinter
