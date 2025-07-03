@@ -15,6 +15,7 @@ Um sistema desktop para gerenciamento de parceiros, lojas atendidas, comprovante
 
 - Python 3.7 ou superior
 - Bibliotecas Python listadas em `requirements.txt`
+- Executável **Tesseract OCR** instalado e acessível no `PATH` para habilitar a leitura de comprovantes
 
 ## Instalação
 

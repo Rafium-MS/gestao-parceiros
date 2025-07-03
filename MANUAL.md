@@ -1,4 +1,8 @@
-# Manual do Usuário
+  - python-dateutil (para manipulação de datas)
+  - tkcalendar (widget de calendário)
+  - pytesseract (para leitura OCR)
+  - pdf2image (para converter PDFs em imagens)
+  - Tesseract OCR instalado e configurado no `PATH`# Manual do Usuário
 # Sistema de Gestão de Parceiros
 **Versão 1.0**
 
@@ -67,6 +71,9 @@ Para executar o Sistema de Gestão de Parceiros, seu computador deve atender aos
   - email-validator (para validação de e-mails)
   - python-dateutil (para manipulação de datas)
   - tkcalendar (widget de calendário)
+  - pytesseract (para leitura OCR)
+  - pdf2image (para converter PDFs em imagens)
+  - Tesseract OCR instalado e configurado no `PATH`
   - pytesseract (para leitura OCR)
   - pdf2image (para converter PDFs em imagens)
 

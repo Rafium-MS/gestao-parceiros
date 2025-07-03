@@ -296,6 +296,7 @@ class ComprovanteView(ttk.Frame):
             self.btn_editar.config(state=tk.NORMAL)
             self.btn_excluir.config(state=tk.NORMAL)
             self.btn_visualizar.config(state=tk.NORMAL)
+            self.btn_ocr.config(state=tk.NORMAL)
 
             # Desabilitar botão de adicionar
             self.btn_adicionar.config(state=tk.DISABLED)
@@ -344,6 +345,7 @@ class ComprovanteView(ttk.Frame):
             filename = os.path.basename(filepath)
             self.arquivo_selecionado = filename
             self.lbl_arquivo.config(text=filename)
+            self.btn_ocr.config(state=tk.NORMAL)
 
             # Copiar o arquivo para o diretório de comprovantes
             try:
@@ -401,7 +403,7 @@ class ComprovanteView(ttk.Frame):
             except Exception as e:
                 self.logger.error(f"Erro ao carregar imagem: {str(e)}")
                 self.lbl_preview.config(text=f"Erro ao carregar imagem: {str(e)}")
-                elif ext == '.pdf':
+        elif ext == '.pdf':
             try:
                 from pdf2image import convert_from_path
                 pages = convert_from_path(arquivo_path, first_page=1, last_page=1)
