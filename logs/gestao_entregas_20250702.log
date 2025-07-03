@@ -1,0 +1,66 @@
+2025-07-02 17:51:48 [INFO] root: ==================================================
+2025-07-02 17:51:48 [INFO] root: Iniciando sistema de logs
+2025-07-02 17:51:48 [INFO] root: Nível de log: INFO
+2025-07-02 17:51:48 [INFO] root: Arquivo de log: logs\gestao_entregas_20250702.log
+2025-07-02 17:51:48 [INFO] root: Iniciando aplicação
+2025-07-02 17:51:48 [INFO] database.db_manager: Conexão estabelecida com o banco de dados: database/gestao_parceiros.db
+2025-07-02 17:51:48 [INFO] database.db_manager: Estrutura do banco de dados configurada com sucesso
+2025-07-02 17:51:50 [ERROR] database.db_manager: Erro ao executar consulta: no such column: c.arquivo_comprovante
+2025-07-02 17:51:50 [ERROR] models.comprovante: Erro ao listar comprovantes: no such column: c.arquivo_comprovante
+2025-07-02 17:51:50 [ERROR] database.db_manager: Erro ao executar consulta: no such column: a.observacao
+2025-07-02 17:51:50 [ERROR] models.associacao: Erro ao listar associações: no such column: a.observacao
+2025-07-02 17:51:50 [INFO] views.main_window: Aba alterada para 'Parceiros'
+2025-07-02 17:51:54 [INFO] views.main_window: Janela principal inicializada
+2025-07-02 17:51:54 [INFO] root: Interface principal carregada
+2025-07-02 17:51:57 [INFO] views.main_window: Aba alterada para 'Lojas'
+2025-07-02 17:51:58 [INFO] views.main_window: Aba alterada para 'Comprovantes'
+2025-07-02 17:52:01 [INFO] views.main_window: Aba alterada para 'Associações'
+2025-07-02 17:52:02 [INFO] views.main_window: Aba alterada para 'Relatórios'
+2025-07-02 18:06:58 [INFO] views.main_window: Aba alterada para 'Comprovantes'
+2025-07-02 18:07:01 [INFO] views.main_window: Aba alterada para 'Associações'
+2025-07-02 18:07:03 [INFO] views.main_window: Aba alterada para 'Parceiros'
+2025-07-02 18:07:40 [INFO] models.parceiro: Novo parceiro inserido com ID 1
+2025-07-02 18:07:40 [INFO] controllers.parceiro_controller: Parceiro 'Rafael' adicionado com sucesso.
+2025-07-02 18:07:43 [INFO] views.main_window: Aba alterada para 'Lojas'
+2025-07-02 18:08:33 [INFO] models.loja: Nova loja inserida com ID 1
+2025-07-02 18:08:33 [INFO] controllers.loja_controller: Loja 'Disagu' adicionada com sucesso.
+2025-07-02 18:08:36 [INFO] views.main_window: Aba alterada para 'Comprovantes'
+2025-07-02 18:08:43 [INFO] database.db_manager: Conexão com o banco de dados fechada
+2025-07-02 18:08:43 [INFO] root: Aplicação encerrada
+2025-07-02 18:08:48 [INFO] root: ==================================================
+2025-07-02 18:08:48 [INFO] root: Iniciando sistema de logs
+2025-07-02 18:08:48 [INFO] root: Nível de log: INFO
+2025-07-02 18:08:48 [INFO] root: Arquivo de log: logs\gestao_entregas_20250702.log
+2025-07-02 18:08:48 [INFO] root: Iniciando aplicação
+2025-07-02 18:08:48 [INFO] database.db_manager: Conexão estabelecida com o banco de dados: database/gestao_parceiros.db
+2025-07-02 18:08:48 [INFO] database.db_manager: Estrutura do banco de dados configurada com sucesso
+2025-07-02 18:08:50 [ERROR] database.db_manager: Erro ao executar consulta: no such column: c.arquivo_comprovante
+2025-07-02 18:08:50 [ERROR] models.comprovante: Erro ao listar comprovantes: no such column: c.arquivo_comprovante
+2025-07-02 18:08:50 [ERROR] database.db_manager: Erro ao executar consulta: no such column: a.observacao
+2025-07-02 18:08:50 [ERROR] models.associacao: Erro ao listar associações: no such column: a.observacao
+2025-07-02 18:08:50 [INFO] views.main_window: Aba alterada para 'Parceiros'
+2025-07-02 18:08:54 [INFO] views.main_window: Janela principal inicializada
+2025-07-02 18:08:54 [INFO] root: Interface principal carregada
+2025-07-02 18:09:01 [INFO] views.main_window: Aba alterada para 'Comprovantes'
+2025-07-02 18:09:03 [INFO] views.main_window: Aba alterada para 'Associações'
+2025-07-02 18:09:08 [ERROR] database.db_manager: Erro ao executar consulta: table associacoes has no column named observacao
+2025-07-02 18:09:08 [ERROR] models.associacao: Erro ao salvar associação: table associacoes has no column named observacao
+2025-07-02 18:09:12 [ERROR] database.db_manager: Erro ao executar consulta: table associacoes has no column named observacao
+2025-07-02 18:09:12 [ERROR] models.associacao: Erro ao salvar associação: table associacoes has no column named observacao
+2025-07-02 18:09:15 [INFO] views.main_window: Aba alterada para 'Comprovantes'
+2025-07-02 18:09:35 [INFO] database.db_manager: Conexão com o banco de dados fechada
+2025-07-02 18:09:35 [INFO] root: Aplicação encerrada
+2025-07-02 18:13:37 [INFO] root: ==================================================
+2025-07-02 18:13:37 [INFO] root: Iniciando sistema de logs
+2025-07-02 18:13:37 [INFO] root: Nível de log: INFO
+2025-07-02 18:13:37 [INFO] root: Arquivo de log: logs\gestao_entregas_20250702.log
+2025-07-02 18:13:37 [INFO] root: Iniciando aplicação
+2025-07-02 18:13:37 [INFO] database.db_manager: Conexão estabelecida com o banco de dados: database/gestao_parceiros.db
+2025-07-02 18:13:37 [INFO] database.db_manager: Estrutura do banco de dados configurada com sucesso
+2025-07-02 18:13:39 [ERROR] database.db_manager: Erro ao executar consulta: no such column: c.arquivo_comprovante
+2025-07-02 18:13:39 [ERROR] models.comprovante: Erro ao listar comprovantes: no such column: c.arquivo_comprovante
+2025-07-02 18:13:39 [ERROR] database.db_manager: Erro ao executar consulta: no such column: a.observacao
+2025-07-02 18:13:39 [ERROR] models.associacao: Erro ao listar associações: no such column: a.observacao
+2025-07-02 18:13:39 [INFO] views.main_window: Aba alterada para 'Parceiros'
+2025-07-02 18:13:43 [INFO] views.main_window: Janela principal inicializada
+2025-07-02 18:13:43 [INFO] root: Interface principal carregada
