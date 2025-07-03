@@ -67,14 +67,50 @@ class ParceiroView(ttk.Frame):
         self.entrada_email = ttk.Entry(self.frame_form, width=30)
         self.entrada_email.grid(row=1, column=3, padx=5, pady=5)
 
-        # Linha 3
+# Linha 3
         ttk.Label(self.frame_form, text="Endereço:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
         self.entrada_endereco = ttk.Entry(self.frame_form, width=60)
         self.entrada_endereco.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky=tk.EW)
 
+        # Linha 4
+        ttk.Label(self.frame_form, text="Cidade:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_cidade = ttk.Entry(self.frame_form, width=30)
+        self.entrada_cidade.grid(row=3, column=1, padx=5, pady=5)
+
+        ttk.Label(self.frame_form, text="Estado:").grid(row=3, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_estado = ttk.Entry(self.frame_form, width=5)
+        self.entrada_estado.grid(row=3, column=3, padx=5, pady=5, sticky=tk.W)
+
+        # Linha 5 - Financeiro
+        ttk.Label(self.frame_form, text="Banco:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_banco = ttk.Entry(self.frame_form, width=20)
+        self.entrada_banco.grid(row=4, column=1, padx=5, pady=5)
+
+        ttk.Label(self.frame_form, text="Agência:").grid(row=4, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_agencia = ttk.Entry(self.frame_form, width=10)
+        self.entrada_agencia.grid(row=4, column=3, padx=5, pady=5, sticky=tk.W)
+
+        # Linha 6 - Financeiro
+        ttk.Label(self.frame_form, text="Conta:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_conta = ttk.Entry(self.frame_form, width=20)
+        self.entrada_conta.grid(row=5, column=1, padx=5, pady=5)
+
+        ttk.Label(self.frame_form, text="Tipo:").grid(row=5, column=2, padx=5, pady=5, sticky=tk.W)
+        self.combo_tipo = ttk.Combobox(self.frame_form, values=["Corrente", "Poupança", "Pix"], width=10, state="readonly")
+        self.combo_tipo.grid(row=5, column=3, padx=5, pady=5, sticky=tk.W)
+
+        # Linha 7 - Produto
+        ttk.Label(self.frame_form, text="Produto:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_produto = ttk.Entry(self.frame_form, width=30)
+        self.entrada_produto.grid(row=6, column=1, padx=5, pady=5)
+
+        ttk.Label(self.frame_form, text="Valor Unidade:").grid(row=6, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_valor = ttk.Entry(self.frame_form, width=10)
+        self.entrada_valor.grid(row=6, column=3, padx=5, pady=5, sticky=tk.W)
+
         # Frame para botões
         self.frame_botoes = ttk.Frame(self.frame_form)
-        self.frame_botoes.grid(row=3, column=0, columnspan=4, pady=10)
+        self.frame_botoes.grid(row=7, column=0, columnspan=4, pady=10)
 
         self.btn_adicionar = ttk.Button(self.frame_botoes, text="Adicionar", command=self._adicionar_parceiro)
         self.btn_adicionar.pack(side=tk.LEFT, padx=5)
@@ -109,7 +145,19 @@ class ParceiroView(ttk.Frame):
         self.frame_lista.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Treeview para listagem
-        colunas = ("id", "nome", "cpf", "telefone", "email", "endereco", "data_cadastro")
+        colunas = (
+            "id",
+            "nome",
+            "cpf",
+            "telefone",
+            "email",
+            "endereco",
+            "cidade",
+            "estado",
+            "produto",
+            "valor",
+            "data_cadastro",
+        )
         self.treeview = ttk.Treeview(self.frame_lista, columns=colunas, show="headings", selectmode="browse")
 
         # Definir cabeçalhos
@@ -119,6 +167,10 @@ class ParceiroView(ttk.Frame):
         self.treeview.heading("telefone", text="Telefone")
         self.treeview.heading("email", text="Email")
         self.treeview.heading("endereco", text="Endereço")
+        self.treeview.heading("cidade", text="Cidade")
+        self.treeview.heading("estado", text="Estado")
+        self.treeview.heading("produto", text="Produto")
+        self.treeview.heading("valor", text="Valor Unid.")
         self.treeview.heading("data_cadastro", text="Data de Cadastro")
 
         # Definir larguras das colunas
@@ -127,7 +179,11 @@ class ParceiroView(ttk.Frame):
         self.treeview.column("cpf", width=120, minwidth=100)
         self.treeview.column("telefone", width=120, minwidth=100)
         self.treeview.column("email", width=180, minwidth=120)
-        self.treeview.column("endereco", width=250, minwidth=150)
+        self.treeview.column("endereco", width=200, minwidth=150)
+        self.treeview.column("cidade", width=120, minwidth=100)
+        self.treeview.column("estado", width=60, minwidth=50)
+        self.treeview.column("produto", width=120, minwidth=100)
+        self.treeview.column("valor", width=80, minwidth=60)
         self.treeview.column("data_cadastro", width=120, minwidth=100)
 
         # Scrollbar
@@ -176,6 +232,10 @@ class ParceiroView(ttk.Frame):
             self.entrada_telefone.insert(0, valores[3] if valores[3] else "")
             self.entrada_email.insert(0, valores[4] if valores[4] else "")
             self.entrada_endereco.insert(0, valores[5] if valores[5] else "")
+            self.entrada_cidade.insert(0, valores[6] if valores[6] else "")
+            self.entrada_estado.insert(0, valores[7] if valores[7] else "")
+            self.entrada_produto.insert(0, valores[8] if valores[8] else "")
+            self.entrada_valor.insert(0, valores[9] if valores[9] else "")
 
             # Habilitar botões de edição e exclusão
             self.btn_editar.config(state=tk.NORMAL)
@@ -196,7 +256,15 @@ class ParceiroView(ttk.Frame):
             'cpf': limpar_formatacao(self.entrada_cpf.get().strip()),
             'telefone': self.entrada_telefone.get().strip(),
             'email': self.entrada_email.get().strip(),
-            'endereco': self.entrada_endereco.get().strip()
+            'endereco': self.entrada_endereco.get().strip(),
+            'cidade': self.entrada_cidade.get().strip(),
+            'estado': self.entrada_estado.get().strip(),
+            'banco': self.entrada_banco.get().strip(),
+            'agencia': self.entrada_agencia.get().strip(),
+            'conta': self.entrada_conta.get().strip(),
+            'tipo': self.combo_tipo.get().strip(),
+            'produto': self.entrada_produto.get().strip(),
+            'valor_unidade': self.entrada_valor.get().strip(),
         }
 
     def _limpar_form(self):
@@ -207,6 +275,14 @@ class ParceiroView(ttk.Frame):
         self.entrada_telefone.delete(0, tk.END)
         self.entrada_email.delete(0, tk.END)
         self.entrada_endereco.delete(0, tk.END)
+        self.entrada_cidade.delete(0, tk.END)
+        self.entrada_estado.delete(0, tk.END)
+        self.entrada_banco.delete(0, tk.END)
+        self.entrada_agencia.delete(0, tk.END)
+        self.entrada_conta.delete(0, tk.END)
+        self.combo_tipo.set("")
+        self.entrada_produto.delete(0, tk.END)
+        self.entrada_valor.delete(0, tk.END)
 
         # Resetar ID atual
         self.parceiro_atual_id = None
@@ -323,7 +399,11 @@ class ParceiroView(ttk.Frame):
                 parceiro[3],  # telefone
                 parceiro[4],  # email
                 parceiro[5],  # endereco
-                parceiro[6]  # data_cadastro
+                parceiro[7],  # cidade
+                parceiro[8],  # estado
+                parceiro[13],  # produto
+                parceiro[14],  # valor_unidade
+                parceiro[6],  # data_cadastro
             )
 
             self.treeview.insert("", "end", values=valores)

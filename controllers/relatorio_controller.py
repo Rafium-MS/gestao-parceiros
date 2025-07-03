@@ -1,6 +1,5 @@
-"""
-Controlador de Relatórios
---------------------------
+"""Controlador de Relatórios
+---------------------------
 Gerencia as operações relacionadas aos relatórios, conectando a interface com o modelo de dados.
 """
 
@@ -15,11 +14,6 @@ class RelatorioController:
     """Controlador para gerenciamento de relatórios."""
 
     def __init__(self, db_manager):
-        """
-        Inicializa o controlador de relatórios.
-        Args:
-            db_manager (DatabaseManager): Instância do gerenciador de banco de dados.
-        """
         self.db_manager = db_manager
         self.logger = logging.getLogger(__name__)
 
@@ -27,7 +21,7 @@ class RelatorioController:
         """Gera relatório de entregas por parceiro."""
         try:
             query = """
-                SELECT c.id, p.nome AS parceiro, l.nome AS loja, 
+                SELECT c.id, p.nome as parceiro, l.nome as loja, 
                        c.data_entrega, c.arquivo_comprovante, c.observacoes
                 FROM comprovantes c
                 JOIN parceiros p ON c.parceiro_id = p.id
@@ -55,7 +49,6 @@ class RelatorioController:
             resultados = self.db_manager.fetchall()
             self.logger.info(f"Relatório por parceiro gerado: {len(resultados)} registros")
             return resultados
-
         except Exception as e:
             self.logger.error(f"Erro ao gerar relatório por parceiro: {str(e)}")
             raise
@@ -64,7 +57,7 @@ class RelatorioController:
         """Gera relatório de entregas por loja."""
         try:
             query = """
-                SELECT c.id, p.nome AS parceiro, l.nome AS loja, 
+                SELECT c.id, p.nome as parceiro, l.nome as loja, 
                        c.data_entrega, c.arquivo_comprovante, c.observacoes
                 FROM comprovantes c
                 JOIN parceiros p ON c.parceiro_id = p.id
@@ -92,7 +85,6 @@ class RelatorioController:
             resultados = self.db_manager.fetchall()
             self.logger.info(f"Relatório por loja gerado: {len(resultados)} registros")
             return resultados
-
         except Exception as e:
             self.logger.error(f"Erro ao gerar relatório por loja: {str(e)}")
             raise
@@ -101,7 +93,7 @@ class RelatorioController:
         """Gera relatório de entregas por período."""
         try:
             query = """
-                SELECT c.id, p.nome AS parceiro, l.nome AS loja, 
+                SELECT c.id, p.nome as parceiro, l.nome as loja, 
                        c.data_entrega, c.arquivo_comprovante, c.observacoes
                 FROM comprovantes c
                 JOIN parceiros p ON c.parceiro_id = p.id
@@ -129,7 +121,6 @@ class RelatorioController:
             resultados = self.db_manager.fetchall()
             self.logger.info(f"Relatório por período gerado: {len(resultados)} registros")
             return resultados
-
         except Exception as e:
             self.logger.error(f"Erro ao gerar relatório por período: {str(e)}")
             raise
@@ -147,7 +138,7 @@ class RelatorioController:
                 WHERE c.data_entrega BETWEEN ? AND ?
                 ORDER BY l.nome, c.data_entrega
                 """,
-                (data_inicial, data_final),
+                (data_inicial, data_final)
             )
             return self.db_manager.fetchall()
         except Exception as exc:
@@ -159,7 +150,7 @@ class RelatorioController:
         try:
             self.db_manager.execute(
                 "SELECT arquivo_comprovante FROM comprovantes WHERE id = ?",
-                (comprovante_id,),
+                (comprovante_id,)
             )
             resultado = self.db_manager.fetchone()
 
@@ -168,11 +159,8 @@ class RelatorioController:
                 return False
 
             arquivo_comprovante = resultado[0]
-            comprovantes_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "comprovantes"
-            )
-            caminho_completo = os.path.join(comprovantes_dir, arquivo_comprovante)
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            caminho_completo = os.path.join(base_dir, "comprovantes", arquivo_comprovante)
 
             if not os.path.exists(caminho_completo):
                 messagebox.showwarning(
@@ -232,7 +220,7 @@ class RelatorioController:
 
             self.db_manager.execute(
                 "SELECT COUNT(*) FROM comprovantes WHERE data_entrega BETWEEN ? AND ?",
-                (data_inicial, data_final),
+                (data_inicial, data_final)
             )
             estatisticas["comprovantes_periodo"] = self.db_manager.fetchone()[0]
 
@@ -246,7 +234,7 @@ class RelatorioController:
                 ORDER BY total DESC
                 LIMIT 5
                 """,
-                (data_inicial, data_final),
+                (data_inicial, data_final)
             )
             estatisticas["top_parceiros"] = self.db_manager.fetchall()
 
@@ -260,7 +248,7 @@ class RelatorioController:
                 ORDER BY total DESC
                 LIMIT 5
                 """,
-                (data_inicial, data_final),
+                (data_inicial, data_final)
             )
             estatisticas["top_lojas"] = self.db_manager.fetchall()
 
@@ -272,16 +260,19 @@ class RelatorioController:
                 GROUP BY dia_semana
                 ORDER BY dia_semana
                 """,
-                (data_inicial, data_final),
+                (data_inicial, data_final)
             )
             dias_semana = {
-                "0": "Domingo", "1": "Segunda", "2": "Terça",
-                "3": "Quarta", "4": "Quinta", "5": "Sexta", "6": "Sábado"
+                "0": "Domingo",
+                "1": "Segunda",
+                "2": "Terça",
+                "3": "Quarta",
+                "4": "Quinta",
+                "5": "Sexta",
+                "6": "Sábado",
             }
             resultados = self.db_manager.fetchall()
-            estatisticas["distribuicao_dia_semana"] = [
-                (dias_semana[r[0]], r[1]) for r in resultados
-            ]
+            estatisticas["distribuicao_dia_semana"] = [(dias_semana[r[0]], r[1]) for r in resultados]
 
             self.logger.info("Estatísticas geradas com sucesso")
             return estatisticas

@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 from controllers.associacao_controller import AssociacaoController
-
+from utils import carregar_combobox_por_cidade
 
 class AssociacaoView(ttk.Frame):
     """Interface gráfica para gerenciamento de associações entre parceiros e lojas."""
@@ -166,6 +166,10 @@ class AssociacaoView(ttk.Frame):
         # Evento de tecla Enter na pesquisa
         self.entrada_pesquisa.bind("<Return>", lambda event: self._pesquisar_associacao())
 
+        # Combobox dinâmico por cidade
+        self.combo_parceiro.bind("<<ComboboxSelected>>", self._on_parceiro_change)
+        self.combo_loja.bind("<<ComboboxSelected>>", self._on_loja_change)
+
         # Teclas de atalho
         self.bind("<Escape>", lambda event: self._limpar_form())
 
@@ -192,7 +196,7 @@ class AssociacaoView(ttk.Frame):
     def _carregar_lojas(self):
         """Carrega as lojas para o combobox."""
         try:
-            # Obter lista de lojas do controlador
+            # Obter lista de lojas do controlador␊
             self.lojas = self.controller.obter_lojas_combobox()
 
             # Atualizar combobox de lojas
@@ -208,6 +212,30 @@ class AssociacaoView(ttk.Frame):
         except Exception as e:
             self.logger.error(f"Erro ao carregar lojas: {str(e)}")
             messagebox.showerror("Erro", f"Erro ao carregar lojas: {str(e)}")
+
+    def _on_parceiro_change(self, event=None):
+        """Filtra as lojas pela cidade do parceiro selecionado."""
+        parceiro_nome = self.combo_parceiro.get()
+        parceiro_id = self.parceiros.get(parceiro_nome)
+        if parceiro_id:
+            parceiro = self.controller.parceiro_controller.obter_parceiro(parceiro_id)
+            if parceiro and parceiro.get("cidade"):
+                self.lojas = carregar_combobox_por_cidade(
+                    self.controller.db_manager, "lojas", parceiro["cidade"]
+                )
+                self.combo_loja["values"] = list(self.lojas.keys())
+
+    def _on_loja_change(self, event=None):
+        """Filtra os parceiros pela cidade da loja selecionada."""
+        loja_nome = self.combo_loja.get()
+        loja_id = self.lojas.get(loja_nome)
+        if loja_id:
+            loja = self.controller.loja_controller.obter_loja(loja_id)
+            if loja and loja.get("cidade"):
+                self.parceiros = carregar_combobox_por_cidade(
+                    self.controller.db_manager, "parceiros", loja["cidade"]
+                )
+                self.combo_parceiro["values"] = list(self.parceiros.keys())
 
     def _on_treeview_select(self, event=None):
         """Manipula o evento de seleção na treeview."""

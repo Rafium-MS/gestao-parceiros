@@ -77,9 +77,23 @@ class LojaView(ttk.Frame):
         self.entrada_contato = ttk.Entry(self.frame_form, width=40)
         self.entrada_contato.grid(row=3, column=1, padx=5, pady=5)
 
+        # Linha 5
+        ttk.Label(self.frame_form, text="Cidade:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_cidade = ttk.Entry(self.frame_form, width=30)
+        self.entrada_cidade.grid(row=4, column=1, padx=5, pady=5)
+
+        ttk.Label(self.frame_form, text="Estado:").grid(row=4, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_estado = ttk.Entry(self.frame_form, width=5)
+        self.entrada_estado.grid(row=4, column=3, padx=5, pady=5, sticky=tk.W)
+
+        # Linha 6
+        ttk.Label(self.frame_form, text="Agrupamento:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_agrupamento = ttk.Entry(self.frame_form, width=20)
+        self.entrada_agrupamento.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W)
+
         # Frame para botões
         self.frame_botoes = ttk.Frame(self.frame_form)
-        self.frame_botoes.grid(row=4, column=0, columnspan=4, pady=10)
+        self.frame_botoes.grid(row=6, column=0, columnspan=4, pady=10)
 
         self.btn_adicionar = ttk.Button(self.frame_botoes, text="Adicionar", command=self._adicionar_loja)
         self.btn_adicionar.pack(side=tk.LEFT, padx=5)
@@ -114,7 +128,19 @@ class LojaView(ttk.Frame):
         self.frame_lista.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Treeview para listagem
-        colunas = ("id", "nome", "cnpj", "telefone", "email", "endereco", "contato", "data_cadastro")
+        colunas = (
+            "id",
+            "nome",
+            "cnpj",
+            "telefone",
+            "email",
+            "endereco",
+            "contato",
+            "cidade",
+            "estado",
+            "agrupamento",
+            "data_cadastro",
+        )
         self.treeview = ttk.Treeview(self.frame_lista, columns=colunas, show="headings", selectmode="browse")
 
         # Definir cabeçalhos
@@ -125,6 +151,9 @@ class LojaView(ttk.Frame):
         self.treeview.heading("email", text="Email")
         self.treeview.heading("endereco", text="Endereço")
         self.treeview.heading("contato", text="Contato")
+        self.treeview.heading("cidade", text="Cidade")
+        self.treeview.heading("estado", text="Estado")
+        self.treeview.heading("agrupamento", text="Agrupamento")
         self.treeview.heading("data_cadastro", text="Data de Cadastro")
 
         # Definir larguras das colunas
@@ -133,8 +162,11 @@ class LojaView(ttk.Frame):
         self.treeview.column("cnpj", width=120, minwidth=100)
         self.treeview.column("telefone", width=120, minwidth=100)
         self.treeview.column("email", width=180, minwidth=120)
-        self.treeview.column("endereco", width=250, minwidth=150)
+        self.treeview.column("endereco", width=200, minwidth=150)
         self.treeview.column("contato", width=150, minwidth=100)
+        self.treeview.column("cidade", width=120, minwidth=100)
+        self.treeview.column("estado", width=60, minwidth=50)
+        self.treeview.column("agrupamento", width=100, minwidth=80)
         self.treeview.column("data_cadastro", width=120, minwidth=100)
 
         # Scrollbar
@@ -184,6 +216,9 @@ class LojaView(ttk.Frame):
             self.entrada_email.insert(0, valores[4] if valores[4] else "")
             self.entrada_endereco.insert(0, valores[5] if valores[5] else "")
             self.entrada_contato.insert(0, valores[6] if valores[6] else "")
+            self.entrada_cidade.insert(0, valores[7] if valores[7] else "")
+            self.entrada_estado.insert(0, valores[8] if valores[8] else "")
+            self.entrada_agrupamento.insert(0, valores[9] if valores[9] else "")
 
             # Habilitar botões de edição e exclusão
             self.btn_editar.config(state=tk.NORMAL)
@@ -205,7 +240,10 @@ class LojaView(ttk.Frame):
             'telefone': self.entrada_telefone.get().strip(),
             'email': self.entrada_email.get().strip(),
             'endereco': self.entrada_endereco.get().strip(),
-            'contato': self.entrada_contato.get().strip()
+            'contato': self.entrada_contato.get().strip(),
+            'cidade': self.entrada_cidade.get().strip(),
+            'estado': self.entrada_estado.get().strip(),
+            'agrupamento_id': self.entrada_agrupamento.get().strip(),
         }
 
     def _limpar_form(self):
@@ -217,6 +255,9 @@ class LojaView(ttk.Frame):
         self.entrada_email.delete(0, tk.END)
         self.entrada_endereco.delete(0, tk.END)
         self.entrada_contato.delete(0, tk.END)
+        self.entrada_cidade.delete(0, tk.END)
+        self.entrada_estado.delete(0, tk.END)
+        self.entrada_agrupamento.delete(0, tk.END)
 
         # Resetar ID atual
         self.loja_atual_id = None
@@ -334,7 +375,10 @@ class LojaView(ttk.Frame):
                 loja[4],  # email
                 loja[5],  # endereco
                 loja[6],  # contato
-                loja[7]   # data_cadastro
+                loja[8],  # cidade
+                loja[9],  # estado
+                loja[10],  # agrupamento
+                loja[7],   # data_cadastro
             )
 
             self.treeview.insert("", "end", values=valores)

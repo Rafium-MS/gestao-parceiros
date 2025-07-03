@@ -17,7 +17,7 @@ from tkcalendar import DateEntry
 from controllers.comprovante_controller import ComprovanteController
 from utils.validators import formatar_data
 from utils.ocr_utils import extract_text_from_image, extract_text_from_pdf
-
+from utils import carregar_combobox_por_cidade
 
 class ComprovanteView(ttk.Frame):
     """Interface gráfica para gerenciamento de comprovantes de entrega."""
@@ -231,6 +231,10 @@ class ComprovanteView(ttk.Frame):
 
         # Evento de mudança no filtro de pesquisa
         self.combo_filtro.bind("<<ComboboxSelected>>", self._on_filtro_change)
+
+        # Combobox dinâmico por cidade
+        self.combo_parceiro.bind("<<ComboboxSelected>>", self._on_parceiro_change)
+        self.combo_loja.bind("<<ComboboxSelected>>", self._on_loja_change)
 
         # Evento de mudança na seleção de arquivo
         self.combo_filtro.bind("<<ComboboxSelected>>", self._on_filtro_change)
@@ -690,7 +694,7 @@ class ComprovanteView(ttk.Frame):
     def _carregar_lojas_combobox(self):
         """Carrega as lojas no combobox."""
         try:
-            # Obter lojas do controller
+            # Obter lojas do controller␊
             lojas = self.controller.obter_lojas_combobox()
 
             # Criar dicionário reverso (id -> nome) para uso interno
@@ -702,6 +706,32 @@ class ComprovanteView(ttk.Frame):
         except Exception as e:
             self.logger.error(f"Erro ao carregar lojas para combobox: {str(e)}")
             messagebox.showerror("Erro", f"Erro ao carregar lojas: {str(e)}")
+
+    def _on_parceiro_change(self, event=None):
+        """Filtra as lojas pela cidade do parceiro."""
+        parceiro_nome = self.combo_parceiro.get()
+        parceiro_id = next((pid for name, pid in self.parceiros_dict.items() if name == parceiro_nome), None)
+        if parceiro_id:
+            parceiro = self.controller.obter_parceiro(parceiro_id)
+            if parceiro and parceiro.get("cidade"):
+                lojas = carregar_combobox_por_cidade(
+                    self.controller.db_manager, "lojas", parceiro["cidade"]
+                )
+                self.lojas_dict = {id: nome for nome, id in lojas.items()}
+                self.combo_loja["values"] = list(lojas.keys())
+
+    def _on_loja_change(self, event=None):
+        """Filtra os parceiros pela cidade da loja."""
+        loja_nome = self.combo_loja.get()
+        loja_id = next((lid for name, lid in self.lojas_dict.items() if name == loja_nome), None)
+        if loja_id:
+            loja = self.controller.obter_loja(loja_id)
+            if loja and loja.get("cidade"):
+                parceiros = carregar_combobox_por_cidade(
+                    self.controller.db_manager, "parceiros", loja["cidade"]
+                )
+                self.parceiros_dict = {id: nome for nome, id in parceiros.items()}
+                self.combo_parceiro["values"] = list(parceiros.keys())
 
     def _atualizar_treeview(self, comprovantes):
         """
