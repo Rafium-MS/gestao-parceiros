@@ -16,6 +16,7 @@ from PIL import Image, ImageTk
 from tkcalendar import DateEntry
 from controllers.comprovante_controller import ComprovanteController
 from utils.validators import formatar_data
+from utils.ocr_utils import extract_text_from_image, extract_text_from_pdf
 
 
 class ComprovanteView(ttk.Frame):
@@ -149,6 +150,10 @@ class ComprovanteView(ttk.Frame):
                                          command=self._visualizar_comprovante, state=tk.DISABLED)
         self.btn_visualizar.pack(side=tk.LEFT, padx=5)
 
+        self.btn_ocr = ttk.Button(self.frame_botoes, text="Ler OCR",
+                                  command=self._ler_ocr, state=tk.DISABLED)
+        self.btn_ocr.pack(side=tk.LEFT, padx=5)
+
         self.btn_limpar = ttk.Button(self.frame_botoes, text="Limpar", command=self._limpar_form)
         self.btn_limpar.pack(side=tk.LEFT, padx=5)
 
@@ -232,6 +237,9 @@ class ComprovanteView(ttk.Frame):
 
         # Teclas de atalho
         self.bind("<Escape>", lambda event: self._limpar_form())
+
+        # Botão OCR habilitado com tecla Ctrl+O
+        self.bind_all('<Control-o>', lambda event: self._ler_ocr())
 
     def _on_filtro_change(self, event=None):
         """Manipula a mudança de filtro de pesquisa."""
@@ -393,6 +401,31 @@ class ComprovanteView(ttk.Frame):
             except Exception as e:
                 self.logger.error(f"Erro ao carregar imagem: {str(e)}")
                 self.lbl_preview.config(text=f"Erro ao carregar imagem: {str(e)}")
+                elif ext == '.pdf':
+            try:
+                from pdf2image import convert_from_path
+                pages = convert_from_path(arquivo_path, first_page=1, last_page=1)
+                if pages:
+                    img = pages[0]
+                    width, height = img.size
+                    max_size = 300
+
+                    if width > height:
+                        new_width = max_size
+                        new_height = int(height * max_size / width)
+                    else:
+                        new_height = max_size
+                        new_width = int(width * max_size / height)
+
+                    img = img.resize((new_width, new_height), Image.LANCZOS)
+                    photo = ImageTk.PhotoImage(img)
+                    self.lbl_preview.config(image=photo, text="")
+                    self.lbl_preview.image = photo
+                else:
+                    self.lbl_preview.config(text="Não foi possível gerar prévia do PDF")
+            except Exception as e:
+                self.logger.error(f"Erro ao carregar PDF: {str(e)}")
+                self.lbl_preview.config(text=f"Erro ao carregar PDF: {str(e)}")
         else:
             # Para arquivos não-imagem, mostrar ícone ou mensagem
             self.lbl_preview.config(text=f"Prévia não disponível para {ext}")
@@ -452,6 +485,7 @@ class ComprovanteView(ttk.Frame):
         self.btn_editar.config(state=tk.DISABLED)
         self.btn_excluir.config(state=tk.DISABLED)
         self.btn_visualizar.config(state=tk.DISABLED)
+        self.btn_ocr.config(state=tk.DISABLED)
 
         # Limpar seleção da treeview
         for item in self.treeview.selection():
@@ -565,6 +599,35 @@ class ComprovanteView(ttk.Frame):
         except Exception as e:
             self.logger.error(f"Erro ao abrir arquivo: {str(e)}")
             messagebox.showerror("Erro", f"Erro ao abrir arquivo: {str(e)}")
+
+    def _ler_ocr(self):
+        """Extrai texto do comprovante selecionado usando OCR."""
+        if not self.arquivo_selecionado:
+            messagebox.showwarning("Aviso", "Nenhum arquivo selecionado!")
+            return
+
+        arquivo_path = os.path.join(self.comprovantes_dir, self.arquivo_selecionado)
+        if not os.path.exists(arquivo_path):
+            messagebox.showerror("Erro", "Arquivo não encontrado!")
+            return
+
+        _, ext = os.path.splitext(arquivo_path)
+        ext = ext.lower()
+
+        if ext in ['.png', '.jpg', '.jpeg']:
+            texto = extract_text_from_image(arquivo_path)
+        elif ext == '.pdf':
+            texto = extract_text_from_pdf(arquivo_path)
+        else:
+            messagebox.showwarning("Aviso", f"OCR não suportado para {ext}")
+            return
+
+        if texto:
+            self.texto_observacoes.delete("1.0", tk.END)
+            self.texto_observacoes.insert(tk.END, texto)
+            messagebox.showinfo("OCR", "Texto extraído das imagens.")
+        else:
+            messagebox.showwarning("OCR", "Não foi possível extrair texto.")
 
     def _pesquisar_comprovante(self):
         """Pesquisa comprovantes com base nos filtros selecionados."""

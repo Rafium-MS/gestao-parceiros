@@ -67,6 +67,8 @@ Para executar o Sistema de Gestão de Parceiros, seu computador deve atender aos
   - email-validator (para validação de e-mails)
   - python-dateutil (para manipulação de datas)
   - tkcalendar (widget de calendário)
+  - pytesseract (para leitura OCR)
+  - pdf2image (para converter PDFs em imagens)
 
 ---
 

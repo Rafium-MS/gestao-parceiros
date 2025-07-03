@@ -145,7 +145,8 @@ Sistema de Gestão de Entregas/
 4. Clique em "Selecionar" para escolher o arquivo do comprovante
 5. Adicione observações se necessário
 6. Clique em "Adicionar" para salvar o comprovante
-7. Para visualizar, selecione um comprovante na lista e clique em "Visualizar"
+7. Utilize o botão "Ler OCR" para extrair texto de arquivos JPG, JPEG, PNG ou PDF
+8. Para visualizar, selecione um comprovante na lista e clique em "Visualizar"
 
 ### Associações Parceiros-Lojas
 

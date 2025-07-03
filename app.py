@@ -30,6 +30,8 @@ def check_dependencies():
     try:
         import PIL
         import sqlite3
+        import pytesseract
+        import pdf2image
         return True
     except ImportError as e:
         messagebox.showerror("Erro de Dependência",

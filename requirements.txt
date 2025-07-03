@@ -17,3 +17,7 @@ email-validator>=1.3.0  # Para validação de endereços de email
 # Utilitários
 python-dateutil>=2.8.2  # Para manipulação de datas
 tkcalendar>=1.6.1       # Widget de calendário para tkinter
+
+# OCR e leitura de PDF
+pytesseract>=0.3.10
+pdf2image>=1.16.0
