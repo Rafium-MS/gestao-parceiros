@@ -6,7 +6,7 @@ Janela Principal
 --------------
 Implementa a janela principal da aplicação com todas as abas e funcionalidades.
 """
-
+# main_window.py
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -14,7 +14,6 @@ import logging
 import datetime
 import webbrowser
 
-# Importar views
 from views.parceiro_view import ParceiroView
 from views.loja_view import LojaView
 from views.comprovante_view import ComprovanteView
@@ -23,63 +22,90 @@ from views.relatorio_view import RelatorioView
 
 
 class MainWindow:
-    """Janela principal da aplicação."""
-
     def __init__(self, root, db_manager, config):
-        """
-        Inicializa a janela principal.
-
-        Args:
-            root (tk.Tk): Objeto Tk que representa a janela principal.
-            db_manager (DatabaseManager): Instância do gerenciador de banco de dados.
-            config (ConfigParser): Configurações do sistema.
-        """
         self.root = root
         self.db_manager = db_manager
         self.config = config
         self.logger = logging.getLogger(__name__)
-
-        # Definir ícone e título
         self.root.title("Sistema de Gestão de Parceiros")
-        self.configurar_estilo()
-        self.criar_menu()
-        self.criar_notebook()
-        self.configurar_atalhos()
 
-        # Definir tamanho mínimo da janela
+        self.configurar_estilo()
+        self.criar_layout()
+
+        # Exibir tela inicial
+        self.trocar_view("Parceiros")
+
         self.root.update()
         self.root.minsize(self.root.winfo_width(), self.root.winfo_height())
-
-        # Centralizar janela na tela
         self.centralizar_janela()
 
-        self.logger.info("Janela principal inicializada")
-
     def configurar_estilo(self):
-        """Configura o estilo da interface."""
-        # Configurar tema
         style = ttk.Style()
-
         try:
-            # Tentar importar ttkthemes se disponível
             from ttkthemes import ThemedStyle
             style = ThemedStyle(self.root)
-            style.set_theme("arc")  # Tema moderno
+            style.set_theme("arc")
         except ImportError:
-            # Se não estiver disponível, usar estilo padrão
-            self.logger.warning("ttkthemes não está instalado. Usando estilo padrão.")
-            style.theme_use('clam')  # Tema padrão mais moderno
+            self.logger.warning("ttkthemes não está instalado. Usando tema clam.")
+            style.theme_use("clam")
 
-        # Configurar cores e estilos específicos
         style.configure('TButton', padding=6)
         style.configure('TLabel', padding=3)
-        style.configure('TEntry', padding=3)
-        style.configure('TNotebook', tabposition='n')
         style.configure('Treeview', rowheight=25)
+        self.root.option_add("*Font", ("Segoe UI", 10))
 
-        # Configurar fonte padrão
-        default_font = ('Segoe UI', 10)
-        self.root.option_add('*Font', default_font)
+    def criar_layout(self):
+        self.container = ttk.Frame(self.root)
+        self.container.pack(fill=tk.BOTH, expand=True)
+
+        # Sidebar
+        self.sidebar = ttk.Frame(self.container, width=180)
+        self.sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5), pady=5)
+
+        self.botoes_sidebar = [
+            ("Parceiros", lambda: self.trocar_view("Parceiros")),
+            ("Lojas", lambda: self.trocar_view("Lojas")),
+            ("Comprovantes", lambda: self.trocar_view("Comprovantes")),
+            ("Associações", lambda: self.trocar_view("Associações")),
+            ("Relatórios", lambda: self.trocar_view("Relatórios")),
+        ]
+
+        for texto, comando in self.botoes_sidebar:
+            btn = ttk.Button(self.sidebar, text=texto, command=comando, width=20)
+            btn.pack(pady=5, padx=10, anchor=tk.NW)
+
+        # Área de conteúdo
+        self.area_conteudo = ttk.Frame(self.container)
+        self.area_conteudo.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Inicializar views
+        self.views = {
+            "Parceiros": ParceiroView(self.area_conteudo, self.db_manager),
+            "Lojas": LojaView(self.area_conteudo, self.db_manager),
+            "Comprovantes": ComprovanteView(self.area_conteudo, self.db_manager),
+            "Associações": AssociacaoView(self.area_conteudo, self.db_manager),
+            "Relatórios": RelatorioView(self.area_conteudo, self.db_manager),
+        }
+
+        for view in self.views.values():
+            view.pack_forget()
+
+    def trocar_view(self, nome_view):
+        for nome, view in self.views.items():
+            view.pack_forget()
+        self.views[nome_view].pack(fill=tk.BOTH, expand=True)
+        self.root.title(f"Sistema de Gestão - {nome_view}")
+        self.logger.info(f"Aba alterada para: {nome_view}")
+
+    def centralizar_janela(self):
+        self.root.update_idletasks()
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        largura = self.root.winfo_width()
+        altura = self.root.winfo_height()
+        x = (largura_tela // 2) - (largura // 2)
+        y = (altura_tela // 2) - (altura // 2)
+        self.root.geometry(f"{largura}x{altura}+{x}+{y}")
 
     def criar_menu(self):
         """Cria o menu principal."""

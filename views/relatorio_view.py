@@ -182,6 +182,16 @@ class RelatorioView(ttk.Frame):
         self.lbl_periodo = ttk.Label(self.frame_resumo, text="N/A")
         self.lbl_periodo.grid(row=1, column=3, padx=5, pady=5, sticky=tk.W)
 
+        # Estilo zebra striping
+        style = ttk.Style()
+        style.map("Treeview", background=[("selected", "#347083")])
+        style.configure("Treeview", rowheight=25)
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        style.configure("Treeview", font=("Segoe UI", 10))
+
+        self.treeview.tag_configure('oddrow', background='#f9f9f9')
+        self.treeview.tag_configure('evenrow', background='#ffffff')
+
         # Armazenar os dados atuais para exportação
         self.dados_atuais = []
 
@@ -310,7 +320,9 @@ class RelatorioView(ttk.Frame):
                 resultado[5] if len(resultado) > 5 else ""  # observacoes
             )
 
-            self.treeview.insert("", "end", values=valores)
+            tag = 'evenrow' if index % 2 == 0 else 'oddrow'
+            self.treeview.insert("", "end", values=valores, tags=(tag,))
+
 
     def _atualizar_resumo(self, resultados, data_inicial, data_final):
         """

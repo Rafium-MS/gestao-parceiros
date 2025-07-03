@@ -192,6 +192,16 @@ class ParceiroView(ttk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.treeview.pack(fill=tk.BOTH, expand=True)
 
+        # Estilo zebra striping
+        style = ttk.Style()
+        style.map("Treeview", background=[("selected", "#347083")])
+        style.configure("Treeview", rowheight=25)
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        style.configure("Treeview", font=("Segoe UI", 10))
+
+        self.treeview.tag_configure('oddrow', background='#f9f9f9')
+        self.treeview.tag_configure('evenrow', background='#ffffff')
+
     def _configurar_eventos(self):
         """Configura os eventos da interface."""
         # Evento de seleção na treeview
@@ -406,7 +416,8 @@ class ParceiroView(ttk.Frame):
                 parceiro[6],  # data_cadastro
             )
 
-            self.treeview.insert("", "end", values=valores)
+            tag = 'evenrow' if index % 2 == 0 else 'oddrow'
+            self.treeview.insert("", "end", values=valores, tags=(tag,))
 
     def focus_nome(self):
         """Coloca o foco no campo de nome."""
