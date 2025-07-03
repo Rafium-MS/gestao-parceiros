@@ -35,6 +35,9 @@ class Loja:
         self.endereco = None
         self.contato = None
         self.data_cadastro = None
+        self.cidade = None
+        self.estado = None
+        self.agrupamento_id = None
 
     def carregar_por_id(self, loja_id):
         """
@@ -49,10 +52,11 @@ class Loja:
         try:
             self.db_manager.execute(
                 """
-                SELECT id, nome, cnpj, telefone, email, endereco, contato, data_cadastro 
+                SELECT id, nome, cnpj, telefone, email, endereco, contato,
+                       data_cadastro, cidade, estado, agrupamento_id
                 FROM lojas WHERE id = ?
                 """,
-                (loja_id,)
+                (loja_id,),
             )
             loja = self.db_manager.fetchone()
 
@@ -60,7 +64,19 @@ class Loja:
                 self.logger.warning(f"Loja com ID {loja_id} não encontrada")
                 return False
 
-            self.id, self.nome, self.cnpj, self.telefone, self.email, self.endereco, self.contato, self.data_cadastro = loja
+            (
+                self.id,
+                self.nome,
+                self.cnpj,
+                self.telefone,
+                self.email,
+                self.endereco,
+                self.contato,
+                self.data_cadastro,
+                self.cidade,
+                self.estado,
+                self.agrupamento_id,
+            ) = loja
             return True
 
         except Exception as e:
@@ -94,15 +110,30 @@ class Loja:
 
             # Definir a data de cadastro para novas lojas
             if not self.id:
-                self.data_cadastro = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+                self.data_cadastro = datetime.datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
                 # Inserir nova loja
                 self.db_manager.execute(
                     """
-                    INSERT INTO lojas (nome, cnpj, telefone, email, endereco, contato, data_cadastro)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO lojas (
+                        nome, cnpj, telefone, email, endereco, contato,
+                        data_cadastro, cidade, estado, agrupamento_id
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (self.nome, self.cnpj, self.telefone, self.email, self.endereco, self.contato, self.data_cadastro)
+                    (
+                        self.nome,
+                        self.cnpj,
+                        self.telefone,
+                        self.email,
+                        self.endereco,
+                        self.contato,
+                        self.data_cadastro,
+                        self.cidade,
+                        self.estado,
+                        self.agrupamento_id,
+                    ),
                 )
 
                 # Obter o ID da loja inserida
@@ -149,37 +180,34 @@ class Loja:
         try:
             # Verificar se existem associações ou comprovantes relacionados
             self.db_manager.execute(
-                "SELECT COUNT(*) FROM associacoes WHERE loja_id = ?",
-                (self.id,)
+                "SELECT COUNT(*) FROM associacoes WHERE loja_id = ?", (self.id,)
             )
             count_associacoes = self.db_manager.fetchone()[0]
 
             self.db_manager.execute(
-                "SELECT COUNT(*) FROM comprovantes WHERE loja_id = ?",
-                (self.id,)
+                "SELECT COUNT(*) FROM comprovantes WHERE loja_id = ?", (self.id,)
             )
             count_comprovantes = self.db_manager.fetchone()[0]
 
             # Excluir registros relacionados se existirem
             if count_associacoes > 0:
                 self.db_manager.execute(
-                    "DELETE FROM associacoes WHERE loja_id = ?",
-                    (self.id,)
+                    "DELETE FROM associacoes WHERE loja_id = ?", (self.id,)
                 )
-                self.logger.info(f"Excluídas {count_associacoes} associações relacionadas à loja {self.id}")
+                self.logger.info(
+                    f"Excluídas {count_associacoes} associações relacionadas à loja {self.id}"
+                )
 
             if count_comprovantes > 0:
                 self.db_manager.execute(
-                    "DELETE FROM comprovantes WHERE loja_id = ?",
-                    (self.id,)
+                    "DELETE FROM comprovantes WHERE loja_id = ?", (self.id,)
                 )
-                self.logger.info(f"Excluídos {count_comprovantes} comprovantes relacionados à loja {self.id}")
+                self.logger.info(
+                    f"Excluídos {count_comprovantes} comprovantes relacionados à loja {self.id}"
+                )
 
             # Excluir a loja
-            self.db_manager.execute(
-                "DELETE FROM lojas WHERE id = ?",
-                (self.id,)
-            )
+            self.db_manager.execute("DELETE FROM lojas WHERE id = ?", (self.id,))
 
             # Commit das alterações
             self.db_manager.commit()
@@ -206,10 +234,20 @@ class Loja:
         try:
             db_manager.execute(
                 """
-                SELECT id, nome, cnpj, telefone, email, endereco, contato, data_cadastro 
-                FROM lojas 
+                SELECT id, nome, cnpj, telefone, email, endereco, contato,
+                       data_cadastro, cidade, estado, agrupamento_id
+                FROM lojas
+                WHERE nome LIKE ? OR cnpj LIKE ? OR telefone LIKE ?
+                      OR email LIKE ? OR contato LIKE ?
                 ORDER BY nome
-                """
+                """,
+                (
+                    f"%{termo}%",
+                    f"%{termo}%",
+                    f"%{termo}%",
+                    f"%{termo}%",
+                    f"%{termo}%",
+                ),
             )
             return db_manager.fetchall()
 
@@ -254,12 +292,15 @@ class Loja:
             dict: Dicionário com os dados da loja.
         """
         return {
-            'id': self.id,
-            'nome': self.nome,
-            'cnpj': formatar_cnpj(self.cnpj) if self.cnpj else '',
-            'telefone': self.telefone,
-            'email': self.email,
-            'endereco': self.endereco,
-            'contato': self.contato,
-            'data_cadastro': self.data_cadastro
+            "id": self.id,
+            "nome": self.nome,
+            "cnpj": formatar_cnpj(self.cnpj) if self.cnpj else "",
+            "telefone": self.telefone,
+            "email": self.email,
+            "endereco": self.endereco,
+            "contato": self.contato,
+            "data_cadastro": self.data_cadastro,
+            "cidade": self.cidade,
+            "estado": self.estado,
+            "agrupamento_id": self.agrupamento_id,
         }

@@ -1,9 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 Controlador de Relatórios
------------------------
+--------------------------
 Gerencia as operações relacionadas aos relatórios, conectando a interface com o modelo de dados.
 """
 
@@ -20,7 +17,6 @@ class RelatorioController:
     def __init__(self, db_manager):
         """
         Inicializa o controlador de relatórios.
-
         Args:
             db_manager (DatabaseManager): Instância do gerenciador de banco de dados.
         """
@@ -28,22 +24,10 @@ class RelatorioController:
         self.logger = logging.getLogger(__name__)
 
     def gerar_relatorio_parceiro(self, parceiro_nome=None, data_inicial=None, data_final=None, loja_nome=None):
-        """
-        Gera relatório de entregas por parceiro.
-
-        Args:
-            parceiro_nome (str, optional): Nome do parceiro filtrado. None para todos.
-            data_inicial (str, optional): Data inicial no formato YYYY-MM-DD.
-            data_final (str, optional): Data final no formato YYYY-MM-DD.
-            loja_nome (str, optional): Nome da loja filtrada. None para todas.
-
-        Returns:
-            list: Lista de tuplas com os dados do relatório.
-        """
+        """Gera relatório de entregas por parceiro."""
         try:
-            # Construir a consulta SQL base
             query = """
-                SELECT c.id, p.nome as parceiro, l.nome as loja, 
+                SELECT c.id, p.nome AS parceiro, l.nome AS loja, 
                        c.data_entrega, c.arquivo_comprovante, c.observacoes
                 FROM comprovantes c
                 JOIN parceiros p ON c.parceiro_id = p.id
@@ -52,30 +36,23 @@ class RelatorioController:
             """
             params = []
 
-            # Adicionar filtros
             if parceiro_nome:
                 query += " AND p.nome = ?"
                 params.append(parceiro_nome)
-
             if loja_nome:
                 query += " AND l.nome = ?"
                 params.append(loja_nome)
-
             if data_inicial:
                 query += " AND c.data_entrega >= ?"
                 params.append(data_inicial)
-
             if data_final:
                 query += " AND c.data_entrega <= ?"
                 params.append(data_final)
 
-            # Ordenar por parceiro e data
             query += " ORDER BY p.nome, c.data_entrega DESC"
 
-            # Executar consulta
             self.db_manager.execute(query, tuple(params))
             resultados = self.db_manager.fetchall()
-
             self.logger.info(f"Relatório por parceiro gerado: {len(resultados)} registros")
             return resultados
 
@@ -84,22 +61,10 @@ class RelatorioController:
             raise
 
     def gerar_relatorio_loja(self, loja_nome=None, data_inicial=None, data_final=None, parceiro_nome=None):
-        """
-        Gera relatório de entregas por loja.
-
-        Args:
-            loja_nome (str, optional): Nome da loja filtrada. None para todas.
-            data_inicial (str, optional): Data inicial no formato YYYY-MM-DD.
-            data_final (str, optional): Data final no formato YYYY-MM-DD.
-            parceiro_nome (str, optional): Nome do parceiro filtrado. None para todos.
-
-        Returns:
-            list: Lista de tuplas com os dados do relatório.
-        """
+        """Gera relatório de entregas por loja."""
         try:
-            # Construir a consulta SQL base
             query = """
-                SELECT c.id, p.nome as parceiro, l.nome as loja, 
+                SELECT c.id, p.nome AS parceiro, l.nome AS loja, 
                        c.data_entrega, c.arquivo_comprovante, c.observacoes
                 FROM comprovantes c
                 JOIN parceiros p ON c.parceiro_id = p.id
@@ -108,30 +73,23 @@ class RelatorioController:
             """
             params = []
 
-            # Adicionar filtros
             if loja_nome:
                 query += " AND l.nome = ?"
                 params.append(loja_nome)
-
             if parceiro_nome:
                 query += " AND p.nome = ?"
                 params.append(parceiro_nome)
-
             if data_inicial:
                 query += " AND c.data_entrega >= ?"
                 params.append(data_inicial)
-
             if data_final:
                 query += " AND c.data_entrega <= ?"
                 params.append(data_final)
 
-            # Ordenar por loja e data
             query += " ORDER BY l.nome, c.data_entrega DESC"
 
-            # Executar consulta
             self.db_manager.execute(query, tuple(params))
             resultados = self.db_manager.fetchall()
-
             self.logger.info(f"Relatório por loja gerado: {len(resultados)} registros")
             return resultados
 
@@ -140,22 +98,10 @@ class RelatorioController:
             raise
 
     def gerar_relatorio_periodo(self, data_inicial=None, data_final=None, parceiro_nome=None, loja_nome=None):
-        """
-        Gera relatório de entregas por período.
-
-        Args:
-            data_inicial (str, optional): Data inicial no formato YYYY-MM-DD.
-            data_final (str, optional): Data final no formato YYYY-MM-DD.
-            parceiro_nome (str, optional): Nome do parceiro filtrado. None para todos.
-            loja_nome (str, optional): Nome da loja filtrada. None para todas.
-
-        Returns:
-            list: Lista de tuplas com os dados do relatório.
-        """
+        """Gera relatório de entregas por período."""
         try:
-            # Construir a consulta SQL base
             query = """
-                SELECT c.id, p.nome as parceiro, l.nome as loja, 
+                SELECT c.id, p.nome AS parceiro, l.nome AS loja, 
                        c.data_entrega, c.arquivo_comprovante, c.observacoes
                 FROM comprovantes c
                 JOIN parceiros p ON c.parceiro_id = p.id
@@ -164,30 +110,23 @@ class RelatorioController:
             """
             params = []
 
-            # Adicionar filtros
             if data_inicial:
                 query += " AND c.data_entrega >= ?"
                 params.append(data_inicial)
-
             if data_final:
                 query += " AND c.data_entrega <= ?"
                 params.append(data_final)
-
             if parceiro_nome:
                 query += " AND p.nome = ?"
                 params.append(parceiro_nome)
-
             if loja_nome:
                 query += " AND l.nome = ?"
                 params.append(loja_nome)
 
-            # Ordenar por data
             query += " ORDER BY c.data_entrega DESC"
 
-            # Executar consulta
             self.db_manager.execute(query, tuple(params))
             resultados = self.db_manager.fetchall()
-
             self.logger.info(f"Relatório por período gerado: {len(resultados)} registros")
             return resultados
 
@@ -195,21 +134,32 @@ class RelatorioController:
             self.logger.error(f"Erro ao gerar relatório por período: {str(e)}")
             raise
 
-    def visualizar_comprovante(self, comprovante_id):
-        """
-        Abre o arquivo de comprovante para visualização.
-
-        Args:
-            comprovante_id (int): ID do comprovante a ser visualizado.
-
-        Returns:
-            bool: True se a visualização foi bem-sucedida, False caso contrário.
-        """
+    def relatorio_comprovantes_detalhado(self, data_inicial, data_final):
+        """Gera relatório detalhado com imagens de comprovantes."""
         try:
-            # Obter informações do comprovante
+            self.db_manager.execute(
+                """
+                SELECT l.nome, p.nome, l.cidade, c.arquivo_comprovante,
+                       c.data_entrega, c.observacoes
+                FROM comprovantes c
+                JOIN parceiros p ON c.parceiro_id = p.id
+                JOIN lojas l ON c.loja_id = l.id
+                WHERE c.data_entrega BETWEEN ? AND ?
+                ORDER BY l.nome, c.data_entrega
+                """,
+                (data_inicial, data_final),
+            )
+            return self.db_manager.fetchall()
+        except Exception as exc:
+            self.logger.error("Erro ao gerar relatório detalhado: %s", exc)
+            return []
+
+    def visualizar_comprovante(self, comprovante_id):
+        """Abre o arquivo de comprovante para visualização."""
+        try:
             self.db_manager.execute(
                 "SELECT arquivo_comprovante FROM comprovantes WHERE id = ?",
-                (comprovante_id,)
+                (comprovante_id,),
             )
             resultado = self.db_manager.fetchone()
 
@@ -218,10 +168,10 @@ class RelatorioController:
                 return False
 
             arquivo_comprovante = resultado[0]
-
-            # Verificar se o arquivo existe
-            comprovantes_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                            "comprovantes")
+            comprovantes_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "comprovantes"
+            )
             caminho_completo = os.path.join(comprovantes_dir, arquivo_comprovante)
 
             if not os.path.exists(caminho_completo):
@@ -231,18 +181,9 @@ class RelatorioController:
                 )
                 return False
 
-            # Abrir o arquivo com o visualizador padrão do sistema
-            try:
-                webbrowser.open(caminho_completo)
-                self.logger.info(f"Comprovante visualizado: {arquivo_comprovante}")
-                return True
-            except Exception as e:
-                messagebox.showerror(
-                    "Erro",
-                    f"Erro ao abrir o arquivo: {str(e)}\n\nCaminho: {caminho_completo}"
-                )
-                self.logger.error(f"Erro ao abrir comprovante: {str(e)}")
-                return False
+            webbrowser.open(caminho_completo)
+            self.logger.info(f"Comprovante visualizado: {arquivo_comprovante}")
+            return True
 
         except Exception as e:
             self.logger.error(f"Erro ao visualizar comprovante: {str(e)}")
@@ -250,12 +191,7 @@ class RelatorioController:
             return False
 
     def obter_parceiros_combobox(self):
-        """
-        Obtém os parceiros para preencher um combobox.
-
-        Returns:
-            dict: Dicionário onde as chaves são os nomes dos parceiros e os valores são os IDs.
-        """
+        """Obtém os parceiros para preencher um combobox."""
         try:
             self.db_manager.execute("SELECT id, nome FROM parceiros ORDER BY nome")
             parceiros = self.db_manager.fetchall()
@@ -265,12 +201,7 @@ class RelatorioController:
             return {}
 
     def obter_lojas_combobox(self):
-        """
-        Obtém as lojas para preencher um combobox.
-
-        Returns:
-            dict: Dicionário onde as chaves são os nomes das lojas e os valores são os IDs.
-        """
+        """Obtém as lojas para preencher um combobox."""
         try:
             self.db_manager.execute("SELECT id, nome FROM lojas ORDER BY nome")
             lojas = self.db_manager.fetchall()
@@ -280,18 +211,8 @@ class RelatorioController:
             return {}
 
     def gerar_estatisticas(self, data_inicial=None, data_final=None):
-        """
-        Gera estatísticas gerais para o dashboard.
-
-        Args:
-            data_inicial (str, optional): Data inicial no formato YYYY-MM-DD.
-            data_final (str, optional): Data final no formato YYYY-MM-DD.
-
-        Returns:
-            dict: Dicionário com estatísticas do sistema.
-        """
+        """Gera estatísticas gerais para o dashboard."""
         try:
-            # Definir período padrão para o mês atual se não especificado
             if not data_inicial or not data_final:
                 hoje = datetime.datetime.now()
                 primeiro_dia = datetime.datetime(hoje.year, hoje.month, 1)
@@ -300,26 +221,21 @@ class RelatorioController:
 
             estatisticas = {}
 
-            # Total de parceiros
             self.db_manager.execute("SELECT COUNT(*) FROM parceiros")
-            estatisticas['total_parceiros'] = self.db_manager.fetchone()[0]
+            estatisticas["total_parceiros"] = self.db_manager.fetchone()[0]
 
-            # Total de lojas
             self.db_manager.execute("SELECT COUNT(*) FROM lojas")
-            estatisticas['total_lojas'] = self.db_manager.fetchone()[0]
+            estatisticas["total_lojas"] = self.db_manager.fetchone()[0]
 
-            # Total de comprovantes
             self.db_manager.execute("SELECT COUNT(*) FROM comprovantes")
-            estatisticas['total_comprovantes'] = self.db_manager.fetchone()[0]
+            estatisticas["total_comprovantes"] = self.db_manager.fetchone()[0]
 
-            # Comprovantes no período
             self.db_manager.execute(
                 "SELECT COUNT(*) FROM comprovantes WHERE data_entrega BETWEEN ? AND ?",
-                (data_inicial, data_final)
+                (data_inicial, data_final),
             )
-            estatisticas['comprovantes_periodo'] = self.db_manager.fetchone()[0]
+            estatisticas["comprovantes_periodo"] = self.db_manager.fetchone()[0]
 
-            # Entregas por parceiro no período
             self.db_manager.execute(
                 """
                 SELECT p.nome, COUNT(c.id) as total
@@ -330,11 +246,10 @@ class RelatorioController:
                 ORDER BY total DESC
                 LIMIT 5
                 """,
-                (data_inicial, data_final)
+                (data_inicial, data_final),
             )
-            estatisticas['top_parceiros'] = self.db_manager.fetchall()
+            estatisticas["top_parceiros"] = self.db_manager.fetchall()
 
-            # Entregas por loja no período
             self.db_manager.execute(
                 """
                 SELECT l.nome, COUNT(c.id) as total
@@ -345,11 +260,10 @@ class RelatorioController:
                 ORDER BY total DESC
                 LIMIT 5
                 """,
-                (data_inicial, data_final)
+                (data_inicial, data_final),
             )
-            estatisticas['top_lojas'] = self.db_manager.fetchall()
+            estatisticas["top_lojas"] = self.db_manager.fetchall()
 
-            # Distribuição de entregas por dia da semana
             self.db_manager.execute(
                 """
                 SELECT strftime('%w', data_entrega) as dia_semana, COUNT(*) as total
@@ -358,19 +272,16 @@ class RelatorioController:
                 GROUP BY dia_semana
                 ORDER BY dia_semana
                 """,
-                (data_inicial, data_final)
+                (data_inicial, data_final),
             )
             dias_semana = {
-                '0': 'Domingo',
-                '1': 'Segunda',
-                '2': 'Terça',
-                '3': 'Quarta',
-                '4': 'Quinta',
-                '5': 'Sexta',
-                '6': 'Sábado'
+                "0": "Domingo", "1": "Segunda", "2": "Terça",
+                "3": "Quarta", "4": "Quinta", "5": "Sexta", "6": "Sábado"
             }
             resultados = self.db_manager.fetchall()
-            estatisticas['distribuicao_dia_semana'] = [(dias_semana[r[0]], r[1]) for r in resultados]
+            estatisticas["distribuicao_dia_semana"] = [
+                (dias_semana[r[0]], r[1]) for r in resultados
+            ]
 
             self.logger.info("Estatísticas geradas com sucesso")
             return estatisticas
@@ -378,11 +289,11 @@ class RelatorioController:
         except Exception as e:
             self.logger.error(f"Erro ao gerar estatísticas: {str(e)}")
             return {
-                'total_parceiros': 0,
-                'total_lojas': 0,
-                'total_comprovantes': 0,
-                'comprovantes_periodo': 0,
-                'top_parceiros': [],
-                'top_lojas': [],
-                'distribuicao_dia_semana': []
+                "total_parceiros": 0,
+                "total_lojas": 0,
+                "total_comprovantes": 0,
+                "comprovantes_periodo": 0,
+                "top_parceiros": [],
+                "top_lojas": [],
+                "distribuicao_dia_semana": [],
             }
