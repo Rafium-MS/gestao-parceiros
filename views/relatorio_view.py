@@ -311,7 +311,7 @@ class RelatorioView(ttk.Frame):
             self.treeview.delete(item)
 
         # Adicionar resultados à treeview
-        for resultado in resultados:
+        for index, resultado in enumerate(resultados):
             valores = (
                 resultado[0],  # id
                 resultado[1],  # parceiro
@@ -320,10 +320,8 @@ class RelatorioView(ttk.Frame):
                 resultado[4],  # comprovante
                 resultado[5] if len(resultado) > 5 else ""  # observacoes
             )
-
             tag = 'evenrow' if index % 2 == 0 else 'oddrow'
             self.treeview.insert("", "end", values=valores, tags=(tag,))
-
 
     def _atualizar_resumo(self, resultados, data_inicial, data_final):
         """

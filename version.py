@@ -9,11 +9,11 @@ Define a versão atual do sistema e funções auxiliares relacionadas.
 
 # Informações de versão
 VERSION_MAJOR = 1
-VERSION_MINOR = 0
-VERSION_PATCH = 0
+VERSION_MINOR = 1
+VERSION_PATCH = 1
 
 # Data de lançamento
-RELEASE_DATE = "2025-04-01"
+RELEASE_DATE = "2025-07-07"
 
 # Informações adicionais
 BUILD_TYPE = "stable"  # 'alpha', 'beta', 'rc', 'stable'

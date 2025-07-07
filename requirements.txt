@@ -21,3 +21,4 @@ tkcalendar>=1.6.1       # Widget de calendário para tkinter
 # OCR e leitura de PDF
 pytesseract>=0.3.10
 pdf2image>=1.16.0
+scikit-learn>=1.3.0
