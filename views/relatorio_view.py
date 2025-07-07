@@ -15,6 +15,7 @@ from tkcalendar import DateEntry
 import pandas as pd
 from controllers.relatorio_controller import RelatorioController
 from utils.validators import formatar_cpf
+from utils.tooltip import ToolTip
 
 
 class RelatorioView(ttk.Frame):

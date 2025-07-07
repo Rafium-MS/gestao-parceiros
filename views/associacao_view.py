@@ -12,6 +12,7 @@ from tkinter import ttk, messagebox
 import logging
 from controllers.associacao_controller import AssociacaoController
 from utils import carregar_combobox_por_cidade
+from utils.tooltip import ToolTip
 
 class AssociacaoView(ttk.Frame):
     """Interface gráfica para gerenciamento de associações entre parceiros e lojas."""
@@ -167,6 +168,22 @@ class AssociacaoView(ttk.Frame):
 
         self.treeview.tag_configure('oddrow', background='#f9f9f9')
         self.treeview.tag_configure('evenrow', background='#ffffff')
+
+        ToolTip(self.combo_parceiro, "Selecione o parceiro que será associado a uma loja.")
+        ToolTip(self.combo_loja, "Selecione a loja que será associada ao parceiro.")
+        ToolTip(self.combo_status, "Defina o status da associação.")
+        ToolTip(self.entrada_observacao, "Digite informações adicionais sobre a associação.")
+        ToolTip(self.btn_adicionar, "Clique para criar uma nova associação.")
+        ToolTip(self.btn_editar, "Clique para salvar alterações na associação selecionada.")
+        ToolTip(self.btn_excluir, "Clique para excluir a associação selecionada.")
+        ToolTip(self.btn_limpar, "Limpa os campos e reinicia o formulário.")
+        ToolTip(self.entrada_pesquisa, "Digite o nome de um parceiro ou loja para buscar.")
+        ToolTip(self.btn_pesquisar, "Clique para buscar associações com base no termo.")
+        ToolTip(self.btn_limpar_pesquisa, "Limpa o campo de busca e exibe todas as associações.")
+        ToolTip(self.combo_filtro_parceiro, "Filtrar lista por parceiro.")
+        ToolTip(self.combo_filtro_loja, "Filtrar lista por loja.")
+        ToolTip(self.combo_filtro_status, "Filtrar lista por status da associação.")
+        ToolTip(self.btn_limpar_filtros, "Remove todos os filtros e exibe todas as associações.")
 
     def _configurar_eventos(self):
         """Configura os eventos da interface."""

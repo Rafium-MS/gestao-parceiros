@@ -12,7 +12,7 @@ from tkinter import ttk, messagebox
 import logging
 from controllers.loja_controller import LojaController
 from utils.validators import formatar_cnpj, limpar_formatacao
-
+from utils.tooltip import ToolTip
 
 class LojaView(ttk.Frame):
     """Interface gráfica para gerenciamento de lojas."""
@@ -238,6 +238,25 @@ class LojaView(ttk.Frame):
             # Desabilitar botão de adicionar
             self.btn_adicionar.config(state=tk.DISABLED)
 
+            ToolTip(self.entrada_nome, "Digite o nome da loja.")
+            ToolTip(self.entrada_cnpj, "Digite o CNPJ da loja (opcional).")
+            ToolTip(self.entrada_telefone, "Digite o telefone de contato.")
+            ToolTip(self.entrada_email, "Digite o e-mail da loja.")
+            ToolTip(self.entrada_endereco, "Endereço completo da loja.")
+            ToolTip(self.entrada_contato, "Nome da pessoa de contato.")
+            ToolTip(self.entrada_cidade, "Cidade onde a loja está localizada.")
+            ToolTip(self.entrada_estado, "Estado (UF) da loja, ex: SP, RJ.")
+            ToolTip(self.entrada_agrupamento, "Identificador do agrupamento de lojas (opcional).")
+
+            ToolTip(self.btn_adicionar, "Clique para adicionar uma nova loja.")
+            ToolTip(self.btn_editar, "Clique para salvar alterações na loja selecionada.")
+            ToolTip(self.btn_excluir, "Clique para excluir a loja selecionada.")
+            ToolTip(self.btn_limpar, "Limpa os campos do formulário.")
+
+            ToolTip(self.entrada_pesquisa, "Digite um termo para buscar por nome, CNPJ, cidade, etc.")
+            ToolTip(self.btn_pesquisar, "Clique para buscar lojas conforme o termo digitado.")
+            ToolTip(self.btn_limpar_pesquisa, "Limpa o campo de pesquisa e exibe todas as lojas.")
+
     def _obter_dados_form(self):
         """
         Obtém os dados do formulário.
@@ -281,7 +300,7 @@ class LojaView(ttk.Frame):
         # Limpar seleção da treeview
         for item in self.treeview.selection():
             self.treeview.selection_remove(item)
-
+    
     def _adicionar_loja(self):
         """Adiciona uma nova loja."""
         # Obter dados do formulário

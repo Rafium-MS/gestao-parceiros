@@ -26,6 +26,7 @@
 7. [Funções Administrativas](#7-funções-administrativas)
    1. [Backup do Banco de Dados](#71-backup-do-banco-de-dados)
    2. [Restauração de Backup](#72-restauração-de-backup)
+   3. [Configurações e Permissões](#73-configurações-e-permissões)
 8. [Solução de Problemas](#8-solução-de-problemas)
 9. [Perguntas Frequentes](#9-perguntas-frequentes)
 10. [Suporte](#10-suporte)
@@ -421,6 +422,65 @@ Caso seja necessário, você pode restaurar o sistema a partir de um backup ante
 6. Após a conclusão, o sistema será reiniciado para aplicar as alterações
 
 > **Atenção**: A restauração substituirá TODOS os dados atuais pelos dados do backup. Recomenda-se fazer um backup do estado atual antes de prosseguir.
+
+### 7.3 Configurações e Permissões
+
+Na opção **Configurações** do menu principal é possível alterar as preferências
+do sistema e gerenciar os níveis de acesso.
+
+#### Acessando as Configurações
+
+1. Clique em **Configurações > Preferências** no menu superior.
+2. Será exibida uma janela listando todas as opções do arquivo `config.ini`.
+3. Edite os valores desejados e clique em **Salvar** para aplicar.
+
+#### Papéis de Usuário
+
+O sistema trabalha com quatro perfis padrão:
+
+- **Admin** – acesso total às funções e configurações.
+- **Operador** – operações de cadastro e relatórios.
+- **Financeiro** – acesso focado em dados financeiros.
+- **Visualizador** – somente leitura das informações.
+
+### 7.3 Janela de Configurações
+
+A janela de configurações centraliza todos os ajustes avançados do sistema.
+As principais categorias incluem:
+
+#### Gestão de Usuários e Permissões
+- Definição de níveis de acesso (Admin, Operador, Financeiro, Visualizador)
+- Controle de permissões por módulo e ação
+- Políticas de senha e autenticação
+
+#### Preferências do Sistema
+- Idioma e fuso horário
+- Layout do dashboard (temas claro/escuro)
+- Configurações de notificações (e-mail, push e alertas internos)
+
+#### Auditoria e Logs
+- Período de retenção dos logs
+- Ativação do registro detalhado de atividades
+- Exportação automática de logs
+
+#### Importação e Exportação
+- Formatos aceitos (CSV, XLSX, PDF, ZIP)
+- Diretórios padrão e limites de tamanho para uploads
+
+#### Integrações e APIs
+- Gerenciamento de chaves de API
+- Integração com sistemas externos (ERP, e-mail, notificações)
+
+#### Faturamento
+- Parâmetros de geração de faturas
+- Métodos de pagamento e políticas de cobrança
+
+#### Multiempresa
+- Adição ou remoção de empresas
+- Separação de diretórios e dados por empresa
+- Permissões específicas por empresa
+
+Essas configurações oferecem centralização, segurança e flexibilidade para o crescimento do sistema.
 
 ---
 

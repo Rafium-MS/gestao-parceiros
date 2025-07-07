@@ -257,8 +257,35 @@ class DatabaseManager:
                 status TEXT,
                 FOREIGN KEY (parceiro_id) REFERENCES parceiros (id),
                 FOREIGN KEY (loja_id) REFERENCES lojas (id)
+)
+            ''')
+
+            # Tabela de roles (permissões)
+            self.execute('''
+            CREATE TABLE IF NOT EXISTS roles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT UNIQUE NOT NULL
             )
             ''')
+
+            # Tabela de usuários
+            self.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role_id INTEGER NOT NULL,
+                FOREIGN KEY (role_id) REFERENCES roles (id)
+            )
+            ''')
+
+            # Inserir roles padrão se não existirem
+            self.execute("SELECT COUNT(*) FROM roles")
+            if self.fetchone()[0] == 0:
+                self.executemany(
+                    "INSERT INTO roles (nome) VALUES (?)",
+                    [("Admin",), ("Operador",), ("Financeiro",), ("Visualizador",)]
+                )
 
             # Commit das mudanças
             self.commit()

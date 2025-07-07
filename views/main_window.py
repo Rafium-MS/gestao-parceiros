@@ -19,6 +19,8 @@ from views.loja_view import LojaView
 from views.comprovante_view import ComprovanteView
 from views.associacao_view import AssociacaoView
 from views.relatorio_view import RelatorioView
+from views.config_view import ConfigView
+from controllers.config_controller import ConfigController
 
 
 class MainWindow:
@@ -26,10 +28,12 @@ class MainWindow:
         self.root = root
         self.db_manager = db_manager
         self.config = config
+        self.config_controller = ConfigController()
         self.logger = logging.getLogger(__name__)
         self.root.title("Sistema de Gestão de Parceiros")
 
         self.configurar_estilo()
+        self.criar_menu()
         self.criar_layout()
 
         # Exibir tela inicial
@@ -135,6 +139,11 @@ class MainWindow:
         relatorios_menu.add_command(label="Entregas por Loja", command=self.relatorio_por_loja)
         relatorios_menu.add_command(label="Entregas por Período", command=self.relatorio_por_periodo)
         menu_bar.add_cascade(label="Relatórios", menu=relatorios_menu)
+
+        # Menu Configurações
+        config_menu = tk.Menu(menu_bar, tearoff=0)
+        config_menu.add_command(label="Preferências", command=self.abrir_configuracoes)
+        menu_bar.add_cascade(label="Configurações", menu=config_menu)
 
         # Menu Ajuda
         ajuda_menu = tk.Menu(menu_bar, tearoff=0)
@@ -312,6 +321,10 @@ class MainWindow:
         """Abre a aba de relatórios e configura para mostrar relatório por período."""
         self.notebook.select(4)  # Seleciona a aba de relatórios
         self.relatorio_view.selecionar_tipo("periodo")
+
+    def abrir_configuracoes(self):
+        """Abre a janela de configurações do sistema."""
+        ConfigView(self.root, self.config_controller)
 
     def abrir_manual(self):
         """Abre o manual do usuário."""

@@ -199,6 +199,12 @@ O sistema pode ser customizado editando o arquivo `config.ini` para alterar:
 - Diretório de comprovantes
 - Formatos de arquivos permitidos
 - Configurações de logs
+- Níveis de permissão de usuários
+
+Também é possível ajustar essas preferências pela interface gráfica em
+**Configurações** no menu principal. Nesta janela você pode editar valores do
+`config.ini` e definir os papéis de acesso (Admin, Operador, Financeiro e
+Visualizador).
 
 ## Contribuições
 

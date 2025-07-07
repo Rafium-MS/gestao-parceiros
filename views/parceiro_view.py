@@ -12,6 +12,7 @@ from tkinter import ttk, messagebox
 import logging
 from controllers.parceiro_controller import ParceiroController
 from utils.validators import formatar_cpf, limpar_formatacao
+from utils.tooltip import ToolTip
 
 
 class ParceiroView(ttk.Frame):
@@ -114,17 +115,21 @@ class ParceiroView(ttk.Frame):
 
         self.btn_adicionar = ttk.Button(self.frame_botoes, text="Adicionar", command=self._adicionar_parceiro)
         self.btn_adicionar.pack(side=tk.LEFT, padx=5)
+        ToolTip(self.btn_adicionar, "Adiciona um novo parceiro ao sistema")
 
         self.btn_editar = ttk.Button(self.frame_botoes, text="Salvar Edição",
                                      command=self._editar_parceiro, state=tk.DISABLED)
         self.btn_editar.pack(side=tk.LEFT, padx=5)
+        ToolTip(self.btn_editar, "Salva alterações no parceiro selecionado")
 
         self.btn_excluir = ttk.Button(self.frame_botoes, text="Excluir",
                                       command=self._excluir_parceiro, state=tk.DISABLED)
         self.btn_excluir.pack(side=tk.LEFT, padx=5)
+        ToolTip(self.btn_excluir, "Remove o parceiro selecionado")
 
         self.btn_limpar = ttk.Button(self.frame_botoes, text="Limpar", command=self._limpar_form)
         self.btn_limpar.pack(side=tk.LEFT, padx=5)
+        ToolTip(self.btn_limpar, "Limpa o formulário")
 
         # Frame para pesquisa
         self.frame_pesquisa = ttk.Frame(self)
@@ -276,6 +281,9 @@ class ParceiroView(ttk.Frame):
             'produto': self.entrada_produto.get().strip(),
             'valor_unidade': self.entrada_valor.get().strip(),
         }
+
+        ToolTip(self.entrada_nome, "Digite o nome completo do parceiro")
+        ToolTip(self.entrada_cpf, "CPF no formato 000.000.000-00 (opcional)")
 
     def _limpar_form(self):
         """Limpa o formulário e reseta o estado dos botões."""

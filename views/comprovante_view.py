@@ -18,6 +18,7 @@ from controllers.comprovante_controller import ComprovanteController
 from utils.validators import formatar_data
 from utils.ocr_utils import extract_text_from_image, extract_text_from_pdf
 from utils import carregar_combobox_por_cidade
+from utils.tooltip import ToolTip
 
 class ComprovanteView(ttk.Frame):
     """Interface gráfica para gerenciamento de comprovantes de entrega."""
@@ -230,6 +231,28 @@ class ComprovanteView(ttk.Frame):
 
         self.treeview.tag_configure('oddrow', background='#f9f9f9')
         self.treeview.tag_configure('evenrow', background='#ffffff')
+
+        ToolTip(self.combo_parceiro, "Selecione o parceiro que realizou a entrega.")
+        ToolTip(self.combo_loja, "Selecione a loja que recebeu a entrega.")
+        ToolTip(self.entrada_data, "Informe a data em que a entrega foi feita.")
+        ToolTip(self.btn_selecionar, "Clique para escolher o arquivo do comprovante (imagem ou PDF).")
+        ToolTip(self.lbl_arquivo, "Nome do arquivo selecionado.")
+        ToolTip(self.texto_observacoes, "Adicione informações extras sobre esta entrega.")
+        ToolTip(self.lbl_preview, "Pré-visualização do arquivo selecionado (imagem ou primeira página do PDF).")
+
+        ToolTip(self.btn_adicionar, "Clique para adicionar um novo comprovante.")
+        ToolTip(self.btn_editar, "Clique para salvar alterações no comprovante selecionado.")
+        ToolTip(self.btn_excluir, "Clique para excluir o comprovante selecionado.")
+        ToolTip(self.btn_visualizar, "Abre o arquivo no visualizador padrão do sistema.")
+        ToolTip(self.btn_ocr, "Executa OCR e tenta extrair o texto do comprovante.")
+        ToolTip(self.btn_limpar, "Limpa o formulário e reinicia os botões.")
+
+        ToolTip(self.combo_filtro, "Escolha como deseja filtrar os comprovantes.")
+        ToolTip(self.entrada_pesquisa, "Digite o termo de busca (nome do parceiro ou loja).")
+        ToolTip(self.data_inicio, "Data inicial do intervalo de busca (aparece ao filtrar por Data).")
+        ToolTip(self.data_fim, "Data final do intervalo de busca (aparece ao filtrar por Data).")
+        ToolTip(self.btn_pesquisar, "Clique para buscar comprovantes conforme o filtro.")
+        ToolTip(self.btn_limpar_pesquisa, "Limpa os filtros e exibe todos os comprovantes.")
 
     def _configurar_eventos(self):
         """Configura os eventos da interface."""
