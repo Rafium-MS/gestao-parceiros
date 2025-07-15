@@ -19,111 +19,111 @@ class ParceiroView(ttk.Frame):
     """Interface gráfica para gerenciamento de parceiros."""
 
     def __init__(self, parent, db_manager):
-        """
-        Inicializa a interface de parceiros.
-
-        Args:
-            parent (tk.Widget): Widget pai.
-            db_manager (DatabaseManager): Instância do gerenciador de banco de dados.
-        """
         super().__init__(parent)
         self.parent = parent
         self.logger = logging.getLogger(__name__)
-
-        # Controlador
         self.controller = ParceiroController(db_manager)
-
-        # ID do parceiro atual (para edição)
         self.parceiro_atual_id = None
 
-        # Construir interface
         self._criar_widgets()
         self._configurar_eventos()
-
-        # Carregar dados iniciais
         self._carregar_parceiros()
 
     def _criar_widgets(self):
         """Cria os widgets da interface."""
-        # Frame para formulário
-        self.frame_form = ttk.LabelFrame(self, text="Cadastro de Parceiros")
-        self.frame_form.pack(fill=tk.X, padx=10, pady=10)
+        # Frame Informações do Parceiro
+        self.frame_info = ttk.LabelFrame(self, text="Informações do Parceiro")
+        self.frame_info.pack(fill=tk.X, padx=10, pady=5)
 
-        # Campos do formulário
-        # Linha 1
-        ttk.Label(self.frame_form, text="Nome:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_nome = ttk.Entry(self.frame_form, width=40)
+        ttk.Label(self.frame_info, text="Nome:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_nome = ttk.Entry(self.frame_info, width=40)
         self.entrada_nome.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(self.frame_form, text="CPF:").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-        self.entrada_cpf = ttk.Entry(self.frame_form, width=20)
+        ttk.Label(self.frame_info, text="CPF/CNPJ:").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_cpf = ttk.Entry(self.frame_info, width=20)
         self.entrada_cpf.grid(row=0, column=3, padx=5, pady=5)
 
-        # Linha 2
-        ttk.Label(self.frame_form, text="Telefone:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_telefone = ttk.Entry(self.frame_form, width=20)
+        ttk.Label(self.frame_info, text="Telefone:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_telefone = ttk.Entry(self.frame_info, width=20)
         self.entrada_telefone.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(self.frame_form, text="Email:").grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
-        self.entrada_email = ttk.Entry(self.frame_form, width=30)
+        ttk.Label(self.frame_info, text="Email:").grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_email = ttk.Entry(self.frame_info, width=30)
         self.entrada_email.grid(row=1, column=3, padx=5, pady=5)
 
-# Linha 3
-        ttk.Label(self.frame_form, text="Endereço:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_endereco = ttk.Entry(self.frame_form, width=60)
+        ttk.Label(self.frame_info, text="Endereço:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_endereco = ttk.Entry(self.frame_info, width=60)
         self.entrada_endereco.grid(row=2, column=1, columnspan=3, padx=5, pady=5, sticky=tk.EW)
 
-        # Linha 4
-        ttk.Label(self.frame_form, text="Cidade:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_cidade = ttk.Entry(self.frame_form, width=30)
+        ttk.Label(self.frame_info, text="Cidade:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_cidade = ttk.Entry(self.frame_info, width=30)
         self.entrada_cidade.grid(row=3, column=1, padx=5, pady=5)
 
-        ttk.Label(self.frame_form, text="Estado:").grid(row=3, column=2, padx=5, pady=5, sticky=tk.W)
-        self.entrada_estado = ttk.Entry(self.frame_form, width=5)
+        ttk.Label(self.frame_info, text="Estado:").grid(row=3, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_estado = ttk.Entry(self.frame_info, width=5)
         self.entrada_estado.grid(row=3, column=3, padx=5, pady=5, sticky=tk.W)
 
-        # Linha 5 - Financeiro
-        ttk.Label(self.frame_form, text="Banco:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_banco = ttk.Entry(self.frame_form, width=20)
-        self.entrada_banco.grid(row=4, column=1, padx=5, pady=5)
+        # Frame Informações Financeiras
+        self.frame_financeiro = ttk.LabelFrame(self, text="Informações Financeiras")
+        self.frame_financeiro.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(self.frame_form, text="Agência:").grid(row=4, column=2, padx=5, pady=5, sticky=tk.W)
-        self.entrada_agencia = ttk.Entry(self.frame_form, width=10)
-        self.entrada_agencia.grid(row=4, column=3, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.frame_financeiro, text="Banco:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_banco = ttk.Entry(self.frame_financeiro, width=20)
+        self.entrada_banco.grid(row=0, column=1, padx=5, pady=5)
 
-        # Linha 6 - Financeiro
-        ttk.Label(self.frame_form, text="Conta:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_conta = ttk.Entry(self.frame_form, width=20)
-        self.entrada_conta.grid(row=5, column=1, padx=5, pady=5)
+        ttk.Label(self.frame_financeiro, text="Agência:").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_agencia = ttk.Entry(self.frame_financeiro, width=10)
+        self.entrada_agencia.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(self.frame_form, text="Tipo:").grid(row=5, column=2, padx=5, pady=5, sticky=tk.W)
-        self.combo_tipo = ttk.Combobox(self.frame_form, values=["Corrente", "Poupança", "Pix"], width=10, state="readonly")
-        self.combo_tipo.grid(row=5, column=3, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(self.frame_financeiro, text="Conta:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_conta = ttk.Entry(self.frame_financeiro, width=20)
+        self.entrada_conta.grid(row=1, column=1, padx=5, pady=5)
 
-        # Linha 7 - Produto
-        ttk.Label(self.frame_form, text="Produto:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entrada_produto = ttk.Entry(self.frame_form, width=30)
-        self.entrada_produto.grid(row=6, column=1, padx=5, pady=5)
+        ttk.Label(self.frame_financeiro, text="Tipo:").grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+        self.combo_tipo = ttk.Combobox(self.frame_financeiro, values=["Corrente", "Poupança", "Pix"], width=10, state="readonly")
+        self.combo_tipo.grid(row=1, column=3, padx=5, pady=5, sticky=tk.W)
 
-        ttk.Label(self.frame_form, text="Valor Unidade:").grid(row=6, column=2, padx=5, pady=5, sticky=tk.W)
-        self.entrada_valor = ttk.Entry(self.frame_form, width=10)
-        self.entrada_valor.grid(row=6, column=3, padx=5, pady=5, sticky=tk.W)
+        # Frame Produtos
+        self.frame_produtos = ttk.LabelFrame(self, text="Produtos e Valores")
+        self.frame_produtos.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # Frame para botões
-        self.frame_botoes = ttk.Frame(self.frame_form)
-        self.frame_botoes.grid(row=7, column=0, columnspan=4, pady=10)
+        ttk.Label(self.frame_produtos, text="Produto:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entrada_produto = ttk.Entry(self.frame_produtos, width=30)
+        self.entrada_produto.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(self.frame_produtos, text="Valor Unidade:").grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+        self.entrada_valor = ttk.Entry(self.frame_produtos, width=10)
+        self.entrada_valor.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
+
+        self.btn_add_produto = ttk.Button(self.frame_produtos, text="+ Adicionar Produto",
+                                          command=self._adicionar_produto)
+        self.btn_add_produto.grid(row=0, column=4, padx=10, pady=5)
+
+        self.tree_produtos = ttk.Treeview(self.frame_produtos, columns=("produto", "valor"), show="headings", height=5)
+        self.tree_produtos.heading("produto", text="Produto")
+        self.tree_produtos.heading("valor", text="Valor Unitário")
+        self.tree_produtos.column("produto", width=300)
+        self.tree_produtos.column("valor", width=100)
+        self.tree_produtos.grid(row=1, column=0, columnspan=5, padx=5, pady=10, sticky="nsew")
+
+        self.frame_produtos.rowconfigure(1, weight=1)
+        self.frame_produtos.columnconfigure(1, weight=1)
+
+        # Frame Botões
+        self.frame_botoes = ttk.Frame(self)
+        self.frame_botoes.pack(pady=10)
 
         self.btn_adicionar = ttk.Button(self.frame_botoes, text="Adicionar", command=self._adicionar_parceiro)
         self.btn_adicionar.pack(side=tk.LEFT, padx=5)
         ToolTip(self.btn_adicionar, "Adiciona um novo parceiro ao sistema")
 
-        self.btn_editar = ttk.Button(self.frame_botoes, text="Salvar Edição",
-                                     command=self._editar_parceiro, state=tk.DISABLED)
+        self.btn_editar = ttk.Button(self.frame_botoes, text="Salvar Edição", command=self._editar_parceiro,
+                                     state=tk.DISABLED)
         self.btn_editar.pack(side=tk.LEFT, padx=5)
         ToolTip(self.btn_editar, "Salva alterações no parceiro selecionado")
 
-        self.btn_excluir = ttk.Button(self.frame_botoes, text="Excluir",
-                                      command=self._excluir_parceiro, state=tk.DISABLED)
+        self.btn_excluir = ttk.Button(self.frame_botoes, text="Excluir", command=self._excluir_parceiro,
+                                      state=tk.DISABLED)
         self.btn_excluir.pack(side=tk.LEFT, padx=5)
         ToolTip(self.btn_excluir, "Remove o parceiro selecionado")
 
@@ -324,6 +324,15 @@ class ParceiroView(ttk.Frame):
 
         if sucesso:
             messagebox.showinfo("Sucesso", mensagem)
+            cidade = dados.get("cidade")
+            if cidade:
+                lojas = self.loja_controller.obter_lojas_por_cidade(cidade)
+                if lojas:
+                    nomes = "\n".join(l["nome"] for l in lojas)
+                    messagebox.showinfo(
+                        "Lojas Sugeridas",
+                        f"Lojas em {cidade} disponíveis para associação:\n{nomes}",
+                    )
             self._limpar_form()
             self._carregar_parceiros()
         else:
@@ -343,6 +352,15 @@ class ParceiroView(ttk.Frame):
 
         if sucesso:
             messagebox.showinfo("Sucesso", mensagem)
+            cidade = dados.get("cidade")
+            if cidade:
+                lojas = self.loja_controller.obter_lojas_por_cidade(cidade)
+                if lojas:
+                    nomes = "\n".join(l["nome"] for l in lojas)
+                    messagebox.showinfo(
+                        "Lojas Sugeridas",
+                        f"Lojas em {cidade} disponíveis para associação:\n{nomes}",
+                    )
             self._limpar_form()
             self._carregar_parceiros()
         else:
@@ -426,6 +444,26 @@ class ParceiroView(ttk.Frame):
 
             tag = 'evenrow' if index % 2 == 0 else 'oddrow'
             self.treeview.insert("", "end", values=valores, tags=(tag,))
+
+    def _adicionar_produto(self):
+        nome = self.entrada_produto.get().strip()
+        valor = self.entrada_valor.get().strip()
+
+        if not nome or not valor:
+            messagebox.showwarning("Campos obrigatórios", "Informe o produto e o valor unitário.")
+            return
+
+        try:
+            valor_float = float(valor)
+        except ValueError:
+            messagebox.showerror("Valor inválido", "O valor deve ser numérico.")
+            return
+
+        self.tree_produtos.insert("", "end", values=(nome, f"R$ {valor_float:.2f}"))
+        self.produtos_adicionados.append({"produto": nome, "valor": valor_float})
+
+        self.entrada_produto.delete(0, tk.END)
+        self.entrada_valor.delete(0, tk.END)
 
     def focus_nome(self):
         """Coloca o foco no campo de nome."""

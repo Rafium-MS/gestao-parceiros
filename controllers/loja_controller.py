@@ -245,3 +245,18 @@ class LojaController:
         except Exception as e:
             self.logger.error(f"Erro ao obter lojas para combobox: {str(e)}")
             return {}
+
+    def obter_lojas_por_cidade(self, cidade):
+        """Obtém lojas filtradas pela cidade."""
+        try:
+            self.db_manager.execute(
+                "SELECT id, nome FROM lojas WHERE cidade = ? ORDER BY nome",
+                (cidade,),
+            )
+            resultados = self.db_manager.fetchall()
+            return [{"id": row[0], "nome": row[1]} for row in resultados]
+        except Exception as e:
+            self.logger.error(
+                f"Erro ao obter lojas da cidade {cidade}: {str(e)}"
+            )
+            return []
