@@ -22,3 +22,4 @@ tkcalendar>=1.6.1       # Widget de calendário para tkinter
 pytesseract>=0.3.10
 pdf2image>=1.16.0
 scikit-learn>=1.3.0
+requests>=2.31.0

@@ -41,6 +41,7 @@ try:
         carregar_combobox_parceiros_por_loja,
     )
     from .pasta_utils import criar_estrutura_comprovantes, renomear_comprovantes_auto
+    from .location_service import obter_estados, obter_cidades_por_estado
 except Exception:  # pylint: disable=broad-except
 
     def carregar_combobox_por_cidade(*_args, **_kwargs):  # type: ignore
@@ -57,7 +58,11 @@ except Exception:  # pylint: disable=broad-except
 
     def renomear_comprovantes_auto(*_args, **_kwargs):  # type: ignore
         return ""
+    def obter_estados(*_args, **_kwargs):  # type: ignore
+        return []
 
+    def obter_cidades_por_estado(*_args, **_kwargs):  # type: ignore
+        return []
 __all__ = [
     "extract_text_from_image",
     "extract_text_from_pdf",
@@ -71,4 +76,6 @@ __all__ = [
     "carregar_combobox_parceiros_por_loja",
     "criar_estrutura_comprovantes",
     "renomear_comprovantes_auto",
+    "obter_estados",
+    "obter_cidades_por_estado",
 ]
