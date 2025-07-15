@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 # Importar componentes
 from views.main_window import MainWindow
+from views.login_view import LoginWindow
 from database.db_manager import DatabaseManager
 from utils.logger import setup_logger
 
@@ -101,16 +102,21 @@ def main():
     db_manager = DatabaseManager(config['DATABASE']['path'])
     db_manager.setup_database()
 
-    # Inicializar aplicação Tkinter
-    root = tk.Tk()
-    app = MainWindow(root, db_manager, config)
+    # Tela de login
+    login = LoginWindow(db_manager)
+    login.mainloop()
+    if not login.user:
+        logger.info("Aplicação encerrada sem login")
+        return
 
-    # Configurar janela principal
+    # Inicializar aplicação Tkinter principal
+    root = tk.Tk()
+    app = MainWindow(root, db_manager, config, user=login.user)
+
     root.title("Sistema de Gestão de Parceiros")
     root.geometry("1200x700")
     root.minsize(1000, 600)
 
-    # Iniciar o loop principal
     logger.info("Interface principal carregada")
     root.mainloop()
 

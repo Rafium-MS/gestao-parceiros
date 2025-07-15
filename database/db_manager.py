@@ -287,6 +287,14 @@ class DatabaseManager:
                     [("Admin",), ("Operador",), ("Financeiro",), ("Visualizador",)]
                 )
 
+            # Criar usuário administrador padrão se não existir
+            self.execute("SELECT COUNT(*) FROM users")
+            if self.fetchone()[0] == 0:
+                self.execute(
+                    "INSERT INTO users (username, password, role_id) VALUES (?, ?, 1)",
+                    ("admin", "admin")
+                )
+
             # Commit das mudanças
             self.commit()
             self.logger.info("Estrutura do banco de dados configurada com sucesso")

@@ -14,20 +14,23 @@ import logging
 import datetime
 import webbrowser
 
+from views.home_view import HomeView
 from views.parceiro_view import ParceiroView
 from views.loja_view import LojaView
 from views.comprovante_view import ComprovanteView
 from views.associacao_view import AssociacaoView
 from views.relatorio_view import RelatorioView
+from views.log_view import LogView
 from views.config_view import ConfigView
 from controllers.config_controller import ConfigController
 
 
 class MainWindow:
-    def __init__(self, root, db_manager, config):
+    def __init__(self, root, db_manager, config, user=""):
         self.root = root
         self.db_manager = db_manager
         self.config = config
+        self.user = user
         self.config_controller = ConfigController()
         self.logger = logging.getLogger(__name__)
         self.root.title("Sistema de Gestão de Parceiros")
@@ -36,8 +39,14 @@ class MainWindow:
         self.criar_menu()
         self.criar_layout()
 
+        # Barra de status
+        self.status_var = tk.StringVar()
+        self.status_bar = ttk.Label(self.root, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
         # Exibir tela inicial
-        self.trocar_view("Parceiros")
+        self.trocar_view("Início")
+        self.atualizar_status(f"Usuário: {self.user}")
 
         self.root.update()
         self.root.minsize(self.root.winfo_width(), self.root.winfo_height())
@@ -67,11 +76,13 @@ class MainWindow:
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5), pady=5)
 
         self.botoes_sidebar = [
+            ("Início", lambda: self.trocar_view("Início")),
             ("Parceiros", lambda: self.trocar_view("Parceiros")),
             ("Lojas", lambda: self.trocar_view("Lojas")),
             ("Comprovantes", lambda: self.trocar_view("Comprovantes")),
             ("Associações", lambda: self.trocar_view("Associações")),
             ("Relatórios", lambda: self.trocar_view("Relatórios")),
+            ("Logs", lambda: self.trocar_view("Logs")),
         ]
 
         for texto, comando in self.botoes_sidebar:
@@ -84,11 +95,13 @@ class MainWindow:
 
         # Inicializar views
         self.views = {
+            "Início": HomeView(self.area_conteudo),
             "Parceiros": ParceiroView(self.area_conteudo, self.db_manager),
             "Lojas": LojaView(self.area_conteudo, self.db_manager),
             "Comprovantes": ComprovanteView(self.area_conteudo, self.db_manager),
             "Associações": AssociacaoView(self.area_conteudo, self.db_manager),
             "Relatórios": RelatorioView(self.area_conteudo, self.db_manager),
+            "Logs": LogView(self.area_conteudo, self.config['LOGS']['path']),
         }
 
         for view in self.views.values():
@@ -100,6 +113,7 @@ class MainWindow:
         self.views[nome_view].pack(fill=tk.BOTH, expand=True)
         self.root.title(f"Sistema de Gestão - {nome_view}")
         self.logger.info(f"Aba alterada para: {nome_view}")
+        self.atualizar_status(f"Usuário: {self.user} | Tela: {nome_view}")
 
     def centralizar_janela(self):
         self.root.update_idletasks()
@@ -408,6 +422,9 @@ class MainWindow:
         # Definir geometria
         self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
+    def atualizar_status(self, mensagem):
+        """Atualiza a mensagem da barra de status."""
+        self.status_var.set(mensagem)
     def sair(self):
         """Fecha a aplicação."""
         if messagebox.askyesno("Sair", "Deseja realmente sair do sistema?"):
