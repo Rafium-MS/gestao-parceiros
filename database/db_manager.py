@@ -214,7 +214,15 @@ class DatabaseManager:
                 telefone TEXT,
                 email TEXT,
                 endereco TEXT,
-                data_cadastro TEXT
+                data_cadastro TEXT,
+                cidade TEXT,
+                estado TEXT,
+                banco TEXT,
+                agencia TEXT,
+                conta TEXT,
+                tipo TEXT,
+                produto TEXT,
+                valor_unidade REAL
             )
             ''')
 
@@ -228,7 +236,10 @@ class DatabaseManager:
                 email TEXT,
                 endereco TEXT,
                 contato TEXT,
-                data_cadastro TEXT
+                data_cadastro TEXT,
+                cidade TEXT,
+                estado TEXT,
+                agrupamento_id INTEGER
             )
             ''')
 
@@ -239,7 +250,7 @@ class DatabaseManager:
                 parceiro_id INTEGER,
                 loja_id INTEGER,
                 data_entrega TEXT,
-                caminho_arquivo TEXT,
+                arquivo_comprovante TEXT,
                 observacoes TEXT,
                 data_cadastro TEXT,
                 FOREIGN KEY (parceiro_id) REFERENCES parceiros (id),

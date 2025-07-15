@@ -22,6 +22,7 @@ from views.associacao_view import AssociacaoView
 from views.relatorio_view import RelatorioView
 from views.log_view import LogView
 from views.config_view import ConfigView
+from views.usuario_view import UsuarioView
 from controllers.config_controller import ConfigController
 
 
@@ -81,6 +82,7 @@ class MainWindow:
             ("Lojas", lambda: self.trocar_view("Lojas")),
             ("Comprovantes", lambda: self.trocar_view("Comprovantes")),
             ("Associações", lambda: self.trocar_view("Associações")),
+            ("Usuários", lambda: self.trocar_view("Usuários")),
             ("Relatórios", lambda: self.trocar_view("Relatórios")),
             ("Logs", lambda: self.trocar_view("Logs")),
         ]
@@ -100,6 +102,7 @@ class MainWindow:
             "Lojas": LojaView(self.area_conteudo, self.db_manager),
             "Comprovantes": ComprovanteView(self.area_conteudo, self.db_manager),
             "Associações": AssociacaoView(self.area_conteudo, self.db_manager),
+            "Usuários": UsuarioView(self.area_conteudo, self.db_manager),
             "Relatórios": RelatorioView(self.area_conteudo, self.db_manager),
             "Logs": LogView(self.area_conteudo, self.config['LOGS']['path']),
         }

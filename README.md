@@ -8,6 +8,7 @@ Um sistema desktop para gerenciamento de parceiros, lojas atendidas, comprovante
 - **Cadastro de Lojas**: Cadastro e gerenciamento das lojas atendidas.
 - **Comprovantes de Entrega**: Upload e visualização de comprovantes de entrega.
 - **Associação Parceiros-Lojas**: Gerenciamento das relações entre parceiros e lojas.
+- **Gestão de Usuários**: Controle de contas e perfis de acesso.
 - **Relatórios**: Geração de relatórios de entregas por parceiro, loja e período.
 - **Sistema de Backup**: Backup e restauração automática de dados.
 
