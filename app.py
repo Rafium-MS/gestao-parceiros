@@ -6,7 +6,7 @@ Sistema de Gestão de Parceiros
 ----------------------------
 Aplicação para gerenciamento de parceiros, lojas, comprovantes de entrega e relatórios.
 
-Desenvolvido por: [Seu Nome]
+Desenvolvido por: [Rafium - Macete System]
 Versão: 1.0
 """
 
