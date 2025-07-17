@@ -9,6 +9,8 @@ Apresenta uma introdução ao sistema.
 
 import tkinter as tk
 from tkinter import ttk
+from utils.style import configurar_estilos_modernos
+
 import datetime
 
 
@@ -17,6 +19,7 @@ class HomeView(ttk.Frame):
 
     def __init__(self, parent):
         super().__init__(parent)
+        configurar_estilos_modernos()
         self._criar_widgets()
 
     def _criar_widgets(self):

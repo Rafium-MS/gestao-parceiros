@@ -13,6 +13,7 @@ import logging
 from controllers.associacao_controller import AssociacaoController
 from utils import carregar_combobox_por_cidade
 from utils.tooltip import ToolTip
+from utils.style import configurar_estilos_modernos
 
 class AssociacaoView(ttk.Frame):
     """Interface gráfica para gerenciamento de associações entre parceiros e lojas."""
@@ -28,6 +29,8 @@ class AssociacaoView(ttk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.logger = logging.getLogger(__name__)
+
+        configurar_estilos_modernos()
 
         # Controlador
         self.controller = AssociacaoController(db_manager)

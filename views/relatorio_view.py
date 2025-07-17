@@ -16,6 +16,7 @@ import pandas as pd
 from controllers.relatorio_controller import RelatorioController
 from utils.validators import formatar_cpf
 from utils.tooltip import ToolTip
+from utils.style import configurar_estilos_modernos
 
 
 class RelatorioView(ttk.Frame):
@@ -32,6 +33,9 @@ class RelatorioView(ttk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.logger = logging.getLogger(__name__)
+        self.parent = parent
+        self.logger = logging.getLogger(__name__)
+        configurar_estilos_modernos()
 
         # Controlador
         self.controller = RelatorioController(db_manager)

@@ -19,7 +19,7 @@ from utils.validators import formatar_data
 from utils.ocr_utils import extract_text_from_image, extract_text_from_pdf
 from utils import carregar_combobox_por_cidade
 from utils.tooltip import ToolTip
-
+from utils.style import configurar_estilos_modernos
 class ComprovanteView(ttk.Frame):
     """Interface gráfica para gerenciamento de comprovantes de entrega."""
 
@@ -35,6 +35,7 @@ class ComprovanteView(ttk.Frame):
         self.parent = parent
         self.logger = logging.getLogger(__name__)
         self.db_manager = db_manager
+        configurar_estilos_modernos()
 
         # Controlador
         self.controller = ComprovanteController(db_manager)

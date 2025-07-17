@@ -13,6 +13,9 @@ import logging
 from controllers.loja_controller import LojaController
 from utils.validators import formatar_cnpj, limpar_formatacao
 from utils.tooltip import ToolTip
+from utils.validators import formatar_cnpj, limpar_formatacao
+from utils.tooltip import ToolTip
+from utils.style import configurar_estilos_modernos
 
 class LojaView(ttk.Frame):
     """Interface gráfica para gerenciamento de lojas."""
@@ -28,6 +31,7 @@ class LojaView(ttk.Frame):
         super().__init__(parent)
         self.parent = parent
         self.logger = logging.getLogger(__name__)
+        configurar_estilos_modernos()
 
         # Controlador
         self.controller = LojaController(db_manager)

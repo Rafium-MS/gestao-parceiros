@@ -10,6 +10,7 @@ Permite a autenticação do usuário.
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
+from utils.style import configurar_estilos_modernos
 
 
 class LoginWindow(tk.Tk):
@@ -21,6 +22,7 @@ class LoginWindow(tk.Tk):
         self.logger = logging.getLogger(__name__)
         self.title("Login")
         self.resizable(False, False)
+        configurar_estilos_modernos()
         self.user = None
         self._criar_widgets()
         self.protocol("WM_DELETE_WINDOW", self._sair)

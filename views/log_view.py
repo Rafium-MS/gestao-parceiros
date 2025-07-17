@@ -1,12 +1,14 @@
 from tkinter import ttk
 from utils.logger import LogManager
 import tkinter as tk
+from utils.style import configurar_estilos_modernos
 
 class LogView(ttk.Frame):
     """Visualizador de logs da aplicação."""
 
     def __init__(self, parent, log_dir):
         super().__init__(parent)
+        configurar_estilos_modernos()
         self.log_dir = log_dir
         self.log_files = []
         self._criar_widgets()

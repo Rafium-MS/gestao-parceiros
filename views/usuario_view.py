@@ -12,6 +12,7 @@ import logging
 
 from controllers.usuario_controller import UsuarioController
 from utils.tooltip import ToolTip
+from utils.style import configurar_estilos_modernos
 
 
 class UsuarioView(ttk.Frame):
@@ -21,6 +22,7 @@ class UsuarioView(ttk.Frame):
         super().__init__(parent)
         self.logger = logging.getLogger(__name__)
         self.controller = UsuarioController(db_manager)
+        configurar_estilos_modernos()
         self.usuario_atual_id = None
 
         self._criar_widgets()

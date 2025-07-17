@@ -9,6 +9,7 @@ Permite editar as preferências salvas em config.ini.
 import tkinter as tk
 from tkinter import ttk, messagebox
 from utils.tooltip import ToolTip
+from utils.style import configurar_estilos_modernos
 
 
 class ConfigView(tk.Toplevel):
@@ -20,6 +21,7 @@ class ConfigView(tk.Toplevel):
         self.resizable(False, False)
         self.controller = controller
         self.entries = {}
+        configurar_estilos_modernos()
         self._criar_widgets()
         self._carregar_valores()
         self.grab_set()
