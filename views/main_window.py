@@ -39,6 +39,7 @@ class MainWindow:
         self.configurar_estilo()
         self.criar_menu()
         self.criar_layout()
+        self.configurar_atalhos()
 
         # Barra de status
         self.status_var = tk.StringVar()
@@ -134,18 +135,42 @@ class MainWindow:
 
         # Menu Arquivo
         arquivo_menu = tk.Menu(menu_bar, tearoff=0)
-        arquivo_menu.add_command(label="Backup do Banco de Dados", command=self.backup_database)
-        arquivo_menu.add_command(label="Restaurar Backup", command=self.restore_database)
+        arquivo_menu.add_command(
+            label="Backup do Banco de Dados",
+            command=self.backup_database,
+            accelerator="Ctrl+B",
+        )
+        arquivo_menu.add_command(
+            label="Restaurar Backup",
+            command=self.restore_database,
+            accelerator="Ctrl+R",
+        )
         arquivo_menu.add_separator()
-        arquivo_menu.add_command(label="Sair", command=self.sair)
+        arquivo_menu.add_command(label="Sair", command=self.sair, accelerator="Ctrl+Q")
         menu_bar.add_cascade(label="Arquivo", menu=arquivo_menu)
 
         # Menu Cadastros
         cadastros_menu = tk.Menu(menu_bar, tearoff=0)
-        cadastros_menu.add_command(label="Parceiros", command=lambda: self.notebook.select(0))
-        cadastros_menu.add_command(label="Lojas", command=lambda: self.notebook.select(1))
-        cadastros_menu.add_command(label="Comprovantes", command=lambda: self.notebook.select(2))
-        cadastros_menu.add_command(label="Associações", command=lambda: self.notebook.select(3))
+        cadastros_menu.add_command(
+            label="Parceiros",
+            command=lambda: self.notebook.select(0),
+            accelerator="Ctrl+1",
+        )
+        cadastros_menu.add_command(
+            label="Lojas",
+            command=lambda: self.notebook.select(1),
+            accelerator="Ctrl+2",
+        )
+        cadastros_menu.add_command(
+            label="Comprovantes",
+            command=lambda: self.notebook.select(2),
+            accelerator="Ctrl+3",
+        )
+        cadastros_menu.add_command(
+            label="Associações",
+            command=lambda: self.notebook.select(3),
+            accelerator="Ctrl+4",
+        )
         menu_bar.add_cascade(label="Cadastros", menu=cadastros_menu)
 
         # Menu Relatórios
@@ -164,7 +189,11 @@ class MainWindow:
 
         # Menu Ajuda
         ajuda_menu = tk.Menu(menu_bar, tearoff=0)
-        ajuda_menu.add_command(label="Manual do Usuário", command=self.abrir_manual)
+        ajuda_menu.add_command(
+            label="Manual do Usuário",
+            command=self.abrir_manual,
+            accelerator="F1",
+        )
         ajuda_menu.add_command(label="Sobre", command=self.mostrar_sobre)
         menu_bar.add_cascade(label="Ajuda", menu=ajuda_menu)
 

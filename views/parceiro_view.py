@@ -26,6 +26,7 @@ class ParceiroView(ttk.Frame):
         self.parceiro_atual_id = None
         self.produtos_adicionados = []
 
+        self._configurar_estilos()  # <-- Adicione esta linha
         self._criar_widgets()
         self._configurar_eventos()
         self._carregar_parceiros()
@@ -137,7 +138,7 @@ class ParceiroView(ttk.Frame):
 
         # Informações Bancárias
         self.frame_financeiro = ttk.LabelFrame(form_container, text="💳 Informações Bancárias",
-                                               style="Card.TLabelFrame", padding=(15, 10))
+                                               style="Card.TLabelframe", padding=(15, 10))
         self.frame_financeiro.pack(fill=tk.X, pady=(0, 10))
 
         # Grid para informações bancárias
@@ -176,7 +177,7 @@ class ParceiroView(ttk.Frame):
 
         # Produtos e Valores
         self.frame_produtos = ttk.LabelFrame(form_container, text="📦 Produtos e Valores",
-                                             style="Card.TLabelFrame", padding=(15, 10))
+                                             style="Card.TLabelframe", padding=(15, 10))
         self.frame_produtos.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Entrada de produtos
@@ -249,7 +250,7 @@ class ParceiroView(ttk.Frame):
 
         # ==================== LISTA DE PARCEIROS ====================
         list_frame = ttk.LabelFrame(main_container, text="📋 Lista de Parceiros",
-                                    style="Card.TLabelFrame", padding=(15, 10))
+                                    style="Card.TLabelframe", padding=(15, 10))
         list_frame.pack(fill=tk.BOTH, expand=True)
 
         # Treeview para listagem

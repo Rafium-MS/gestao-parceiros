@@ -42,8 +42,10 @@ class ConfigView(tk.Toplevel):
                 self.entries[(section, option)] = entry
         btn_frame = ttk.Frame(self)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Salvar", command=self._salvar).pack(side=tk.LEFT, padx=5)
-        adicionar_tooltip(btn_salvar, "Salva as alterações no arquivo de configuração.")
+        btn_salvar = ttk.Button(btn_frame, text="Salvar", command=self._salvar)
+        btn_salvar.pack(side=tk.LEFT, padx=5)
+        ToolTip(btn_salvar, "Salva as alterações no arquivo de configuração.")
+
         ttk.Button(btn_frame, text="Fechar", command=self.destroy).pack(side=tk.LEFT, padx=5)
 
     def _carregar_valores(self):

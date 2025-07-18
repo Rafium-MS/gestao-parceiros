@@ -173,6 +173,13 @@ O sistema oferece diversos atalhos para agilizar o uso:
 - **Ctrl+Q**: Sair do sistema
 - **F1**: Abrir este manual de ajuda
 - **Esc**: Limpar formulário atual
+- **Ctrl+N**: Criar novo parceiro (aba Parceiros)
+- **Ctrl+S**: Salvar parceiro (aba Parceiros)
+- **Delete**: Excluir parceiro selecionado
+- **Ctrl+O**: Ler comprovante via OCR
+- **F5**: Gerar relatório
+- **Ctrl+E**: Exportar relatório para Excel
+- **Ctrl+P**: Exportar relatório para PDF
 
 ---
 
