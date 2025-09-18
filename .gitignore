@@ -1,0 +1,16 @@
+/arquivo
+/__pycache__
+/controllers/__pycache__
+/controllers/__pycache__
+/controllers/__pycache__
+/models/__pycache__
+/logs
+/models/__pycache__
+/database/__pycache__
+/views/__pycache__
+/utils/__pycache__
+/views/__pycache__
+/controllers/__pycache__
+*.pyc
+*.pyc
+/views/__pycache__
