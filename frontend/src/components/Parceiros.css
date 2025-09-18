@@ -1,0 +1,33 @@
+.parceiros-container {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.parceiros-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.parceiros-table th, .parceiros-table td {
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+.parceiros-table th {
+    background-color: #4a5568;
+    color: white;
+    font-weight: 600;
+}
+
+.parceiros-table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.parceiros-table tr:hover {
+    background-color: #e9ecef;
+}
