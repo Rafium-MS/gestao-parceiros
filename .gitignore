@@ -1,16 +1,19 @@
-/arquivo
-/__pycache__
-/controllers/__pycache__
-/controllers/__pycache__
-/controllers/__pycache__
-/models/__pycache__
-/logs
-/models/__pycache__
-/database/__pycache__
-/views/__pycache__
-/utils/__pycache__
-/views/__pycache__
-/controllers/__pycache__
+# Ignore Python virtual environment
+backend/venv/
+frontend/node_modules/
+
+# Ignore Python cache
+__pycache__/
 *.pyc
-*.pyc
-/views/__pycache__
+
+# Ignore IDE files
+.idea/
+
+# Ignore log files
+logs/
+*.log
+
+# Ignore build artifacts
+dist/
+build/
+*.egg-info/
