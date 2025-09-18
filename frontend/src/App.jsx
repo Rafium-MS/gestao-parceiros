@@ -1,31 +1,58 @@
 import React from 'react';
-import { Link, Routes, Route } from 'react-router-dom';
+import { Link, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import ParceirosPage from './components/Parceiros';
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 
 // Placeholder components
-const HomePage = () => <h2>Página Inicial</h2>;
-const LojasPage = () => <h2>Gerenciamento de Lojas</h2>;
-const ComprovantesPage = () => <h2>Gerenciamento de Comprovantes</h2>;
-const AssociacoesPage = () => <h2>Gerenciamento de Associações</h2>;
-const RelatoriosPage = () => <h2>Relatórios</h2>;
+const HomePage = () => <h2 className="text-2xl font-bold">Página Inicial</h2>;
+const LojasPage = () => <h2 className="text-2xl font-bold">Gerenciamento de Lojas</h2>;
+const ComprovantesPage = () => <h2 className="text-2xl font-bold">Gerenciamento de Comprovantes</h2>;
+const AssociacoesPage = () => <h2 className="text-2xl font-bold">Gerenciamento de Associações</h2>;
+const RelatoriosPage = () => <h2 className="text-2xl font-bold">Relatórios</h2>;
 
+const navLinks = [
+  { path: '/', label: 'Início' },
+  { path: '/parceiros', label: 'Parceiros' },
+  { path: '/lojas', label: 'Lojas' },
+  { path: '/comprovantes', label: 'Comprovantes' },
+  { path: '/associacoes', label: 'Associações' },
+  { path: '/relatorios', label: 'Relatórios' },
+];
 
 function App() {
-  return (
-    <>
-      <nav>
-        <ul>
-          <li><Link to="/">Início</Link></li>
-          <li><Link to="/parceiros">Parceiros</Link></li>
-          <li><Link to="/lojas">Lojas</Link></li>
-          <li><Link to="/comprovantes">Comprovantes</Link></li>
-          <li><Link to="/associacoes">Associações</Link></li>
-          <li><Link to="/relatorios">Relatórios</Link></li>
-        </ul>
-      </nav>
+  const location = useLocation();
 
-      <main>
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b">
+        <div className="container mx-auto flex h-16 items-center justify-center px-4">
+          <NavigationMenu>
+            <NavigationMenuList>
+              {navLinks.map((navLink) => (
+                <NavigationMenuItem key={navLink.path}>
+                  <Link to={navLink.path}>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                      active={location.pathname === navLink.path}
+                    >
+                      {navLink.label}
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+      </header>
+
+      <main className="container mx-auto p-4 md:p-6">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/parceiros" element={<ParceirosPage />} />
@@ -35,7 +62,7 @@ function App() {
           <Route path="/relatorios" element={<RelatoriosPage />} />
         </Routes>
       </main>
-    </>
+    </div>
   );
 }
 
