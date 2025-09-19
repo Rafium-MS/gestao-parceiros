@@ -38,10 +38,16 @@ def add_initial_data():
     if User.query.count() == 0:
         admin_role = Role.query.filter_by(nome="Admin").first()
         if admin_role:
-            # In a real app, use a hashed password
-            admin_user = User(username="admin", password="admin", role_id=admin_role.id)
+            admin_password = os.environ.get("ADMIN_PASSWORD") or "admin"
+            admin_user = User(username="admin", role_id=admin_role.id)
+            admin_user.set_password(admin_password)
             db.session.add(admin_user)
             db.session.commit()
+            app.logger.info("Usuário administrador padrão criado com senha configurada via ambiente")
+
+    updated = User.migrate_plaintext_passwords()
+    if updated:
+        app.logger.info("%d senhas migradas para hashes seguros", updated)
 
 @app.cli.command("init-db")
 def init_db_command():
@@ -50,6 +56,14 @@ def init_db_command():
         db.create_all()
         add_initial_data()
     print("Initialized the database.")
+
+
+@app.cli.command("migrate-passwords")
+def migrate_passwords_command():
+    """Converte senhas existentes para hashes seguros."""
+    with app.app_context():
+        updated = User.migrate_plaintext_passwords()
+    print(f"{updated} senhas atualizadas para hashes.")
 
 # Register Blueprints
 from backend.api.parceiros import parceiros_bp

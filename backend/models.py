@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
 from backend.extensions import db
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class Parceiro(db.Model):
@@ -152,10 +153,52 @@ class User(db.Model):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(String, nullable=False)
+    _password_hash: Mapped[str] = mapped_column("password", String, nullable=False)
     role_id: Mapped[int] = mapped_column(Integer, ForeignKey('roles.id'), nullable=False)
 
     role = relationship("Role", back_populates="users")
+
+    @property
+    def password(self):
+        raise AttributeError("A senha não pode ser lida diretamente.")
+
+    @password.setter
+    def password(self, password: str) -> None:
+        if password is None or not str(password).strip():
+            raise ValueError("Senha não pode ser vazia.")
+        self._password_hash = generate_password_hash(str(password).strip())
+
+    def set_password(self, password: str) -> None:
+        self.password = password
+
+    def check_password(self, password: str) -> bool:
+        if not password or not self._password_hash:
+            return False
+        if self.is_password_hashed(self._password_hash):
+            return check_password_hash(self._password_hash, password)
+        return self._password_hash == password
+
+    @property
+    def password_hash(self) -> str:
+        return self._password_hash
+
+    @staticmethod
+    def is_password_hashed(value: str) -> bool:
+        if not value:
+            return False
+        parts = value.split("$")
+        return len(parts) >= 3 and ":" in parts[0]
+
+    @classmethod
+    def migrate_plaintext_passwords(cls) -> int:
+        atualizados = 0
+        for usuario in cls.query.all():
+            if usuario._password_hash and not cls.is_password_hashed(usuario._password_hash):
+                usuario.set_password(usuario._password_hash)
+                atualizados += 1
+        if atualizados:
+            db.session.commit()
+        return atualizados
 
     def to_dict(self):
         return {

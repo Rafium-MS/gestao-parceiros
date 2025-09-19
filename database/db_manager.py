@@ -13,6 +13,8 @@ import datetime
 import shutil
 import logging
 
+from werkzeug.security import generate_password_hash
+
 
 class DatabaseManager:
     """Classe para gerenciar operações com o banco de dados SQLite."""
@@ -301,15 +303,58 @@ class DatabaseManager:
             # Criar usuário administrador padrão se não existir
             self.execute("SELECT COUNT(*) FROM users")
             if self.fetchone()[0] == 0:
+                admin_password = os.environ.get("ADMIN_PASSWORD") or "admin"
+                password_hash = generate_password_hash(admin_password)
                 self.execute(
                     "INSERT INTO users (username, password, role_id) VALUES (?, ?, 1)",
-                    ("admin", "admin")
+                    ("admin", password_hash)
                 )
 
             # Commit das mudanças
             self.commit()
             self.logger.info("Estrutura do banco de dados configurada com sucesso")
 
+            migrados = self.migrate_plaintext_passwords()
+            if migrados:
+                self.logger.info("Atualizadas %d senhas em formato de hash", migrados)
+
         except sqlite3.Error as e:
             self.logger.error(f"Erro ao configurar o banco de dados: {str(e)}")
             raise
+
+    def migrate_plaintext_passwords(self):
+        """Converte senhas armazenadas em texto puro para hashes."""
+        try:
+            self.execute("SELECT id, password FROM users")
+            registros = self.fetchall()
+        except sqlite3.Error as e:
+            self.logger.error(
+                f"Erro ao buscar senhas para migração: {str(e)}"
+            )
+            return 0
+
+        atualizacoes = []
+        for usuario_id, senha in registros:
+            if senha and not self._is_password_hashed(senha):
+                atualizacoes.append((generate_password_hash(senha), usuario_id))
+
+        if atualizacoes:
+            try:
+                self.executemany(
+                    "UPDATE users SET password=? WHERE id=?",
+                    atualizacoes,
+                )
+                self.commit()
+            except sqlite3.Error as e:
+                self.logger.error(
+                    f"Erro ao atualizar senhas durante migração: {str(e)}"
+                )
+                raise
+        return len(atualizacoes)
+
+    @staticmethod
+    def _is_password_hashed(valor: str) -> bool:
+        if not valor:
+            return False
+        partes = valor.split("$")
+        return len(partes) >= 3 and ":" in partes[0]
