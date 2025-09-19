@@ -97,9 +97,10 @@ class UsuarioView(ttk.Frame):
         self.bind("<Escape>", lambda event: self._limpar_form())
 
     def _obter_dados_form(self):
+        senha = self.entrada_senha.get().strip()
         return {
             "username": self.entrada_usuario.get().strip(),
-            "password": self.entrada_senha.get().strip(),
+            "password": senha if senha else None,
             "role_id": self._role_id_por_nome(self.combo_role.get()),
         }
 
@@ -136,6 +137,7 @@ class UsuarioView(ttk.Frame):
             self.usuario_atual_id = valores[0]
             self.entrada_usuario.delete(0, tk.END)
             self.entrada_usuario.insert(0, valores[1])
+            self.entrada_senha.delete(0, tk.END)
             self.combo_role.set(valores[2])
             self.btn_adicionar.config(state=tk.DISABLED)
             self.btn_editar.config(state=tk.NORMAL)

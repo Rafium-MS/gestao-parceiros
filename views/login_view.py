@@ -10,6 +10,7 @@ Permite a autenticação do usuário.
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
+from models.usuario import Usuario
 from utils.style import configurar_estilos_modernos
 
 
@@ -47,13 +48,12 @@ class LoginWindow(tk.Tk):
         username = self.entry_user.get().strip()
         password = self.entry_pass.get().strip()
 
-        self.db_manager.execute(
-            "SELECT password FROM users WHERE username=?", (username,)
+        autenticado, usuario = Usuario.autenticar(
+            self.db_manager, username, password
         )
-        row = self.db_manager.fetchone()
-        if row and row[0] == password:
-            self.logger.info(f"Usuário '{username}' autenticado")
-            self.user = username
+        if autenticado and usuario:
+            self.logger.info("Usuário '%s' autenticado", usuario.username)
+            self.user = usuario.username
             self.destroy()
         else:
             self.logger.warning(f"Falha de login para '{username}'")

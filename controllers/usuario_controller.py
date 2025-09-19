@@ -25,12 +25,21 @@ class UsuarioController:
 
     def adicionar_usuario(self, dados):
         try:
-            if not dados.get("username") or not dados.get("password") or not dados.get("role_id"):
-                return False, "Preencha usuário, senha e perfil."
+            username = (dados.get("username") or "").strip()
+            role_id = dados.get("role_id")
+            password = dados.get("password")
+
+            if not username or role_id is None:
+                return False, "Preencha usuário e perfil."
+
+            password = (password or "").strip()
+            if not password:
+                return False, "Informe uma senha válida."
+
             usuario = Usuario(self.db_manager)
-            usuario.username = dados["username"].strip()
-            usuario.password = dados["password"].strip()
-            usuario.role_id = dados["role_id"]
+            usuario.username = username
+            usuario.role_id = role_id
+            usuario.set_password(password)
             if usuario.salvar():
                 return True, "Usuário adicionado com sucesso."
             return False, "Erro ao salvar usuário."
@@ -43,9 +52,22 @@ class UsuarioController:
             usuario = Usuario(self.db_manager)
             if not usuario.carregar_por_id(usuario_id):
                 return False, "Usuário não encontrado."
-            usuario.username = dados.get("username", usuario.username).strip()
-            usuario.password = dados.get("password", usuario.password).strip()
-            usuario.role_id = dados.get("role_id", usuario.role_id)
+
+            novo_username = dados.get("username")
+            if novo_username is not None:
+                novo_username = novo_username.strip()
+                if novo_username:
+                    usuario.username = novo_username
+
+            novo_role = dados.get("role_id")
+            if novo_role is not None:
+                usuario.role_id = novo_role
+
+            nova_senha = dados.get("password")
+            if nova_senha is not None:
+                nova_senha = nova_senha.strip()
+                if nova_senha:
+                    usuario.set_password(nova_senha)
             if usuario.salvar():
                 return True, "Usuário atualizado com sucesso."
             return False, "Erro ao atualizar usuário."
