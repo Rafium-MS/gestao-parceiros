@@ -13,9 +13,9 @@ from models.repositories import (
     ParceiroLojaRepository,
     ParceirosRepository,
 )
+from services.parceiro_service import ParceiroService
 
 from utils.formatters import formatar_cnpj, formatar_telefone
-from utils.validators import validate_email, validate_non_empty
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ class ParceirosTab:
         self._lojas_repo = lojas_repo
         self._vinculo_repo = vinculo_repo
         self._on_change = on_change
+        self._service = ParceiroService(parceiros_repo, comprovantes_repo)
 
         self.frame = tk.Frame(notebook, bg="white")
         notebook.add(self.frame, text="🚚 Parceiros")
@@ -406,51 +407,53 @@ class ParceirosTab:
 
         self._lojas_layout = layout
 
-    def _parse_float(self, value: str) -> float | None:
-        value = value.strip()
-        if not value:
-            return None
-        return float(value.replace(",", "."))
-
     def salvar(self) -> None:
-        nome = self.entry_nome.get().strip()
-        if not validate_non_empty(nome):
-            messagebox.showwarning("Atenção", "Informe o nome do parceiro!")
+        dados = {
+            "nome": self.entry_nome.get(),
+            "distribuidora": self.entry_distrib.get(),
+            "cidade": self.entry_cidade.get(),
+            "estado": self.entry_estado.get(),
+            "cnpj": self.entry_cnpj.get(),
+            "telefone": self.entry_telefone.get(),
+            "email": self.entry_email.get(),
+            "dia_pagamento": self.entry_dia_pagamento.get(),
+            "banco": self.entry_banco.get(),
+            "agencia": self.entry_agencia.get(),
+            "conta": self.entry_conta.get(),
+            "pix": self.entry_pix.get(),
+            "valor_20l": self.entry_valor_20l.get(),
+            "valor_10l": self.entry_valor_10l.get(),
+            "valor_cx_copo": self.entry_valor_cx_copo.get(),
+            "valor_1500ml": self.entry_valor_1500ml.get(),
+        }
+
+        sucesso, mensagens = self._service.validar_parceiro(dados)
+        if not sucesso:
+            messagebox.showerror("Erro", "\n".join(mensagens))
             return
 
-        try:
-            dia_pagamento = int(self.entry_dia_pagamento.get()) if self.entry_dia_pagamento.get().strip() else None
-        except ValueError as exc:
-            logger.error("Erro ao converter dia de pagamento: %s", exc)
-            messagebox.showerror("Erro", "Dia de pagamento inválido!")
-            return
-        email = self.entry_email.get().strip()
-        if email and not validate_email(email):
-            messagebox.showerror("Erro", "E-mail inválido!")
-            return
-        
         try:
             self._repo.add(
-                nome,
-                self.entry_distrib.get().strip(),
-                self.entry_cidade.get().strip(),
-                self.entry_estado.get().strip(),
-                self.entry_cnpj.get().strip(),
-                self.entry_telefone.get().strip(),
-                email,
-                dia_pagamento,
-                self.entry_banco.get().strip(),
-                self.entry_agencia.get().strip(),
-                self.entry_conta.get().strip(),
-                self.entry_pix.get().strip(),
-                self._parse_float(self.entry_valor_20l.get()),
-                self._parse_float(self.entry_valor_10l.get()),
-                self._parse_float(self.entry_valor_cx_copo.get()),
-                self._parse_float(self.entry_valor_1500ml.get()),
+                dados["nome"],
+                dados["distribuidora"],
+                dados["cidade"],
+                dados["estado"],
+                dados["cnpj"],
+                dados["telefone"],
+                dados["email"],
+                dados["dia_pagamento"],
+                dados["banco"],
+                dados["agencia"],
+                dados["conta"],
+                dados["pix"],
+                dados["valor_20l"],
+                dados["valor_10l"],
+                dados["valor_cx_copo"],
+                dados["valor_1500ml"],
             )
-        except ValueError as exc:
-            logger.error("Erro ao converter valores numéricos do parceiro: %s", exc)
-            messagebox.showerror("Erro", "Valores numéricos inválidos!")
+        except (ValueError, sqlite3.Error) as exc:
+            logger.error("Erro ao salvar parceiro: %s", exc)
+            messagebox.showerror("Erro", "Não foi possível salvar o parceiro.")
             return
 
         messagebox.showinfo("Sucesso", "Parceiro cadastrado com sucesso!")
@@ -528,13 +531,7 @@ class ParceirosTab:
             self._on_change()
 
     def pode_deletar_parceiro(self, parceiro_id: int) -> tuple[bool, str]:
-        comprovantes = self._comprovantes_repo.count_by_parceiro(parceiro_id)
-        if comprovantes > 0:
-            return (
-                False,
-                f"Parceiro tem {comprovantes} comprovantes. Não pode deletar.",
-            )
-        return True, "OK"
+        return self._service.pode_deletar_parceiro(parceiro_id)
 
     def carregar_lojas_vinculacao(self, event: tk.Event | None = None) -> None:
         parceiro = self.combo_vincular_parceiro.get()
