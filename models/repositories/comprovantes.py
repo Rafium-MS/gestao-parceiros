@@ -64,6 +64,14 @@ class ComprovantesRepository:
         cursor.execute("DELETE FROM comprovantes WHERE id = ?", (comprovante_id,))
         self._connection.commit()
 
+    def count_by_parceiro(self, parceiro_id: int) -> int:
+        cursor = self._connection.cursor()
+        cursor.execute(
+            "SELECT COUNT(*) FROM comprovantes WHERE parceiro_id = ?",
+            (parceiro_id,),
+        )
+        return cursor.fetchone()[0]
+
     def count_distinct_parceiros(self) -> int:
         cursor = self._connection.cursor()
         cursor.execute("SELECT COUNT(DISTINCT parceiro_id) FROM comprovantes")
