@@ -12,6 +12,7 @@ from models.repositories import (
     ParceirosRepository,
 )
 
+from utils.validators import validate_email, validate_non_empty
 
 class ParceirosTab:
     def __init__(
@@ -405,7 +406,7 @@ class ParceirosTab:
 
     def salvar(self) -> None:
         nome = self.entry_nome.get().strip()
-        if not nome:
+        if not validate_non_empty(nome):
             messagebox.showwarning("Atenção", "Informe o nome do parceiro!")
             return
 
@@ -414,7 +415,11 @@ class ParceirosTab:
         except ValueError:
             messagebox.showerror("Erro", "Dia de pagamento inválido!")
             return
-
+        email = self.entry_email.get().strip()
+        if email and not validate_email(email):
+            messagebox.showerror("Erro", "E-mail inválido!")
+            return
+        
         try:
             self._repo.add(
                 nome,
@@ -423,7 +428,7 @@ class ParceirosTab:
                 self.entry_estado.get().strip(),
                 self.entry_cnpj.get().strip(),
                 self.entry_telefone.get().strip(),
-                self.entry_email.get().strip(),
+                email,
                 dia_pagamento,
                 self.entry_banco.get().strip(),
                 self.entry_agencia.get().strip(),
