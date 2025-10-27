@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from models.repositories import (
+    ComprovantesRepository,
     LojasRepository,
     ParceiroLojaRepository,
     ParceirosRepository,
@@ -24,11 +25,13 @@ class ParceirosTab:
         self,
         notebook: ttk.Notebook,
         parceiros_repo: ParceirosRepository,
+        comprovantes_repo: ComprovantesRepository,
         lojas_repo: LojasRepository,
         vinculo_repo: ParceiroLojaRepository,
         on_change: callable | None = None,
     ) -> None:
         self._repo = parceiros_repo
+        self._comprovantes_repo = comprovantes_repo
         self._lojas_repo = lojas_repo
         self._vinculo_repo = vinculo_repo
         self._on_change = on_change
@@ -512,12 +515,26 @@ class ParceirosTab:
         item = self.tree.item(selected[0])
         parceiro_id = item["values"][0]
 
+        pode_deletar, mensagem = self.pode_deletar_parceiro(parceiro_id)
+        if not pode_deletar:
+            messagebox.showerror("Erro", mensagem)
+            return
+
         self._repo.delete(parceiro_id)
         messagebox.showinfo("Sucesso", "Parceiro excluído!")
         self.refresh()
         self.update_parceiros_combo()
         if self._on_change:
             self._on_change()
+
+    def pode_deletar_parceiro(self, parceiro_id: int) -> tuple[bool, str]:
+        comprovantes = self._comprovantes_repo.count_by_parceiro(parceiro_id)
+        if comprovantes > 0:
+            return (
+                False,
+                f"Parceiro tem {comprovantes} comprovantes. Não pode deletar.",
+            )
+        return True, "OK"
 
     def carregar_lojas_vinculacao(self, event: tk.Event | None = None) -> None:
         parceiro = self.combo_vincular_parceiro.get()

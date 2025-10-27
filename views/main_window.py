@@ -83,6 +83,7 @@ class SistemaEntregas:
         self.parceiros_tab = ParceirosTab(
             self.notebook,
             parceiros_repo=self.parceiros_repo,
+            comprovantes_repo=self.comprovantes_repo,
             lojas_repo=self.lojas_repo,
             vinculo_repo=self.parceiro_loja_repo,
             on_change=self._on_parceiros_change,
