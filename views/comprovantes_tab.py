@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from models.repositories import ComprovantesRepository, ParceiroLojaRepository, ParceirosRepository
 
+
+logger = logging.getLogger(__name__)
 
 class ComprovantesTab:
     def __init__(
@@ -201,7 +204,8 @@ class ComprovantesTab:
         data = self.entry_data.get().strip()
         try:
             data_sql = datetime.strptime(data, "%d/%m/%Y").strftime("%Y-%m-%d")
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter data do comprovante: %s", exc)
             messagebox.showerror("Erro", "Data inválida! Use o formato DD/MM/AAAA")
             return
 
@@ -217,7 +221,8 @@ class ComprovantesTab:
                 self.entry_assinatura.get().strip(),
                 self.entry_arquivo.get().strip(),
             )
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter quantidades do comprovante: %s", exc)
             messagebox.showerror("Erro", "Quantidades inválidas!")
             return
 

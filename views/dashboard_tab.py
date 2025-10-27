@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+from datetime import datetime
 import tkinter as tk
 from tkinter import ttk
-from datetime import datetime
 
 from models.repositories import ComprovantesRepository, LojasRepository, ParceirosRepository
 
+
+logger = logging.getLogger(__name__)
 
 class DashboardTab:
     """Build and refresh the dashboard tab."""
@@ -192,8 +195,12 @@ class DashboardTab:
             if ultima != "Sem entregas":
                 try:
                     ultima = datetime.strptime(ultima, "%Y-%m-%d").strftime("%d/%m/%Y")
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.error(
+                        "Erro ao converter data da última entrega do parceiro %s: %s",
+                        nome,
+                        exc,
+                    )
             self.tree_dashboard.insert("", "end", values=(nome, status, ultima))
 
         self._auto_size_tree()

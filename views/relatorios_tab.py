@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 from models.repositories import ComprovantesRepository, MarcasRepository, ParceirosRepository
 
+
+logger = logging.getLogger(__name__)
 
 class RelatoriosTab:
     def __init__(
@@ -175,7 +178,8 @@ class RelatoriosTab:
             return None
         try:
             return datetime.strptime(value, "%d/%m/%Y").strftime("%Y-%m-%d")
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter data do relatório: %s", exc)
             messagebox.showwarning("Atenção", f"Data inválida: {value}")
             return None
 
