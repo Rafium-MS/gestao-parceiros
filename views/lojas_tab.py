@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 from models.repositories import LojasRepository, MarcasRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 class LojasTab:
@@ -202,7 +206,8 @@ class LojasTab:
 
         try:
             marca_id = int(marca.split(" - ")[0])
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter ID da marca selecionada: %s", exc)
             messagebox.showerror("Erro", "Marca inválida!")
             return
 
@@ -235,10 +240,14 @@ class LojasTab:
                 parse_float(self.entry_valor_cx_copo.get()),
                 parse_float(self.entry_valor_1500ml.get()),
             )
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter valores numéricos da loja: %s", exc)
             messagebox.showerror("Erro", "Valores numéricos inválidos!")
             return
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as exc:
+            logger.error(
+                "Erro ao salvar loja devido a código Disagua duplicado: %s", exc
+            )
             messagebox.showerror("Erro", "Código Disagua já cadastrado!")
             return
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -14,6 +15,9 @@ from models.repositories import (
 
 from utils.formatters import formatar_cnpj, formatar_telefone
 from utils.validators import validate_email, validate_non_empty
+
+
+logger = logging.getLogger(__name__)
 
 class ParceirosTab:
     def __init__(
@@ -413,7 +417,8 @@ class ParceirosTab:
 
         try:
             dia_pagamento = int(self.entry_dia_pagamento.get()) if self.entry_dia_pagamento.get().strip() else None
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter dia de pagamento: %s", exc)
             messagebox.showerror("Erro", "Dia de pagamento inválido!")
             return
         email = self.entry_email.get().strip()
@@ -440,7 +445,8 @@ class ParceirosTab:
                 self._parse_float(self.entry_valor_cx_copo.get()),
                 self._parse_float(self.entry_valor_1500ml.get()),
             )
-        except ValueError:
+        except ValueError as exc:
+            logger.error("Erro ao converter valores numéricos do parceiro: %s", exc)
             messagebox.showerror("Erro", "Valores numéricos inválidos!")
             return
 
