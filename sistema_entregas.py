@@ -4,6 +4,8 @@ import sqlite3
 from datetime import datetime
 import os
 
+from projeto.models import DatabaseManager, initialize_schema, MarcaRepository
+
 class SistemaEntregas:
     def __init__(self, root):
         self.root = root
@@ -12,98 +14,18 @@ class SistemaEntregas:
         self.root.configure(bg='#f0f0f0')
         
         # Inicializar banco de dados
-        self.init_database()
+        self.conn = self.init_database()
+        self.cursor = self.conn.cursor()
+        self.marca_repository = MarcaRepository(self.conn)
         
         # Criar interface
         self.create_widgets()
         
     def init_database(self):
         """Inicializa o banco de dados SQLite"""
-        self.conn = sqlite3.connect('entregas.db')
-        self.cursor = self.conn.cursor()
-        
-        # Tabela de Marcas
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS marcas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                codigo_disagua TEXT UNIQUE NOT NULL
-            )
-        ''')
-        
-        # Tabela de Lojas
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS lojas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                marca_id INTEGER,
-                nome TEXT NOT NULL,
-                codigo_disagua TEXT UNIQUE NOT NULL,
-                local_entrega TEXT,
-                municipio TEXT,
-                estado TEXT,
-                valor_20l REAL,
-                valor_10l REAL,
-                valor_cx_copo REAL,
-                valor_1500ml REAL,
-                FOREIGN KEY (marca_id) REFERENCES marcas(id)
-            )
-        ''')
-        
-        # Tabela de Parceiros
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS parceiros (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                cidade TEXT,
-                estado TEXT,
-                nome_parceiro TEXT NOT NULL,
-                distribuidora TEXT,
-                cnpj TEXT,
-                telefone TEXT,
-                email TEXT,
-                dia_pagamento INTEGER,
-                banco TEXT,
-                agencia TEXT,
-                conta TEXT,
-                chave_pix TEXT,
-                valor_20l REAL,
-                valor_10l REAL,
-                valor_cx_copo REAL,
-                valor_1500ml REAL
-            )
-        ''')
-        
-        # Tabela de Vínculo Parceiro-Loja
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS parceiro_loja (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                parceiro_id INTEGER,
-                loja_id INTEGER,
-                FOREIGN KEY (parceiro_id) REFERENCES parceiros(id),
-                FOREIGN KEY (loja_id) REFERENCES lojas(id),
-                UNIQUE(parceiro_id, loja_id)
-            )
-        ''')
-        
-        # Tabela de Comprovantes
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS comprovantes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                parceiro_id INTEGER,
-                loja_id INTEGER,
-                data_entrega DATE,
-                qtd_20l INTEGER DEFAULT 0,
-                qtd_10l INTEGER DEFAULT 0,
-                qtd_cx_copo INTEGER DEFAULT 0,
-                qtd_1500ml INTEGER DEFAULT 0,
-                assinatura TEXT,
-                arquivo_comprovante TEXT,
-                data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (parceiro_id) REFERENCES parceiros(id),
-                FOREIGN KEY (loja_id) REFERENCES lojas(id)
-            )
-        ''')
-        
-        self.conn.commit()
+        self.database_manager = DatabaseManager("entregas.db")
+        initialize_schema(self.database_manager)
+        return sqlite3.connect(self.database_manager.database_path)
     
     def create_widgets(self):
         """Cria a interface principal"""
@@ -871,14 +793,13 @@ class SistemaEntregas:
     def salvar_marca(self):
         nome = self.entry_marca_nome.get().strip()
         codigo = self.entry_marca_codigo.get().strip()
-        
+
         if not nome or not codigo:
             messagebox.showwarning("Atenção", "Preencha todos os campos!")
             return
-        
+
         try:
-            self.cursor.execute("INSERT INTO marcas (nome, codigo_disagua) VALUES (?, ?)", (nome, codigo))
-            self.conn.commit()
+            self.marca_repository.adicionar(nome, codigo)
             messagebox.showinfo("Sucesso", "Marca cadastrada com sucesso!")
             self.limpar_marca()
             self.carregar_marcas()
@@ -893,9 +814,8 @@ class SistemaEntregas:
     def carregar_marcas(self):
         for item in self.tree_marcas.get_children():
             self.tree_marcas.delete(item)
-        
-        self.cursor.execute("SELECT * FROM marcas ORDER BY nome")
-        for row in self.cursor.fetchall():
+
+        for row in self.marca_repository.listar():
             self.tree_marcas.insert('', 'end', values=row)
     
     def editar_marca(self):
@@ -923,16 +843,14 @@ class SistemaEntregas:
         if messagebox.askyesno("Confirmar", "Deseja realmente excluir esta marca?"):
             item = self.tree_marcas.item(selected[0])
             marca_id = item['values'][0]
-            
-            self.cursor.execute("DELETE FROM marcas WHERE id = ?", (marca_id,))
-            self.conn.commit()
+
+            self.marca_repository.remover(marca_id)
             messagebox.showinfo("Sucesso", "Marca excluída!")
             self.carregar_marcas()
             self.atualizar_combo_marcas()
-    
+
     def atualizar_combo_marcas(self):
-        self.cursor.execute("SELECT id, nome FROM marcas ORDER BY nome")
-        marcas = self.cursor.fetchall()
+        marcas = self.marca_repository.opcoes_para_combobox()
         self.combo_loja_marca['values'] = [f"{m[0]} - {m[1]}" for m in marcas]
     
     # === MÉTODOS DE LOJA ===
