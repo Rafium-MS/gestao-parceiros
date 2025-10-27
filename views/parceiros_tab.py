@@ -565,16 +565,22 @@ class ParceirosTab:
             return
 
         parceiro_id = int(parceiro.split(" - ")[0])
-        loja_id = self.tree_lojas_disponiveis.item(selected[0])["values"][0]
+        loja_ids = [
+            int(self.tree_lojas_disponiveis.item(item)["values"][0])
+            for item in selected
+        ]
 
         try:
-            self._vinculo_repo.vincular(parceiro_id, loja_id)
+            self._vinculo_repo.vincular_multiplas(parceiro_id, loja_ids)
         except sqlite3.IntegrityError:
             messagebox.showwarning("Atenção", "Loja já vinculada!")
             return
 
         self.carregar_lojas_vinculacao()
-        messagebox.showinfo("Sucesso", "Loja vinculada!")
+        mensagem = (
+            "Loja vinculada!" if len(loja_ids) == 1 else "Lojas vinculadas!"
+        )
+        messagebox.showinfo("Sucesso", mensagem)
         if self._on_change:
             self._on_change()
 

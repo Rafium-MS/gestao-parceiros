@@ -40,12 +40,25 @@ class ParceiroLojaRepository:
         return cursor.fetchall()
 
     def vincular(self, parceiro_id: int, loja_id: int) -> None:
-        cursor = self._connection.cursor()
-        cursor.execute(
-            "INSERT INTO parceiro_loja (parceiro_id, loja_id) VALUES (?, ?)",
-            (parceiro_id, loja_id),
-        )
-        self._connection.commit()
+        self.vincular_multiplas(parceiro_id, [loja_id])
+
+    def vincular_multiplas(
+        self, parceiro_id: int, loja_ids: Sequence[int]
+    ) -> None:
+        if not loja_ids:
+            return
+
+        try:
+            self._connection.execute("BEGIN")
+            cursor = self._connection.cursor()
+            cursor.executemany(
+                "INSERT INTO parceiro_loja (parceiro_id, loja_id) VALUES (?, ?)",
+                ((parceiro_id, loja_id) for loja_id in loja_ids),
+            )
+            self._connection.commit()
+        except Exception:
+            self._connection.rollback()
+            raise
 
     def desvincular(self, parceiro_id: int, loja_id: int) -> None:
         cursor = self._connection.cursor()
