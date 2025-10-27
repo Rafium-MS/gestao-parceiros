@@ -12,6 +12,7 @@ from utils.formatters import (
     formatar_cpf, formatar_cnpj, formatar_telefone,
     remover_formatacao, capitalizar_nome
 )
+from utils.validators import validate_email, validate_non_empty
 from config.settings import PADDING
 
 
@@ -572,12 +573,22 @@ class FormularioParceiro:
     
     def salvar(self):
         """Salva o parceiro."""
+        nome = self.entrada_nome.get().strip()
+        if not validate_non_empty(nome):
+            messagebox.showerror("Erro", "Informe o nome do parceiro!")
+            return
+
+        email = self.entrada_email.get().strip()
+        if email and not validate_email(email):
+            messagebox.showerror("Erro", "E-mail inválido!")
+            return
+
         # Coleta dados
         dados = {
-            'nome': capitalizar_nome(self.entrada_nome.get().strip()),
+            'nome': capitalizar_nome(nome),
             'tipo_documento': self.combo_tipo_doc.get(),
             'documento': remover_formatacao(self.entrada_documento.get()),
-            'email': self.entrada_email.get().strip(),
+            'email': email,
             'telefone': remover_formatacao(self.entrada_telefone.get()),
             'endereco': self.entrada_endereco.get().strip(),
             'cidade': self.entrada_cidade.get().strip(),
