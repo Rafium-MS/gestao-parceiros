@@ -1,29 +1,19 @@
-"""Base controller shared by the application workflows."""
+"""Base controller responsável por iniciar a aplicação gráfica."""
 
 from __future__ import annotations
 
-from projeto.utils import format_currency, validate_email
-from projeto.views.main_window import MainWindow
+import tkinter as tk
+
+from views.main_window import SistemaEntregas
 
 
 class BaseController:
-    """Provide convenience helpers for derived controllers."""
+    """Inicializa a janela principal e executa o loop da aplicação."""
 
-    def __init__(self, view: MainWindow | None = None) -> None:
-        self.view = view or MainWindow()
-
-    def initialise_demo_content(self) -> None:
-        """Populate the interface with initial helper messages."""
-        self.view.show_status("Bem-vindo ao sistema de gestão de parceiros!")
-
-        sample_email = "contato@empresa.com"
-        if validate_email(sample_email):
-            self.view.append_log(f"Email '{sample_email}' validado com sucesso!")
-
-        self.view.append_log(
-            "Exemplo de formatação monetária: " + format_currency(1234.5)
-        )
+    def __init__(self) -> None:
+        self.root = tk.Tk()
+        self.app = SistemaEntregas(self.root)
 
     def run(self) -> None:
-        """Start the GUI application."""
-        self.view.run()
+        self.root.mainloop()
+

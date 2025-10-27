@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from projeto.controllers.base_controller import BaseController
+from controllers.base_controller import BaseController
 
 
 def main() -> None:
     """Bootstraps the graphical application."""
     controller = BaseController()
-    controller.initialise_demo_content()
     controller.run()
 
 
