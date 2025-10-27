@@ -55,79 +55,81 @@ class ParceirosTab:
             font=("Arial", 11, "bold"),
             bg="white",
         )
-        cadastro_frame.pack(fill="x", padx=20, pady=10)
+        cadastro_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        for col in range(4):
+            cadastro_frame.grid_columnconfigure(col, weight=1, uniform="cadastro")
 
         tk.Label(cadastro_frame, text="Nome do Parceiro:", bg="white").grid(
             row=0, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_nome = tk.Entry(cadastro_frame, width=30)
-        self.entry_nome.grid(row=0, column=1, padx=10, pady=5)
+        self.entry_nome = tk.Entry(cadastro_frame)
+        self.entry_nome.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Distribuidora:", bg="white").grid(
             row=0, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_distrib = tk.Entry(cadastro_frame, width=30)
-        self.entry_distrib.grid(row=0, column=3, padx=10, pady=5)
+        self.entry_distrib = tk.Entry(cadastro_frame)
+        self.entry_distrib.grid(row=0, column=3, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Cidade:", bg="white").grid(
             row=1, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_cidade = tk.Entry(cadastro_frame, width=30)
-        self.entry_cidade.grid(row=1, column=1, padx=10, pady=5)
+        self.entry_cidade = tk.Entry(cadastro_frame)
+        self.entry_cidade.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Estado:", bg="white").grid(
             row=1, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_estado = tk.Entry(cadastro_frame, width=30)
-        self.entry_estado.grid(row=1, column=3, padx=10, pady=5)
+        self.entry_estado = tk.Entry(cadastro_frame)
+        self.entry_estado.grid(row=1, column=3, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="CNPJ:", bg="white").grid(
             row=2, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_cnpj = tk.Entry(cadastro_frame, width=30)
-        self.entry_cnpj.grid(row=2, column=1, padx=10, pady=5)
+        self.entry_cnpj = tk.Entry(cadastro_frame)
+        self.entry_cnpj.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Telefone:", bg="white").grid(
             row=2, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_telefone = tk.Entry(cadastro_frame, width=30)
-        self.entry_telefone.grid(row=2, column=3, padx=10, pady=5)
+        self.entry_telefone = tk.Entry(cadastro_frame)
+        self.entry_telefone.grid(row=2, column=3, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Email:", bg="white").grid(
             row=3, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_email = tk.Entry(cadastro_frame, width=30)
-        self.entry_email.grid(row=3, column=1, padx=10, pady=5)
+        self.entry_email = tk.Entry(cadastro_frame)
+        self.entry_email.grid(row=3, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Dia do Pagamento:", bg="white").grid(
             row=3, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_dia_pagamento = tk.Entry(cadastro_frame, width=30)
-        self.entry_dia_pagamento.grid(row=3, column=3, padx=10, pady=5)
+        self.entry_dia_pagamento = tk.Entry(cadastro_frame)
+        self.entry_dia_pagamento.grid(row=3, column=3, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Banco:", bg="white").grid(
             row=4, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_banco = tk.Entry(cadastro_frame, width=30)
-        self.entry_banco.grid(row=4, column=1, padx=10, pady=5)
+        self.entry_banco = tk.Entry(cadastro_frame)
+        self.entry_banco.grid(row=4, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Agência:", bg="white").grid(
             row=4, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_agencia = tk.Entry(cadastro_frame, width=30)
-        self.entry_agencia.grid(row=4, column=3, padx=10, pady=5)
+        self.entry_agencia = tk.Entry(cadastro_frame)
+        self.entry_agencia.grid(row=4, column=3, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Conta:", bg="white").grid(
             row=5, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_conta = tk.Entry(cadastro_frame, width=30)
-        self.entry_conta.grid(row=5, column=1, padx=10, pady=5)
+        self.entry_conta = tk.Entry(cadastro_frame)
+        self.entry_conta.grid(row=5, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(cadastro_frame, text="Chave PIX:", bg="white").grid(
             row=5, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_pix = tk.Entry(cadastro_frame, width=30)
-        self.entry_pix.grid(row=5, column=3, padx=10, pady=5)
+        self.entry_pix = tk.Entry(cadastro_frame)
+        self.entry_pix.grid(row=5, column=3, padx=10, pady=5, sticky="ew")
 
         valores_frame = tk.LabelFrame(
             scrollable_frame,
@@ -135,31 +137,33 @@ class ParceirosTab:
             font=("Arial", 11, "bold"),
             bg="white",
         )
-        valores_frame.pack(fill="x", padx=20, pady=10)
+        valores_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        for col in range(4):
+            valores_frame.grid_columnconfigure(col, weight=1, uniform="valores")
 
         tk.Label(valores_frame, text="Valor 20L (R$):", bg="white").grid(
             row=0, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_valor_20l = tk.Entry(valores_frame, width=20)
-        self.entry_valor_20l.grid(row=0, column=1, padx=10, pady=5)
+        self.entry_valor_20l = tk.Entry(valores_frame)
+        self.entry_valor_20l.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(valores_frame, text="Valor 10L (R$):", bg="white").grid(
             row=0, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_valor_10l = tk.Entry(valores_frame, width=20)
-        self.entry_valor_10l.grid(row=0, column=3, padx=10, pady=5)
+        self.entry_valor_10l = tk.Entry(valores_frame)
+        self.entry_valor_10l.grid(row=0, column=3, padx=10, pady=5, sticky="ew")
 
         tk.Label(valores_frame, text="Valor Cx Copo (R$):", bg="white").grid(
             row=1, column=0, padx=10, pady=5, sticky="w"
         )
-        self.entry_valor_cx_copo = tk.Entry(valores_frame, width=20)
-        self.entry_valor_cx_copo.grid(row=1, column=1, padx=10, pady=5)
+        self.entry_valor_cx_copo = tk.Entry(valores_frame)
+        self.entry_valor_cx_copo.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
         tk.Label(valores_frame, text="Valor 1500ml (R$):", bg="white").grid(
             row=1, column=2, padx=10, pady=5, sticky="w"
         )
-        self.entry_valor_1500ml = tk.Entry(valores_frame, width=20)
-        self.entry_valor_1500ml.grid(row=1, column=3, padx=10, pady=5)
+        self.entry_valor_1500ml = tk.Entry(valores_frame)
+        self.entry_valor_1500ml.grid(row=1, column=3, padx=10, pady=5, sticky="ew")
 
         btn_frame = tk.Frame(scrollable_frame, bg="white")
         btn_frame.pack(pady=10)
@@ -196,17 +200,12 @@ class ParceirosTab:
         for column in columns:
             self.tree.heading(column, text=column)
 
-        self.tree.column("ID", width=50)
-        self.tree.column("Nome", width=200)
-        self.tree.column("Cidade", width=150)
-        self.tree.column("Estado", width=80)
-        self.tree.column("CNPJ", width=150)
-        self.tree.column("Telefone", width=120)
-
         scrollbar_tree = ttk.Scrollbar(list_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar_tree.set)
         self.tree.pack(side="left", fill="both", expand=True)
         scrollbar_tree.pack(side="right", fill="y")
+
+        list_frame.bind("<Configure>", lambda event: self._auto_size_parceiros_tree())
 
         action_frame = tk.Frame(scrollable_frame, bg="white")
         action_frame.pack(pady=10)
@@ -243,6 +242,7 @@ class ParceirosTab:
         scrollbar.pack(side="right", fill="y")
 
         self._build_vinculo_tab(parceiro_notebook)
+        self._auto_size_parceiros_tree()
 
     def _build_vinculo_tab(self, notebook: ttk.Notebook) -> None:
         lojas_tab = tk.Frame(notebook, bg="white")
@@ -258,11 +258,12 @@ class ParceirosTab:
 
         tk.Label(sel_frame, text="Parceiro:", bg="white").pack(side="left", padx=10, pady=10)
         self.combo_vincular_parceiro = ttk.Combobox(sel_frame, width=50, state="readonly")
-        self.combo_vincular_parceiro.pack(side="left", padx=10, pady=10)
+        self.combo_vincular_parceiro.pack(side="left", fill="x", expand=True, padx=10, pady=10)
         self.combo_vincular_parceiro.bind("<<ComboboxSelected>>", self.carregar_lojas_vinculacao)
 
         main_frame = tk.Frame(lojas_tab, bg="white")
         main_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        self._lojas_layout = "horizontal"
 
         disponiveis_frame = tk.LabelFrame(
             main_frame,
@@ -280,15 +281,12 @@ class ParceirosTab:
         )
         for column in ("ID", "Nome", "Cidade", "Estado"):
             self.tree_lojas_disponiveis.heading(column, text=column)
-        self.tree_lojas_disponiveis.column("ID", width=50)
-        self.tree_lojas_disponiveis.column("Nome", width=200)
-        self.tree_lojas_disponiveis.column("Cidade", width=120)
-        self.tree_lojas_disponiveis.column("Estado", width=60)
-
         scrollbar1 = ttk.Scrollbar(disponiveis_frame, orient="vertical", command=self.tree_lojas_disponiveis.yview)
         self.tree_lojas_disponiveis.configure(yscrollcommand=scrollbar1.set)
         self.tree_lojas_disponiveis.pack(side="left", fill="both", expand=True)
         scrollbar1.pack(side="right", fill="y")
+
+        disponiveis_frame.bind("<Configure>", lambda event: self._auto_size_lojas_tree(self.tree_lojas_disponiveis))
 
         btn_frame = tk.Frame(main_frame, bg="white")
         btn_frame.pack(side="left", padx=10)
@@ -328,15 +326,18 @@ class ParceirosTab:
         )
         for column in ("ID", "Nome", "Cidade", "Estado"):
             self.tree_lojas_vinculadas.heading(column, text=column)
-        self.tree_lojas_vinculadas.column("ID", width=50)
-        self.tree_lojas_vinculadas.column("Nome", width=200)
-        self.tree_lojas_vinculadas.column("Cidade", width=120)
-        self.tree_lojas_vinculadas.column("Estado", width=60)
-
         scrollbar2 = ttk.Scrollbar(vinculadas_frame, orient="vertical", command=self.tree_lojas_vinculadas.yview)
         self.tree_lojas_vinculadas.configure(yscrollcommand=scrollbar2.set)
         self.tree_lojas_vinculadas.pack(side="left", fill="both", expand=True)
         scrollbar2.pack(side="right", fill="y")
+
+        vinculadas_frame.bind("<Configure>", lambda event: self._auto_size_lojas_tree(self.tree_lojas_vinculadas))
+        main_frame.bind(
+            "<Configure>",
+            lambda event, df=disponiveis_frame, bf=btn_frame, vf=vinculadas_frame: self._adjust_lojas_layout(event, df, bf, vf),
+        )
+        self._auto_size_lojas_tree(self.tree_lojas_disponiveis)
+        self._auto_size_lojas_tree(self.tree_lojas_vinculadas)
 
     def set_on_change(self, callback: callable | None) -> None:
         self._on_change = callback
@@ -344,6 +345,57 @@ class ParceirosTab:
     def update_parceiros_combo(self) -> None:
         values = list(self._repo.combo_values())
         self.combo_vincular_parceiro["values"] = values
+
+    def _auto_size_parceiros_tree(self) -> None:
+        total_width = self.tree.winfo_width()
+        if total_width <= 0:
+            return
+
+        def set_width(column: str, fraction: float, minimum: int) -> None:
+            self.tree.column(column, width=max(int(total_width * fraction), minimum))
+
+        set_width("ID", 0.08, 70)
+        set_width("Nome", 0.32, 160)
+        set_width("Cidade", 0.18, 120)
+        set_width("Estado", 0.1, 80)
+        set_width("CNPJ", 0.18, 140)
+        set_width("Telefone", 0.14, 120)
+
+    def _auto_size_lojas_tree(self, tree: ttk.Treeview) -> None:
+        total_width = tree.winfo_width()
+        if total_width <= 0:
+            return
+
+        def set_width(column: str, fraction: float, minimum: int) -> None:
+            tree.column(column, width=max(int(total_width * fraction), minimum))
+
+        set_width("ID", 0.12, 70)
+        set_width("Nome", 0.46, 180)
+        set_width("Cidade", 0.27, 120)
+        set_width("Estado", 0.15, 70)
+
+    def _adjust_lojas_layout(
+        self,
+        event: tk.Event,
+        disponiveis_frame: tk.Widget,
+        btn_frame: tk.Widget,
+        vinculadas_frame: tk.Widget,
+    ) -> None:
+        width = event.width
+        layout = "vertical" if width < 900 else "horizontal"
+        if layout == self._lojas_layout:
+            return
+
+        if layout == "horizontal":
+            disponiveis_frame.pack_configure(side="left", fill="both", expand=True, padx=5, pady=0)
+            btn_frame.pack_configure(side="left", padx=10, pady=0)
+            vinculadas_frame.pack_configure(side="left", fill="both", expand=True, padx=5, pady=0)
+        else:
+            disponiveis_frame.pack_configure(side="top", fill="both", expand=True, padx=5, pady=5)
+            btn_frame.pack_configure(side="top", pady=10)
+            vinculadas_frame.pack_configure(side="top", fill="both", expand=True, padx=5, pady=5)
+
+        self._lojas_layout = layout
 
     def _parse_float(self, value: str) -> float | None:
         value = value.strip()

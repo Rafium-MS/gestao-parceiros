@@ -26,7 +26,10 @@ class SistemaEntregas:
         self.root = root
         self.root.title("Sistema de Gerenciamento de Entregas - Água Mineral")
         self.root.geometry("1200x700")
+        self.root.minsize(900, 600)
         self.root.configure(bg="#f0f0f0")
+        self.root.rowconfigure(1, weight=1)
+        self.root.columnconfigure(0, weight=1)
 
         self.conn, _ = init_database(db_path)
 
@@ -54,6 +57,8 @@ class SistemaEntregas:
 
         main_frame = tk.Frame(self.root, bg="#f0f0f0")
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        main_frame.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=1)
 
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill="both", expand=True)
