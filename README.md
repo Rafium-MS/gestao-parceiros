@@ -1,224 +1,94 @@
-# Sistema de Gestão de Parceiro
+# Sistema de Gerenciamento de Entregas - Água Mineral
 
-Um sistema desktop para gerenciamento de parceiros, lojas atendidas, comprovantes de entregas e geração de relatórios.
-
-## Recursos Principais
-
-- **Cadastro de Parceiros**: Gerenciamento completo de entregadores/parceiros.
-- **Cadastro de Lojas**: Cadastro e gerenciamento das lojas atendidas.
-- **Comprovantes de Entrega**: Upload e visualização de comprovantes de entrega.
-- **Associação Parceiros-Lojas**: Gerenciamento das relações entre parceiros e lojas.
-- **Gestão de Usuários**: Controle de contas e perfis de acesso.
-- **Relatórios**: Geração de relatórios de entregas por parceiro, loja e período.
-- **Sistema de Backup**: Backup e restauração automática de dados.
-
-## Requisitos
+## 📋 Pré-requisitos
 
 - Python 3.7 ou superior
-- Bibliotecas Python listadas em `requirements.txt`
-- Executável **Tesseract OCR** instalado e acessível no `PATH` para habilitar a leitura de comprovantes
+- Tkinter (já vem instalado com Python)
 
-## Instalação
+## 🚀 Como Executar
 
-1. Clone este repositório:
-   ```
-   git clone https://github.com/seu-usuario/sistema-gestao-entregas.git
-   cd sistema-gestao-entregas
-   ```
-
-2. Crie um ambiente virtual (recomendado):
-   ```
-   python -m venv venv
-   
-   # No Windows
-   venv\Scripts\activate
-   
-   # No Linux/Mac
-   source venv/bin/activate
-   ```
-
-3. Instale as dependências:
-   ```
-   pip install -r requirements.txt
-   ```
-
-4. Execute o aplicativo:
-   ```
-   python app.py
-   ```
-
-## Estrutura do Projeto
-
-O projeto segue o padrão de arquitetura MVC (Model-View-Controller) para organizar o código de forma modular e facilitar a manutenção:
-
-- **Models**: Representa os dados e regras de negócio.
-- **Views**: Interface do usuário.
-- **Controllers**: Conecta os modelos às views e implementa a lógica de negócio.
-- **Database**: Gerenciamento de conexão e operações do banco de dados.
-- **Utils**: Funções utilitárias como validadores e formatadores.
-- **Resources**: Recursos estáticos como ícones e imagens.
-- **Comprovantes**: Diretório para armazenar os arquivos de comprovantes de entrega.
-
-```
-Sistema de Gestão de Entregas/
-│
-├── app.py                  # Ponto de entrada da aplicação
-├── config.ini              # Configurações do sistema
-├── requirements.txt        # Dependências do projeto
-│
-├── database/               # Gerenciamento do banco de dados
-│   ├── __init__.py
-│   ├── db_manager.py       # Gerenciador de conexão com o banco
-│   └── queries.py          # Consultas SQL reutilizáveis
-│
-├── models/                 # Modelos de dados
-│   ├── __init__.py
-│   ├── parceiro.py         # Modelo para parceiros
-│   ├── loja.py             # Modelo para lojas
-│   ├── comprovante.py      # Modelo para comprovantes
-│   └── associacao.py       # Modelo para associações
-│
-├── views/                  # Interfaces gráficas
-│   ├── __init__.py
-│   ├── main_window.py      # Janela principal da aplicação
-│   ├── parceiro_view.py    # Interface de parceiros
-│   ├── loja_view.py        # Interface de lojas
-│   ├── comprovante_view.py # Interface de comprovantes
-│   ├── associacao_view.py  # Interface de associações
-│   └── relatorio_view.py   # Interface de relatórios
-│
-├── controllers/            # Controladores
-│   ├── __init__.py
-│   ├── parceiro_controller.py
-│   ├── loja_controller.py
-│   ├── comprovante_controller.py
-│   ├── associacao_controller.py
-│   └── relatorio_controller.py
-│
-├── utils/                  # Utilitários
-│   ├── __init__.py
-│   ├── validators.py       # Validação de CPF, CNPJ, etc.
-│   ├── formatters.py       # Formatação de dados
-│   ├── logger.py           # Sistema de logging
-│   ├── backup_utils.py     # Funções de backup
-│   └── export_utils.py     # Funções para exportação
-│
-├── resources/              # Recursos estáticos
-│   ├── icons/              # Ícones da interface
-│   ├── images/             # Imagens
-│   └── styles/             # Estilos para a interface
-│
-└── comprovantes/           # Diretório para armazenar comprovantes
+1. Certifique-se de ter Python instalado:
+```bash
+python --version
 ```
 
-## Guia de Uso
+2. Execute o sistema:
+```bash
+python sistema_entregas.py
+```
 
-### Cadastro de Parceiros
+## 📚 Manual de Uso
 
-1. Acesse a aba "Parceiros"
-2. Preencha os campos com os dados do parceiro:
-   - Nome (obrigatório)
-   - CPF (opcional, mas deve ser válido se informado)
-   - Telefone
-   - Email
-   - Endereço
-3. Clique em "Adicionar" para salvar
-4. Para editar, selecione um parceiro na lista, modifique os dados e clique em "Salvar Edição"
-5. Para excluir, selecione um parceiro na lista e clique em "Excluir"
+### 1. Cadastro de Marca
+- Acesse a aba "🏢 Marcas"
+- Preencha nome e código Disagua
+- Clique em "Salvar Marca"
 
-### Cadastro de Lojas
+### 2. Cadastro de Lojas
+- Acesse a aba "🏪 Lojas"
+- Selecione a marca
+- Preencha os dados da loja e valores dos produtos
+- Clique em "Salvar Loja"
 
-1. Acesse a aba "Lojas"
-2. Preencha os campos com os dados da loja:
-   - Nome (obrigatório)
-   - CNPJ (opcional, mas deve ser válido se informado)
-   - Telefone
-   - Email
-   - Endereço
-   - Contato (nome da pessoa de contato)
-3. Clique em "Adicionar" para salvar
-4. Para editar ou excluir, utilize os mesmos procedimentos do cadastro de parceiros
+### 3. Cadastro de Parceiros
+- Acesse a aba "🚚 Parceiros"
+- Preencha os dados do parceiro
+- Informe os valores que ele receberá por produto
+- Clique em "Salvar Parceiro"
 
-### Comprovantes de Entrega
+### 4. Vincular Lojas aos Parceiros
+- Na aba "🚚 Parceiros", clique em "Lojas do Parceiro"
+- Selecione o parceiro
+- Use as setas para adicionar/remover lojas
 
-1. Acesse a aba "Comprovantes"
-2. Selecione o parceiro e a loja relacionados à entrega
-3. Informe a data da entrega
-4. Clique em "Selecionar" para escolher o arquivo do comprovante
-5. Adicione observações se necessário
-6. Clique em "Adicionar" para salvar o comprovante
-7. Utilize o botão "Ler OCR" para extrair texto de arquivos JPG, JPEG, PNG ou PDF
-8. Para visualizar, selecione um comprovante na lista e clique em "Visualizar"
+### 5. Registrar Comprovantes
+- Acesse a aba "📋 Comprovantes"
+- Selecione parceiro e loja
+- Informe data, quantidades e assinatura
+- Opcionalmente, anexe um arquivo
+- Clique em "Salvar Comprovante"
 
-### Associações Parceiros-Lojas
+### 6. Gerar Relatórios
+- Acesse a aba "📊 Relatórios"
+- Escolha entre "Relatório por Marca" ou "Relatório por Parceiro"
+- Selecione os filtros desejados
+- Clique em "Gerar Relatório"
 
-1. Acesse a aba "Associações"
-2. Selecione o parceiro e a loja que deseja associar
-3. Escolha o status da associação (Ativo, Inativo, Pendente)
-4. Clique em "Associar" para criar a associação
-5. Para editar ou remover associações, selecione-as na lista e utilize os botões correspondentes
+### 7. Dashboard
+- Visualize indicadores em tempo real
+- Acompanhe quais parceiros já enviaram comprovantes
+- Veja o percentual de relatórios preenchidos
 
-### Relatórios
+## 🔧 Estrutura do Banco de Dados
 
-1. Acesse a aba "Relatórios"
-2. Selecione o tipo de relatório desejado:
-   - Entregas por Parceiro
-   - Entregas por Loja
-   - Entregas por Período
-3. Configure os filtros conforme necessário
-4. Clique em "Gerar Relatório"
-5. Use os botões "Exportar para Excel" ou "Exportar para PDF" para salvar o relatório
+O sistema cria automaticamente um arquivo `entregas.db` com as seguintes tabelas:
 
-## Backup e Restauração
+- **marcas**: Cadastro de marcas
+- **lojas**: Cadastro de lojas vinculadas a marcas
+- **parceiros**: Cadastro de parceiros/entregadores
+- **parceiro_loja**: Vínculo entre parceiros e lojas
+- **comprovantes**: Registro de entregas realizadas
 
-Para realizar backup do banco de dados:
-1. No menu principal, acesse "Arquivo" > "Backup"
-2. Escolha o local para salvar o arquivo de backup
+## 📊 Diferença de Preços
 
-Para restaurar um backup:
-1. No menu principal, acesse "Arquivo" > "Restaurar Backup" 
-2. Selecione o arquivo de backup desejado
+- **Valores da Loja**: Preço cobrado pelo serviço (aparece no relatório da marca)
+- **Valores do Parceiro**: Preço pago ao parceiro pelo serviço (aparece no relatório do parceiro)
 
-## Solução de Problemas
+## 🔄 Migração para Multiusuário
 
-### Comprovantes Não Visualizados
-- Verifique se o arquivo existe no diretório de comprovantes
-- Confirme se o visualizador padrão para o tipo de arquivo está configurado
+Atualmente o sistema usa SQLite (arquivo local). Para migrar para um banco multiusuário:
 
-### Erros de Banco de Dados
-- Verifique se o arquivo do banco de dados não está corrompido
-- Restaure um backup recente
+1. Instalar PostgreSQL ou MySQL
+2. Adaptar as conexões no código
+3. Configurar servidor de aplicação
 
-### Problemas com CPF/CNPJ
-- Certifique-se de que os documentos são válidos
-- O sistema valida automaticamente o formato e o algoritmo de verificação
+## 💡 Dicas
 
-## Customização
+- Use formato de data: DD/MM/AAAA
+- Valores monetários podem usar vírgula ou ponto
+- O dashboard atualiza automaticamente ao registrar comprovantes
+- Backup regular do arquivo entregas.db é recomendado
 
-O sistema pode ser customizado editando o arquivo `config.ini` para alterar:
-- Localização do banco de dados
-- Diretório de comprovantes
-- Formatos de arquivos permitidos
-- Configurações de logs
-- Níveis de permissão de usuários
+## 🐛 Suporte
 
-Também é possível ajustar essas preferências pela interface gráfica em
-**Configurações** no menu principal. Nesta janela você pode editar valores do
-`config.ini` e definir os papéis de acesso (Admin, Operador, Financeiro e
-Visualizador).
-
-## Contribuições
-
-Contribuições são bem-vindas! Siga estes passos:
-
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Faça commit das alterações (`git commit -m 'Adiciona nova funcionalidade'`)
-4. Envie para o branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
-
-## Licença
-
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
-
-### Desenvolvido por Macete Systems
+Para melhorias ou correções, entre em contato com o desenvolvedor.

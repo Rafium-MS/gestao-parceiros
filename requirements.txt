@@ -1,32 +1,23 @@
-# Sistema de Gestão de Entregas - Dependências
+# Requisitos do Sistema de Gerenciamento de Entregas
+# 
+# NOTA: Python 3.7+ já inclui tkinter e sqlite3
+# Este arquivo é para referência futura caso seja necessário adicionar dependências
 
-# Interface gráfica
-Pillow>=9.0.0       # Para processamento de imagens
-ttkthemes>=3.2.0    # Temas adicionais para tkinter
+# Dependências atuais (já incluídas no Python):
+# - tkinter (interface gráfica)
+# - sqlite3 (banco de dados)
+# - datetime (manipulação de datas)
+# - os (manipulação de arquivos)
 
-# Exportação de dados
-pandas>=1.5.0       # Para manipulação de dados tabulares
-openpyxl>=3.0.10    # Para exportação para Excel
-reportlab>=3.6.11   # Para geração de relatórios em PDF
-xlsxwriter>=3.0.3   # Para formatação avançada em Excel
+# Dependências futuras sugeridas para melhorias:
+# openpyxl>=3.0.0          # Para exportação para Excel
+# reportlab>=3.6.0          # Para geração de PDFs
+# pillow>=9.0.0             # Para manipulação de imagens
+# matplotlib>=3.5.0         # Para gráficos
+# pandas>=1.4.0             # Para análise de dados avançada
+# psycopg2-binary>=2.9.0    # Para PostgreSQL (multiusuário)
+# pymysql>=1.0.0            # Para MySQL (multiusuário)
+# flask>=2.2.0              # Para versão web (futuro)
 
-# Validação de dados
-validate-docbr>=1.10.0  # Para validação de documentos brasileiros (CPF, CNPJ)
-email-validator>=1.3.0  # Para validação de endereços de email
-
-# Utilitários
-python-dateutil>=2.8.2  # Para manipulação de datas
-tkcalendar>=1.6.1       # Widget de calendário para tkinter
-
-# OCR e leitura de PDF
-pytesseract>=0.3.10
-pdf2image>=1.16.0
-scikit-learn>=1.3.0
-requests>=2.31.0
-Werkzeug>=2.3.0
-
-# Backend web
-Flask>=2.3.0
-Flask-SQLAlchemy>=3.0.0
-Flask-Cors>=4.0.0
-SQLAlchemy>=2.0.0
+# Para instalar dependências futuras:
+# pip install -r requirements.txt --break-system-packages
