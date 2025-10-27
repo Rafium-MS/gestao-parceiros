@@ -40,9 +40,14 @@ class DashboardTab:
 
         cards_frame = tk.Frame(self.frame, bg="white")
         cards_frame.pack(fill="both", expand=True, padx=20, pady=10)
+        cards_frame.grid_columnconfigure(0, weight=1)
+        cards_frame.grid_columnconfigure(1, weight=1)
+        cards_frame.grid_columnconfigure(2, weight=1)
+
+        self._cards_frame = cards_frame
+        self._cards_columns = 0
 
         card1 = tk.Frame(cards_frame, bg="#3498db", relief="raised", borderwidth=2)
-        card1.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         tk.Label(
             card1,
             text="Parceiros com Entregas",
@@ -60,7 +65,6 @@ class DashboardTab:
         self.lbl_parceiros_enviaram.pack(pady=10)
 
         card2 = tk.Frame(cards_frame, bg="#2ecc71", relief="raised", borderwidth=2)
-        card2.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         tk.Label(
             card2,
             text="Relatórios Preenchidos",
@@ -78,7 +82,6 @@ class DashboardTab:
         self.lbl_percentual_relatorios.pack(pady=10)
 
         card3 = tk.Frame(cards_frame, bg="#e74c3c", relief="raised", borderwidth=2)
-        card3.grid(row=0, column=2, padx=10, pady=10, sticky="nsew")
         tk.Label(
             card3,
             text="Total de Lojas",
@@ -95,9 +98,10 @@ class DashboardTab:
         )
         self.lbl_total_lojas.pack(pady=10)
 
-        cards_frame.grid_columnconfigure(0, weight=1)
-        cards_frame.grid_columnconfigure(1, weight=1)
-        cards_frame.grid_columnconfigure(2, weight=1)
+        self._cards = (card1, card2, card3)
+        self._reflow_cards(3)
+
+        self.frame.bind("<Configure>", self._handle_resize)
 
         list_frame = tk.LabelFrame(
             self.frame,
@@ -121,6 +125,8 @@ class DashboardTab:
         self.tree_dashboard.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        list_frame.bind("<Configure>", lambda event: self._auto_size_tree())
+
         btn_frame = tk.Frame(self.frame, bg="white")
         btn_frame.pack(pady=10)
 
@@ -134,6 +140,39 @@ class DashboardTab:
             padx=20,
             pady=10,
         ).pack()
+
+    def _handle_resize(self, event: tk.Event) -> None:
+        width = event.width
+        if width < 640:
+            columns = 1
+        elif width < 960:
+            columns = 2
+        else:
+            columns = 3
+        if columns != self._cards_columns:
+            self._reflow_cards(columns)
+
+    def _reflow_cards(self, columns: int) -> None:
+        for card in self._cards:
+            card.grid_forget()
+
+        for idx, card in enumerate(self._cards):
+            row = idx // columns
+            col = idx % columns
+            card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+
+        for col in range(columns):
+            self._cards_frame.grid_columnconfigure(col, weight=1)
+
+        self._cards_columns = columns
+
+    def _auto_size_tree(self) -> None:
+        total_width = self.tree_dashboard.winfo_width()
+        if total_width <= 0:
+            return
+        self.tree_dashboard.column("Parceiro", width=int(total_width * 0.5))
+        self.tree_dashboard.column("Status", width=int(total_width * 0.25))
+        self.tree_dashboard.column("Última Entrega", width=int(total_width * 0.25))
 
     def refresh(self) -> None:
         total_parceiros = self._parceiros_repo.count_all()
@@ -156,4 +195,6 @@ class DashboardTab:
                 except ValueError:
                     pass
             self.tree_dashboard.insert("", "end", values=(nome, status, ultima))
+
+        self._auto_size_tree()
 
