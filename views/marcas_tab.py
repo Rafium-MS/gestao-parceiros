@@ -126,12 +126,12 @@ class MarcasTab:
         nome = self.entry_nome.get().strip()
         codigo = self.entry_codigo.get().strip()
 
-        if not nome or not codigo:
-            messagebox.showwarning("Atenção", "Preencha todos os campos!")
+        if not nome:
+            messagebox.showwarning("Atenção", "Informe o nome da marca!")
             return
 
         try:
-            self._repo.add(nome, codigo)
+            self._repo.add(nome, codigo or None)
         except sqlite3.IntegrityError:
             messagebox.showerror("Erro", "Código Disagua já cadastrado!")
             return
@@ -151,7 +151,8 @@ class MarcasTab:
             self.tree.delete(item)
 
         for row in self._repo.list_all():
-            self.tree.insert("", "end", values=row)
+            codigo = row[2] if row[2] else "—"
+            self.tree.insert("", "end", values=(row[0], row[1], codigo))
 
     def editar(self) -> None:
         messagebox.showinfo("Info", "Função de edição será implementada")

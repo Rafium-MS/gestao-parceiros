@@ -12,7 +12,7 @@ class MarcasRepository:
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._connection = connection
 
-    def add(self, nome: str, codigo_disagua: str) -> None:
+    def add(self, nome: str, codigo_disagua: str | None) -> None:
         cursor = self._connection.cursor()
         cursor.execute(
             "INSERT INTO marcas (nome, codigo_disagua) VALUES (?, ?)",

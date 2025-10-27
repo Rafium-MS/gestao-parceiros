@@ -14,7 +14,7 @@ class LojasRepository:
         self,
         marca_id: int,
         nome: str,
-        codigo_disagua: str,
+        codigo_disagua: str | None,
         local_entrega: str,
         municipio: str,
         estado: str,

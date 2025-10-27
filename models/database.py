@@ -29,14 +29,14 @@ def init_database(db_path: str | Path | None = None) -> Tuple[sqlite3.Connection
         CREATE TABLE IF NOT EXISTS marcas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
-            codigo_disagua TEXT UNIQUE NOT NULL
+            codigo_disagua TEXT UNIQUE
         );
 
         CREATE TABLE IF NOT EXISTS lojas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             marca_id INTEGER,
             nome TEXT NOT NULL,
-            codigo_disagua TEXT UNIQUE NOT NULL,
+            codigo_disagua TEXT UNIQUE,
             local_entrega TEXT,
             municipio TEXT,
             estado TEXT,
