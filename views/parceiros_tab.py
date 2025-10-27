@@ -12,6 +12,7 @@ from models.repositories import (
     ParceirosRepository,
 )
 
+from utils.formatters import formatar_cnpj, formatar_telefone
 from utils.validators import validate_email, validate_non_empty
 
 class ParceirosTab:
@@ -476,7 +477,19 @@ class ParceirosTab:
             self.tree.delete(item)
 
         for row in self._repo.list_all():
-            self.tree.insert("", "end", values=row)
+            parceiro_id, nome, cidade, estado, cnpj, telefone = row
+            self.tree.insert(
+                "",
+                "end",
+                values=(
+                    parceiro_id,
+                    nome,
+                    cidade,
+                    estado,
+                    formatar_cnpj(cnpj),
+                    formatar_telefone(telefone),
+                ),
+            )
 
     def editar(self) -> None:
         messagebox.showinfo("Info", "Função de edição será implementada")
