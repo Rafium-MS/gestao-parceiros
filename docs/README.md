@@ -21,7 +21,7 @@ python sistema_entregas.py
 
 ### 1. Cadastro de Marca
 - Acesse a aba "🏢 Marcas"
-- Preencha nome e código Disagua
+- Preencha o nome da marca (o código Disagua é opcional)
 - Clique em "Salvar Marca"
 
 ### 2. Cadastro de Lojas

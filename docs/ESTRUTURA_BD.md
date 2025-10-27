@@ -59,14 +59,14 @@ Armazena as marcas de água mineral.
 CREATE TABLE marcas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
-    codigo_disagua TEXT UNIQUE NOT NULL
+    codigo_disagua TEXT UNIQUE
 );
 ```
 
 **Campos:**
 - `id`: Identificador único (gerado automaticamente)
 - `nome`: Nome da marca (ex: "Água Crystal")
-- `codigo_disagua`: Código único da marca no sistema Disagua
+- `codigo_disagua`: Código único opcional da marca no sistema Disagua
 
 **Índices:**
 - PRIMARY KEY em `id`
@@ -82,7 +82,7 @@ CREATE TABLE lojas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     marca_id INTEGER,
     nome TEXT NOT NULL,
-    codigo_disagua TEXT UNIQUE NOT NULL,
+    codigo_disagua TEXT UNIQUE,
     local_entrega TEXT,
     municipio TEXT,
     estado TEXT,
@@ -98,7 +98,7 @@ CREATE TABLE lojas (
 - `id`: Identificador único
 - `marca_id`: Referência à marca (FK)
 - `nome`: Nome da loja
-- `codigo_disagua`: Código único da loja
+- `codigo_disagua`: Código único opcional da loja
 - `local_entrega`: Endereço completo de entrega
 - `municipio`: Cidade da loja
 - `estado`: UF (ex: "SP", "RJ")

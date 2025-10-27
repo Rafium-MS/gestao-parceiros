@@ -212,8 +212,8 @@ class LojasTab:
         municipio = self.entry_municipio.get().strip()
         estado = self.entry_estado.get().strip()
 
-        if not nome or not codigo:
-            messagebox.showwarning("Atenção", "Preencha todos os campos obrigatórios!")
+        if not nome:
+            messagebox.showwarning("Atenção", "Informe o nome da loja!")
             return
 
         def parse_float(value: str) -> float | None:
@@ -226,7 +226,7 @@ class LojasTab:
             self._repo.add(
                 marca_id,
                 nome,
-                codigo,
+                codigo or None,
                 local,
                 municipio,
                 estado,
