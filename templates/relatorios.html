@@ -238,8 +238,11 @@
                     </div>
                 </div>
                 
+                <div style="margin-top:10px"><button type="button" id="seedBtn" class="btn-submit">Gerar dados de exemplo</button></div>
+                
                 <div class="btn-container">
                     <button type="submit" class="btn-generate">Gerar Relatório</button>
+                    <button type="button" class="btn-generate" id="seedBtn">Gerar dados de exemplo</button>
                 </div>
             </form>
         </div>
@@ -290,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportButtons = document.getElementById('exportButtons');
     const summaryCards = document.getElementById('summaryCards');
     const marcaSelect = document.getElementById('marca');
+    const seedBtn = document.getElementById('seedBtn');
 
     async function loadBrands(){
         const brands = await (await fetch('/api/brands')).json();
@@ -394,6 +398,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (marca) url.searchParams.set('marca', marca);
         const data = await (await fetch(url)).json();
         renderTable(data);
+    });
+
+    seedBtn.addEventListener('click', async ()=>{
+        const n = prompt('Quantos registros de exemplo deseja criar?', '100');
+        if (n===null) return;
+        const res = await fetch('/api/report-data/seed?n='+encodeURIComponent(n), { method:'POST' });
+        if (!res.ok){ alert('Cadastre ao menos uma marca e loja antes de gerar dados.'); return; }
+        alert('Dados de exemplo gerados! Agora use o filtro e clique em "Gerar Relatório".');
     });
 
     loadBrands();

@@ -187,6 +187,154 @@ def create_app():
     def get_upload(filename):
         return send_from_directory(UPLOAD_DIR, filename)
 
+
+        # --- Update/Delete Partners ---
+        @app.put("/api/partners/<int:pid>")
+        def update_partner(pid):
+            data = request.json or {}
+            with Session() as s:
+                obj = s.get(Partner, pid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                for k,v in data.items():
+                    if hasattr(obj, k): setattr(obj, k, v)
+                s.commit()
+                return jsonify({"ok": True})
+
+        @app.delete("/api/partners/<int:pid>")
+        def delete_partner(pid):
+            with Session() as s:
+                obj = s.get(Partner, pid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                s.delete(obj); s.commit()
+                return jsonify({"ok": True})
+
+        # --- Update/Delete Brands ---
+        @app.put("/api/brands/<int:bid>")
+        def update_brand(bid):
+            data = request.json or {}
+            with Session() as s:
+                obj = s.get(Brand, bid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                for k,v in data.items():
+                    if hasattr(obj, k): setattr(obj, k, v)
+                s.commit()
+                return jsonify({"ok": True})
+
+        @app.delete("/api/brands/<int:bid>")
+        def delete_brand(bid):
+            with Session() as s:
+                obj = s.get(Brand, bid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                s.delete(obj); s.commit()
+                return jsonify({"ok": True})
+
+        # --- Update/Delete Stores ---
+        @app.put("/api/stores/<int:sid>")
+        def update_store(sid):
+            data = request.json or {}
+            with Session() as s:
+                obj = s.get(Store, sid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                for k,v in data.items():
+                    if hasattr(obj, k): setattr(obj, k, v)
+                s.commit()
+                return jsonify({"ok": True})
+
+        @app.delete("/api/stores/<int:sid>")
+        def delete_store(sid):
+            with Session() as s:
+                obj = s.get(Store, sid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                s.delete(obj); s.commit()
+                return jsonify({"ok": True})
+
+        # --- Delete Connection ---
+        @app.delete("/api/connections/<int:cid>")
+        def delete_connection(cid):
+            with Session() as s:
+                obj = s.get(Connection, cid)
+                if not obj:
+                    return jsonify({"error":"not found"}), 404
+                s.delete(obj); s.commit()
+                return jsonify({"ok": True})
+    
+
+    # --- UPDATE/DELETE PARTNER ---
+    @app.put("/api/partners/<int:pid>")
+    def update_partner(pid):
+        data = request.json or {}
+        with Session() as s:
+            p = s.get(Partner, pid)
+            if not p: return jsonify({"error":"not found"}), 404
+            for k,v in data.items():
+                if hasattr(p, k): setattr(p, k, v)
+            s.commit()
+            return jsonify({"ok": True})
+
+    @app.delete("/api/partners/<int:pid>")
+    def delete_partner(pid):
+        with Session() as s:
+            p = s.get(Partner, pid)
+            if not p: return jsonify({"error":"not found"}), 404
+            s.delete(p); s.commit()
+            return jsonify({"ok": True})
+
+    # --- UPDATE/DELETE BRAND ---
+    @app.put("/api/brands/<int:bid>")
+    def update_brand(bid):
+        data = request.json or {}
+        with Session() as s:
+            b = s.get(Brand, bid)
+            if not b: return jsonify({"error":"not found"}), 404
+            for k,v in data.items():
+                if hasattr(b, k): setattr(b, k, v)
+            s.commit()
+            return jsonify({"ok": True})
+
+    @app.delete("/api/brands/<int:bid>")
+    def delete_brand(bid):
+        with Session() as s:
+            b = s.get(Brand, bid)
+            if not b: return jsonify({"error":"not found"}), 404
+            s.delete(b); s.commit()
+            return jsonify({"ok": True})
+
+    # --- UPDATE/DELETE STORE ---
+    @app.put("/api/stores/<int:sid>")
+    def update_store(sid):
+        data = request.json or {}
+        with Session() as s:
+            st = s.get(Store, sid)
+            if not st: return jsonify({"error":"not found"}), 404
+            for k,v in data.items():
+                if hasattr(st, k): setattr(st, k, v)
+            s.commit()
+            return jsonify({"ok": True})
+
+    @app.delete("/api/stores/<int:sid>")
+    def delete_store(sid):
+        with Session() as s:
+            st = s.get(Store, sid)
+            if not st: return jsonify({"error":"not found"}), 404
+            s.delete(st); s.commit()
+            return jsonify({"ok": True})
+
+    # --- DELETE CONNECTION ---
+    @app.delete("/api/connections/<int:cid>")
+    def delete_connection(cid):
+        with Session() as s:
+            c = s.get(Connection, cid)
+            if not c: return jsonify({"error":"not found"}), 404
+            s.delete(c); s.commit()
+            return jsonify({"ok": True})
+    
+
     return app
 
 if __name__ == "__main__":

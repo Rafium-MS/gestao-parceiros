@@ -381,9 +381,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const partnersTableBody = document.getElementById('partnersTableBody');
     const emptyMessage = document.getElementById('emptyMessage');
 
+    let editingId = null;
+
     async function fetchPartners() {
         const res = await fetch('/api/partners');
         return await res.json();
+    }
+
+    function pref(id){ return document.getElementById(id); }
+
+    function fillForm(p){
+        pref('cidade').value = p.cidade||'';
+        pref('estado').value = p.estado||'';
+        pref('parceiro').value = p.parceiro||'';
+        pref('distribuidora').value = p.distribuidora||'';
+        pref('cnpj_cpf').value = p.cnpj_cpf||'';
+        pref('telefone').value = p.telefone||'';
+        pref('email').value = p.email||'';
+        pref('cx_copo').value = p.cx_copo||0;
+        pref('dez_litros').value = p.dez_litros||0;
+        pref('vinte_litros').value = p.vinte_litros||0;
+        pref('mil_quinhentos_ml').value = p.mil_quinhentos_ml||0;
+        pref('vasilhame').value = p.vasilhame||0;
     }
 
     function renderRows(list) {
@@ -395,6 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         emptyMessage.style.display = 'none';
         list.forEach(p => {
             const tr = document.createElement('tr');
+            const total = (Number(p.cx_copo||0)+Number(p.dez_litros||0)+Number(p.vinte_litros||0)+Number(p.mil_quinhentos_ml||0)).toFixed(2);
             tr.innerHTML = `
                 <td>${p.cidade || ''}</td>
                 <td>${p.estado || ''}</td>
@@ -403,8 +423,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${p.cnpj_cpf || ''}</td>
                 <td>${p.telefone || ''}</td>
                 <td>${p.email || ''}</td>
-                <td>${(Number(p.cx_copo||0)+Number(p.dez_litros||0)+Number(p.vinte_litros||0)+Number(p.mil_quinhentos_ml||0)).toFixed(2)}</td>
+                <td>${total}</td>
+                <td>
+                    <button class="btn-edit" data-id="${p.id}">Editar</button>
+                    <button class="btn-delete" data-id="${p.id}">Excluir</button>
+                </td>
             `;
+            tr.querySelector('.btn-edit').addEventListener('click', ()=>{
+                editingId = p.id;
+                fillForm(p);
+                document.querySelector('#partnerForm .btn-submit').textContent = 'Atualizar Parceiro';
+                window.scrollTo({top:0, behavior:'smooth'});
+            });
+            tr.querySelector('.btn-delete').addEventListener('click', async ()=>{
+                if(!confirm('Excluir este parceiro?')) return;
+                const r = await fetch(`/api/partners/${p.id}`, { method:'DELETE' });
+                if(!r.ok){ alert('Erro ao excluir.'); return; }
+                renderRows(await fetchPartners());
+            });
             partnersTableBody.appendChild(tr);
         });
     }
@@ -413,34 +449,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        const formData = new FormData(form);
-        // Map fields expected by API
+        const fd = new FormData(form);
         const payload = {
-            cidade: formData.get('cidade') || '',
-            estado: formData.get('estado') || '',
-            parceiro: formData.get('parceiro') || '',
-            distribuidora: formData.get('distribuidora') || '',
-            cnpj_cpf: formData.get('cnpj_cpf') || '',
-            telefone: formData.get('telefone') || '',
-            email: formData.get('email') || '',
-            cx_copo: Number(formData.get('cx_copo') || 0),
-            dez_litros: Number(formData.get('dez_litros') || 0),
-            vinte_litros: Number(formData.get('vinte_litros') || 0),
-            mil_quinhentos_ml: Number(formData.get('mil_quinhentos_ml') || 0),
-            vasilhame: Number(formData.get('vasilhame') || 0),
+            cidade: fd.get('cidade') || '',
+            estado: fd.get('estado') || '',
+            parceiro: fd.get('parceiro') || '',
+            distribuidora: fd.get('distribuidora') || '',
+            cnpj_cpf: fd.get('cnpj_cpf') || '',
+            telefone: fd.get('telefone') || '',
+            email: fd.get('email') || '',
+            cx_copo: Number(fd.get('cx_copo') || 0),
+            dez_litros: Number(fd.get('dez_litros') || 0),
+            vinte_litros: Number(fd.get('vinte_litros') || 0),
+            mil_quinhentos_ml: Number(fd.get('mil_quinhentos_ml') || 0),
+            vasilhame: Number(fd.get('vasilhame') || 0),
         };
-        const res = await fetch('/api/partners', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-            alert('Erro ao cadastrar parceiro.');
-            return;
+        let res;
+        if (editingId){
+            res = await fetch(`/api/partners/${editingId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        } else {
+            res = await fetch('/api/partners', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
         }
-        alert('Parceiro cadastrado com sucesso!');
+        if (!res.ok) { alert('Erro ao salvar parceiro.'); return; }
+        alert('Parceiro salvo com sucesso!');
         form.reset();
+        editingId = null;
+        document.querySelector('#partnerForm .btn-submit').textContent = 'Cadastrar Parceiro';
         renderRows(await fetchPartners());
+    });
+
+    form.addEventListener('reset', ()=>{
+        editingId = null;
+        document.querySelector('#partnerForm .btn-submit').textContent = 'Cadastrar Parceiro';
     });
 });
 
