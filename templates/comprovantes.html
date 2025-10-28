@@ -569,338 +569,186 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elementos da interface
-            const steps = document.querySelectorAll('.step');
-            const stepContents = document.querySelectorAll('.step-content');
-            const progressBar = document.getElementById('progressBar');
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-            const browseFilesBtn = document.getElementById('browseFiles');
-            const previewContainer = document.getElementById('previewContainer');
-            const verificationResults = document.getElementById('verificationResults');
-            const marcaSelect = document.getElementById('marca');
-            
-            // Botões de navegação
-            const toStep2Btn = document.getElementById('toStep2');
-            const toStep1From2Btn = document.getElementById('toStep1');
-            const toStep3Btn = document.getElementById('toStep3');
-            const toStep2From3Btn = document.getElementById('toStep2');
-            const startImportBtn = document.getElementById('startImport');
-            const toStep1From4Btn = document.getElementById('toStep1');
-            const viewImagesBtn = document.getElementById('viewImages');
-            
-            // Elementos de resumo
-            const summaryCount = document.getElementById('summaryCount');
-            const summarySize = document.getElementById('summarySize');
-            const summaryBrand = document.getElementById('summaryBrand');
-            const importedCount = document.getElementById('importedCount');
-            const errorCount = document.getElementById('errorCount');
-            const processingTime = document.getElementById('processingTime');
-            
-            // Mensagens de alerta
-            const successMessage = document.getElementById('successMessage');
-            const errorMessage = document.getElementById('errorMessage');
-            
-            // Estado da aplicação
-            let currentStep = 1;
-            let selectedFiles = [];
-            let importResults = {
-                success: 0,
-                errors: 0
-            };
-            
-            // Carregar marcas do localStorage
-            loadBrands();
-            
-            // Função para carregar as marcas do localStorage
-            function loadBrands() {
-                const brands = JSON.parse(localStorage.getItem('brands')) || [];
-                marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
-                
-                brands.forEach((brand, index) => {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = brand.marca;
-                    marcaSelect.appendChild(option);
-                });
-            }
-            
-            // Configurar eventos de upload
-            browseFilesBtn.addEventListener('click', () => fileInput.click());
-            
-            fileInput.addEventListener('change', handleFileSelect);
-            
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('dragover');
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                
-                if (e.dataTransfer.files.length) {
-                    handleFiles(e.dataTransfer.files);
-                }
-            });
-            
-            // Função para lidar com a seleção de arquivos
-            function handleFileSelect(e) {
-                handleFiles(e.target.files);
-                fileInput.value = ''; // Reset para permitir selecionar os mesmos arquivos novamente
-            }
-            
-            // Função para processar os arquivos selecionados
-            function handleFiles(files) {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    
-                    // Verificar se é uma imagem
-                    if (!file.type.match('image.*')) {
-                        alert(`O arquivo "${file.name}" não é uma imagem. Apenas arquivos de imagem são permitidos.`);
-                        continue;
-                    }
-                    
-                    // Verificar se o arquivo já foi selecionado
-                    if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                        continue;
-                    }
-                    
-                    selectedFiles.push(file);
-                    createPreview(file);
-                }
-                
-                updateSummary();
-            }
-            
-            // Função para criar pré-visualização de imagem
-            function createPreview(file) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'preview-item';
-                    
-                    const fileSize = (file.size / (1024 * 1024)).toFixed(2);
-                    
-                    previewItem.innerHTML = `
-                        <img src="${e.target.result}" class="preview-image" alt="${file.name}">
-                        <div class="preview-info">
-                            <div class="preview-name">${file.name}</div>
-                            <div class="preview-size">${fileSize} MB</div>
-                        </div>
-                        <button class="preview-remove" data-filename="${file.name}">×</button>
-                    `;
-                    
-                    previewContainer.appendChild(previewItem);
-                    
-                    // Adicionar evento para remover a imagem
-                    const removeBtn = previewItem.querySelector('.preview-remove');
-                    removeBtn.addEventListener('click', function() {
-                        const filename = this.getAttribute('data-filename');
-                        selectedFiles = selectedFiles.filter(f => f.name !== filename);
-                        previewContainer.removeChild(previewItem);
-                        updateSummary();
-                    });
-                };
-                
-                reader.readAsDataURL(file);
-            }
-            
-            // Função para atualizar o resumo
-            function updateSummary() {
-                const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
-                const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-                
-                summaryCount.textContent = selectedFiles.length;
-                summarySize.textContent = `${totalSizeMB} MB`;
-                
-                const selectedBrandIndex = marcaSelect.value;
-                if (selectedBrandIndex) {
-                    const brands = JSON.parse(localStorage.getItem('brands')) || [];
-                    summaryBrand.textContent = brands[selectedBrandIndex].marca;
-                } else {
-                    summaryBrand.textContent = 'Nenhuma';
-                }
-            }
-            
-            // Função para verificar as imagens
-            function verifyImages() {
-                verificationResults.innerHTML = '';
-                
-                if (selectedFiles.length === 0) {
-                    verificationResults.innerHTML = '<p>Nenhuma imagem selecionada para verificação.</p>';
-                    return false;
-                }
-                
-                let allValid = true;
-                
-                selectedFiles.forEach(file => {
-                    const verificationItem = document.createElement('div');
-                    verificationItem.className = 'verification-item';
-                    
-                    // Verificações
-                    const maxSize = 10 * 1024 * 1024; // 10MB
-                    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                    
-                    let icon = '✅';
-                    let message = `${file.name} - OK`;
-                    let status = 'success';
-                    
-                    // Verificar tipo de arquivo
-                    if (!validTypes.includes(file.type)) {
-                        icon = '❌';
-                        message = `${file.name} - Tipo de arquivo não suportado`;
-                        status = 'error';
-                        allValid = false;
-                    }
-                    // Verificar tamanho do arquivo
-                    else if (file.size > maxSize) {
-                        icon = '⚠️';
-                        message = `${file.name} - Arquivo muito grande (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
-                        status = 'warning';
-                    }
-                    
-                    verificationItem.innerHTML = `
-                        <span class="verification-icon">${icon}</span>
-                        <span class="verification-${status}">${message}</span>
-                    `;
-                    
-                    verificationResults.appendChild(verificationItem);
-                });
-                
-                return allValid;
-            }
-            
-            // Função para simular a importação
-            function simulateImport() {
-                return new Promise((resolve) => {
-                    const startTime = new Date();
-                    
-                    // Simular processamento
-                    setTimeout(() => {
-                        const endTime = new Date();
-                        const processingTimeMs = endTime - startTime;
-                        
-                        // Simular resultados (90% de sucesso)
-                        importResults.success = Math.floor(selectedFiles.length * 0.9);
-                        importResults.errors = selectedFiles.length - importResults.success;
-                        
-                        resolve({
-                            success: importResults.success,
-                            errors: importResults.errors,
-                            processingTime: processingTimeMs / 1000
-                        });
-                    }, 2000);
-                });
-            }
-            
-            // Função para navegar entre as etapas
-            function goToStep(step) {
-                // Validar transições
-                if (step === 2 && selectedFiles.length === 0) {
-                    alert('Por favor, selecione pelo menos uma imagem antes de continuar.');
-                    return;
-                }
-                
-                if (step === 2 && !marcaSelect.value) {
-                    alert('Por favor, selecione uma marca antes de continuar.');
-                    return;
-                }
-                
-                if (step === 3) {
-                    const allValid = verifyImages();
-                    if (!allValid) {
-                        alert('Algumas imagens não passaram na verificação. Por favor, corrija os problemas antes de continuar.');
-                        return;
-                    }
-                }
-                
-                if (step === 4) {
-                    // Iniciar importação
-                    startImportBtn.disabled = true;
-                    startImportBtn.textContent = 'Importando...';
-                    
-                    simulateImport().then(results => {
-                        // Atualizar resultados
-                        importedCount.textContent = results.success;
-                        errorCount.textContent = results.errors;
-                        processingTime.textContent = `${results.processingTime.toFixed(2)} segundos`;
-                        
-                        // Mostrar mensagem apropriada
-                        if (results.errors === 0) {
-                            successMessage.classList.remove('hidden');
-                            errorMessage.classList.add('hidden');
-                        } else {
-                            successMessage.classList.add('hidden');
-                            errorMessage.classList.remove('hidden');
-                        }
-                        
-                        // Atualizar interface
-                        startImportBtn.disabled = false;
-                        startImportBtn.textContent = 'Iniciar Importação';
-                    });
-                }
-                
-                // Atualizar a etapa atual
-                currentStep = step;
-                
-                // Atualizar a barra de progresso
-                const progressPercentage = ((step - 1) / (steps.length - 1)) * 100;
-                progressBar.style.width = `${progressPercentage}%`;
-                
-                // Atualizar os passos
-                steps.forEach((s, index) => {
-                    if (index + 1 < step) {
-                        s.classList.remove('active');
-                        s.classList.add('completed');
-                    } else if (index + 1 === step) {
-                        s.classList.add('active');
-                        s.classList.remove('completed');
-                    } else {
-                        s.classList.remove('active', 'completed');
-                    }
-                });
-                
-                // Atualizar o conteúdo das etapas
-                stepContents.forEach((content, index) => {
-                    if (index + 1 === step) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
-                });
-                
-                // Rolar para o topo
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-            
-            // Configurar eventos de navegação
-            toStep2Btn.addEventListener('click', () => goToStep(2));
-            toStep1From2Btn.addEventListener('click', () => goToStep(1));
-            toStep3Btn.addEventListener('click', () => goToStep(3));
-            toStep2From3Btn.addEventListener('click', () => goToStep(2));
-            startImportBtn.addEventListener('click', () => goToStep(4));
-            toStep1From4Btn.addEventListener('click', () => {
-                // Resetar para nova importação
-                selectedFiles = [];
-                previewContainer.innerHTML = '';
-                updateSummary();
-                goToStep(1);
-            });
-            
-            viewImagesBtn.addEventListener('click', () => {
-                alert('Funcionalidade de visualização de imagens seria implementada aqui.');
-            });
-            
-            // Atualizar o resumo quando a marca for alterada
-            marcaSelect.addEventListener('change', updateSummary);
+
+document.addEventListener('DOMContentLoaded', function() {
+    const steps = document.querySelectorAll('.step');
+    const stepContents = document.querySelectorAll('.step-content');
+    const progressBar = document.getElementById('progressBar');
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const browseFilesBtn = document.getElementById('browseFiles');
+    const previewContainer = document.getElementById('previewContainer');
+    const verificationResults = document.getElementById('verificationResults');
+    const marcaSelect = document.getElementById('marca');
+
+    const toStep2Btn = document.getElementById('toStep2');
+    const toStep1From2Btn = document.getElementById('toStep1');
+    const toStep3Btn = document.getElementById('toStep3');
+    const toStep2From3Btn = document.getElementById('toStep2');
+    const startImportBtn = document.getElementById('startImport');
+    const toStep1From4Btn = document.getElementById('toStep1');
+    const viewImagesBtn = document.getElementById('viewImages');
+
+    const summaryCount = document.getElementById('summaryCount');
+    const summarySize = document.getElementById('summarySize');
+    const summaryBrand = document.getElementById('summaryBrand');
+    const importedCount = document.getElementById('importedCount');
+    const errorCount = document.getElementById('errorCount');
+    const processingTime = document.getElementById('processingTime');
+
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+
+    let currentStep = 1;
+    let selectedFiles = [];
+    let brands = [];
+
+    async function loadBrands(){
+        brands = await (await fetch('/api/brands')).json();
+        marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
+        brands.forEach(b => {
+            const o = document.createElement('option');
+            o.value = b.id;
+            o.textContent = b.marca;
+            marcaSelect.appendChild(o);
         });
-    </script>
+    }
+
+    function goToStep(step){
+        currentStep = step;
+        const progressPercentage = ((step - 1) / (steps.length - 1)) * 100;
+        progressBar.style.width = `${progressPercentage}%`;
+        steps.forEach((s, idx) => {
+            if (idx+1 < step){ s.classList.add('completed'); s.classList.remove('active'); }
+            else if (idx+1 === step){ s.classList.add('active'); s.classList.remove('completed'); }
+            else { s.classList.remove('active','completed'); }
+        });
+        stepContents.forEach((c, idx)=>{
+            c.classList.toggle('active', idx+1===step);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Upload UI
+    browseFilesBtn.addEventListener('click', ()=>fileInput.click());
+    fileInput.addEventListener('change', (e)=>{ handleFiles(e.target.files); fileInput.value=''; });
+    uploadArea.addEventListener('dragover', (e)=>{ e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', ()=> uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e)=>{
+        e.preventDefault(); uploadArea.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files){
+        for (let i=0; i<files.length; i++){
+            const f = files[i];
+            if (!f.type.match('image.*')){ alert(`"${f.name}" não é imagem.`); continue; }
+            if (selectedFiles.some(x=>x.name===f.name && x.size===f.size)) continue;
+            selectedFiles.push(f);
+            createPreview(f);
+        }
+        updateSummary();
+    }
+
+    function createPreview(file){
+        const reader = new FileReader();
+        reader.onload = (e)=>{
+            const div = document.createElement('div');
+            div.className='preview-item';
+            const sizeMB = (file.size/(1024*1024)).toFixed(2);
+            div.innerHTML = `
+                <img src="${e.target.result}" class="preview-image" alt="${file.name}">
+                <div class="preview-info">
+                    <div class="preview-name">${file.name}</div>
+                    <div class="preview-size">${sizeMB} MB</div>
+                </div>
+                <button class="preview-remove" data-fn="${file.name}">×</button>`;
+            div.querySelector('.preview-remove').addEventListener('click', ()=>{
+                selectedFiles = selectedFiles.filter(x=>x.name!==file.name);
+                previewContainer.removeChild(div);
+                updateSummary();
+            });
+            previewContainer.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function updateSummary(){
+        const totalSize = selectedFiles.reduce((a,f)=>a+f.size,0);
+        summaryCount.textContent = selectedFiles.length;
+        summarySize.textContent = (totalSize/(1024*1024)).toFixed(2)+' MB';
+        const idx = marcaSelect.value;
+        const b = brands.find(x=> String(x.id)===String(idx));
+        summaryBrand.textContent = b ? b.marca : 'Nenhuma';
+    }
+
+    function verifyImages(){
+        verificationResults.innerHTML='';
+        if (selectedFiles.length===0){ verificationResults.innerHTML='<p>Nenhuma imagem selecionada.</p>'; return false; }
+        const validTypes = ['image/jpeg','image/png','image/gif','image/webp'];
+        let allValid = true;
+        selectedFiles.forEach(f=>{
+            let icon='✅', status='success', msg=`${f.name} - OK`;
+            if (!validTypes.includes(f.type)){ icon='❌'; status='error'; msg=`${f.name} - Tipo não suportado`; allValid=false; }
+            else if (f.size > 10*1024*1024){ icon='⚠️'; status='warning'; msg=`${f.name} - Arquivo grande ${(f.size/(1024*1024)).toFixed(2)}MB`; }
+            const row = document.createElement('div');
+            row.className='verification-item';
+            row.innerHTML = `<span class="verification-icon">${icon}</span><span class="verification-${status}">${msg}</span>`;
+            verificationResults.appendChild(row);
+        });
+        return allValid;
+    }
+
+    async function performUpload(){
+        const t0 = performance.now();
+        let ok=0, err=0;
+        const fd = new FormData();
+        const brandId = marcaSelect.value;
+        if (!brandId){ alert('Selecione uma marca antes.'); return {ok:0,err:selectedFiles.length,dur:0}; }
+        fd.append('brand_id', brandId);
+        selectedFiles.forEach(f => fd.append('files', f));
+        const res = await fetch('/api/upload', { method:'POST', body: fd });
+        if (res.ok){
+            const data = await res.json();
+            ok = Array.isArray(data.saved) ? data.saved.length : 0;
+            err = Math.max(0, selectedFiles.length - ok);
+        } else {
+            err = selectedFiles.length;
+        }
+        const dur = (performance.now()-t0)/1000;
+        return {ok, err, dur};
+    }
+
+    // Navigation rules
+    toStep2Btn.addEventListener('click', ()=>{
+        if (!marcaSelect.value){ alert('Selecione uma marca.'); return; }
+        if (selectedFiles.length===0){ alert('Selecione ao menos uma imagem.'); return; }
+        goToStep(2);
+    });
+    toStep1From2Btn.addEventListener('click', ()=>goToStep(1));
+    toStep3Btn.addEventListener('click', ()=>{
+        if (!verifyImages()){ alert('Corrija os problemas antes de continuar.'); return; }
+        goToStep(3);
+    });
+    toStep2From3Btn.addEventListener('click', ()=>goToStep(2));
+    startImportBtn.addEventListener('click', async ()=>{
+        startImportBtn.disabled=true; startImportBtn.textContent='Importando...';
+        const results = await performUpload();
+        importedCount.textContent = results.ok;
+        errorCount.textContent = results.err;
+        processingTime.textContent = results.dur.toFixed(2) + ' segundos';
+        successMessage.classList.toggle('hidden', results.err>0);
+        errorMessage.classList.toggle('hidden', results.err===0);
+        startImportBtn.disabled=false; startImportBtn.textContent='Iniciar Importação';
+        goToStep(4);
+    });
+    toStep1From4Btn.addEventListener('click', ()=>{ selectedFiles=[]; previewContainer.innerHTML=''; updateSummary(); goToStep(1); });
+    viewImagesBtn.addEventListener('click', ()=>{ window.open('/uploads/','_blank'); });
+
+    marcaSelect.addEventListener('change', updateSummary);
+    loadBrands().then(()=>goToStep(1));
+});
+
+</script>
 </body>
 </html>

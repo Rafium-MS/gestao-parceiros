@@ -375,106 +375,75 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('partnerForm');
-            const partnersTableBody = document.getElementById('partnersTableBody');
-            const emptyMessage = document.getElementById('emptyMessage');
-            const totalDisplay = document.getElementById('total-volume');
-            
-            // Array para armazenar os parceiros
-            let partners = JSON.parse(localStorage.getItem('partners')) || [];
-            
-            // Atualizar a tabela ao carregar a página
-            updatePartnersTable();
-            
-            // Calcular o total quando os valores dos volumes mudam
-            const volumeInputs = document.querySelectorAll('.volumes-section input[type="number"]');
-            volumeInputs.forEach(input => {
-                input.addEventListener('input', calculateTotal);
-            });
-            
-            // Calcular o total inicial
-            calculateTotal();
-            
-            // Função para calcular o total dos volumes
-            function calculateTotal() {
-                const cxCopo = parseInt(document.getElementById('cx_copo').value) || 0;
-                const dezLitros = parseInt(document.getElementById('dez_litros').value) || 0;
-                const vinteLitros = parseInt(document.getElementById('vinte_litros').value) || 0;
-                const milQuinhentosMl = parseInt(document.getElementById('mil_quinhentos_ml').value) || 0;
-                
-                const total = cxCopo + dezLitros + vinteLitros + milQuinhentosMl;
-                totalDisplay.textContent = total;
-            }
-            
-            // Função para atualizar a tabela de parceiros
-            function updatePartnersTable() {
-                partnersTableBody.innerHTML = '';
-                
-                if (partners.length === 0) {
-                    emptyMessage.style.display = 'block';
-                    return;
-                }
-                
-                emptyMessage.style.display = 'none';
-                
-                partners.forEach((partner, index) => {
-                    const row = document.createElement('tr');
-                    
-                    row.innerHTML = `
-                        <td>${partner.cidade}</td>
-                        <td>${partner.estado}</td>
-                        <td>${partner.parceiro}</td>
-                        <td>${partner.distribuidora}</td>
-                        <td>${partner.cnpj_cpf}</td>
-                        <td>${partner.telefone}</td>
-                        <td>${partner.email}</td>
-                        <td>${partner.total}</td>
-                    `;
-                    
-                    partnersTableBody.appendChild(row);
-                });
-            }
-            
-            // Evento de envio do formulário
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Coletar dados do formulário
-                const formData = new FormData(form);
-                const partnerData = {};
-                
-                for (let [key, value] of formData.entries()) {
-                    partnerData[key] = value;
-                }
-                
-                // Calcular o total
-                const cxCopo = parseInt(partnerData.cx_copo) || 0;
-                const dezLitros = parseInt(partnerData.dez_litros) || 0;
-                const vinteLitros = parseInt(partnerData.vinte_litros) || 0;
-                const milQuinhentosMl = parseInt(partnerData.mil_quinhentos_ml) || 0;
-                
-                partnerData.total = cxCopo + dezLitros + vinteLitros + milQuinhentosMl;
-                
-                // Adicionar o parceiro ao array
-                partners.push(partnerData);
-                
-                // Salvar no localStorage
-                localStorage.setItem('partners', JSON.stringify(partners));
-                
-                // Atualizar a tabela
-                updatePartnersTable();
-                
-                // Limpar o formulário
-                form.reset();
-                
-                // Recalcular o total
-                calculateTotal();
-                
-                // Exibir mensagem de sucesso
-                alert('Parceiro cadastrado com sucesso!');
-            });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('partnerForm');
+    const partnersTableBody = document.getElementById('partnersTableBody');
+    const emptyMessage = document.getElementById('emptyMessage');
+
+    async function fetchPartners() {
+        const res = await fetch('/api/partners');
+        return await res.json();
+    }
+
+    function renderRows(list) {
+        partnersTableBody.innerHTML = '';
+        if (!list || list.length === 0) {
+            emptyMessage.style.display = 'block';
+            return;
+        }
+        emptyMessage.style.display = 'none';
+        list.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.cidade || ''}</td>
+                <td>${p.estado || ''}</td>
+                <td>${p.parceiro || ''}</td>
+                <td>${p.distribuidora || ''}</td>
+                <td>${p.cnpj_cpf || ''}</td>
+                <td>${p.telefone || ''}</td>
+                <td>${p.email || ''}</td>
+                <td>${(Number(p.cx_copo||0)+Number(p.dez_litros||0)+Number(p.vinte_litros||0)+Number(p.mil_quinhentos_ml||0)).toFixed(2)}</td>
+            `;
+            partnersTableBody.appendChild(tr);
         });
-    </script>
+    }
+
+    (async () => { renderRows(await fetchPartners()); })();
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        // Map fields expected by API
+        const payload = {
+            cidade: formData.get('cidade') || '',
+            estado: formData.get('estado') || '',
+            parceiro: formData.get('parceiro') || '',
+            distribuidora: formData.get('distribuidora') || '',
+            cnpj_cpf: formData.get('cnpj_cpf') || '',
+            telefone: formData.get('telefone') || '',
+            email: formData.get('email') || '',
+            cx_copo: Number(formData.get('cx_copo') || 0),
+            dez_litros: Number(formData.get('dez_litros') || 0),
+            vinte_litros: Number(formData.get('vinte_litros') || 0),
+            mil_quinhentos_ml: Number(formData.get('mil_quinhentos_ml') || 0),
+            vasilhame: Number(formData.get('vasilhame') || 0),
+        };
+        const res = await fetch('/api/partners', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            alert('Erro ao cadastrar parceiro.');
+            return;
+        }
+        alert('Parceiro cadastrado com sucesso!');
+        form.reset();
+        renderRows(await fetchPartners());
+    });
+});
+
+</script>
 </body>
 </html>
