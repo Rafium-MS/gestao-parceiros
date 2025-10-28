@@ -50,10 +50,14 @@ Aplicação web desenvolvida em Flask para gerenciar parceiros, marcas, lojas e 
    ```
 3. Acesse `http://localhost:5000` no navegador. O login padrão é `admin` / `admin` (gerado automaticamente se o banco estiver vazio). Altere a senha em "Minha conta" na primeira utilização.
 
+### Diretórios gerados automaticamente
+- `exports/`: criado na raiz do projeto durante a importação de `config.settings`. Certifique-se de que o usuário do processo possui permissão de escrita, pois os arquivos exportados são gravados nesse local.
+
 ## Estrutura principal do projeto
 ```
 .
 ├── app.py           # Ponto de entrada Flask com rotas, autenticação e configuração do banco
+├── config/          # Configurações globais do projeto (ex.: diretórios de exportação)
 ├── models.py        # Definição das tabelas SQLAlchemy e classes de domínio
 ├── templates/       # Templates HTML da interface web
 ├── static/          # Arquivos estáticos (CSS, JS, imagens)
