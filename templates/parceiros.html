@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cadastro de Parceiros</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .form-group {
+            flex: 1 0 200px;
+            margin: 0 10px 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background-color: #c0392b;
+        }
+
+        .partners-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .list-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .volumes-section .form-group {
+            flex: 1 0 150px;
+        }
+
+        .total-display {
+            background-color: #ecf0f1;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                flex: 1 0 100%;
+            }
+            
+            .volumes-section .form-group {
+                flex: 1 0 calc(50% - 20px);
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav>
+  <a href="/">Início</a>
+  <a href="/parceiros">Parceiros</a>
+  <a href="/lojas">Lojas</a>
+  <a href="/conectar">Conectar</a>
+  <a href="/comprovantes">Comprovantes</a>
+  <a href="/relatorios">Relatórios</a>
+</nav>
+    <div class="container">
+        <header>
+            <h1>Cadastro de Parceiros</h1>
+            <p>Sistema para cadastro e gerenciamento de parceiros comerciais</p>
+        </header>
+
+        <div class="form-container">
+            <form id="partnerForm">
+                <div class="form-section">
+                    <h2 class="section-title">Informações do Parceiro</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cidade">CIDADE</label>
+                            <input type="text" id="cidade" name="cidade" required>
+							 <input type="text" id="cidade" name="cidade">
+
+                        </div>
+                        <div class="form-group">
+                            <label for="estado">ESTADO</label>
+                            <select id="estado" name="estado" required>
+                                <option value="">Selecione</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Ceará</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espírito Santo</option>
+                                <option value="GO">Goiás</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Pará</option>
+                                <option value="PB">Paraíba</option>
+                                <option value="PR">Paraná</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piauí</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="parceiro">PARCEIRO</label>
+                            <input type="text" id="parceiro" name="parceiro" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="distribuidora">DISTRIBUIDORA</label>
+                            <input type="text" id="distribuidora" name="distribuidora">
+                        </div>
+                        <div class="form-group">
+                            <label for="cnpj_cpf">CNPJ/CPF</label>
+                            <input type="text" id="cnpj_cpf" name="cnpj_cpf" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">TELEFONE</label>
+                            <input type="tel" id="telefone" name="telefone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">EMAIL</label>
+                            <input type="email" id="email" name="email">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">Informações Financeiras</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dia_pagamento">DIA PAGTO.</label>
+                            <input type="number" id="dia_pagamento" name="dia_pagamento" min="1" max="31">
+                        </div>
+                        <div class="form-group">
+                            <label for="banco">BANCO</label>
+                            <input type="text" id="banco" name="banco">
+                        </div>
+                        <div class="form-group">
+                            <label for="agencia_conta">AGÊNCIA E CONTA</label>
+                            <input type="text" id="agencia_conta" name="agencia_conta">
+                        </div>
+                        <div class="form-group">
+                            <label for="pix">PIX</label>
+                            <input type="text" id="pix" name="pix">
+                        </div>
+                    </div>
+                </div>
+			<!--deve ser informado os valores dos produtos -->
+                <div class="form-section prices-section">
+                    <h2 class="section-title">Valores dos Produtos</h2> 
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cx_copo">VALOR CX COPO</label>
+                            <input type="number" id="cx_copo" name="cx_copo" min="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="dez_litros">VALOR 10 LITROS<</label>
+                            <input type="number" id="dez_litros" name="dez_litros" min="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="vinte_litros">VALOR20 LITROS</label>
+                            <input type="number" id="vinte_litros" name="vinte_litros" min="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="mil_quinhentos_ml">VALOR 1500 ML</label>
+                            <input type="number" id="mil_quinhentos_ml" name="mil_quinhentos_ml" min="0.01" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="vasilhame">VALOR VASILHAME</label>
+                            <input type="number" id="vasilhame" name="vasilhame" min="0.01" value="0">
+                        </div>
+
+                    </div>
+                    <div class="total-display">
+                        TOTAL: <span id="total-prices">0</span>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button type="submit" class="btn-submit">Cadastrar Parceiro</button>
+                    <button type="reset" class="btn-reset">Limpar Formulário</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="partners-list">
+            <div class="list-header">
+                Parceiros Cadastrados
+            </div>
+            <table id="partnersTable">
+                <thead>
+                    <tr>
+                        <th>CIDADE</th>
+                        <th>ESTADO</th>
+                        <th>PARCEIRO</th>
+                        <th>DISTRIBUIDORA</th>
+                        <th>CNPJ/CPF</th>
+                        <th>TELEFONE</th>
+                        <th>EMAIL</th>
+                        <th>TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody id="partnersTableBody">
+                    <!-- Dados serão inseridos aqui via JavaScript -->
+                </tbody>
+            </table>
+            <div id="emptyMessage" class="empty-message">
+                Nenhum parceiro cadastrado ainda.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('partnerForm');
+            const partnersTableBody = document.getElementById('partnersTableBody');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const totalDisplay = document.getElementById('total-volume');
+            
+            // Array para armazenar os parceiros
+            let partners = JSON.parse(localStorage.getItem('partners')) || [];
+            
+            // Atualizar a tabela ao carregar a página
+            updatePartnersTable();
+            
+            // Calcular o total quando os valores dos volumes mudam
+            const volumeInputs = document.querySelectorAll('.volumes-section input[type="number"]');
+            volumeInputs.forEach(input => {
+                input.addEventListener('input', calculateTotal);
+            });
+            
+            // Calcular o total inicial
+            calculateTotal();
+            
+            // Função para calcular o total dos volumes
+            function calculateTotal() {
+                const cxCopo = parseInt(document.getElementById('cx_copo').value) || 0;
+                const dezLitros = parseInt(document.getElementById('dez_litros').value) || 0;
+                const vinteLitros = parseInt(document.getElementById('vinte_litros').value) || 0;
+                const milQuinhentosMl = parseInt(document.getElementById('mil_quinhentos_ml').value) || 0;
+                
+                const total = cxCopo + dezLitros + vinteLitros + milQuinhentosMl;
+                totalDisplay.textContent = total;
+            }
+            
+            // Função para atualizar a tabela de parceiros
+            function updatePartnersTable() {
+                partnersTableBody.innerHTML = '';
+                
+                if (partners.length === 0) {
+                    emptyMessage.style.display = 'block';
+                    return;
+                }
+                
+                emptyMessage.style.display = 'none';
+                
+                partners.forEach((partner, index) => {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${partner.cidade}</td>
+                        <td>${partner.estado}</td>
+                        <td>${partner.parceiro}</td>
+                        <td>${partner.distribuidora}</td>
+                        <td>${partner.cnpj_cpf}</td>
+                        <td>${partner.telefone}</td>
+                        <td>${partner.email}</td>
+                        <td>${partner.total}</td>
+                    `;
+                    
+                    partnersTableBody.appendChild(row);
+                });
+            }
+            
+            // Evento de envio do formulário
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Coletar dados do formulário
+                const formData = new FormData(form);
+                const partnerData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    partnerData[key] = value;
+                }
+                
+                // Calcular o total
+                const cxCopo = parseInt(partnerData.cx_copo) || 0;
+                const dezLitros = parseInt(partnerData.dez_litros) || 0;
+                const vinteLitros = parseInt(partnerData.vinte_litros) || 0;
+                const milQuinhentosMl = parseInt(partnerData.mil_quinhentos_ml) || 0;
+                
+                partnerData.total = cxCopo + dezLitros + vinteLitros + milQuinhentosMl;
+                
+                // Adicionar o parceiro ao array
+                partners.push(partnerData);
+                
+                // Salvar no localStorage
+                localStorage.setItem('partners', JSON.stringify(partners));
+                
+                // Atualizar a tabela
+                updatePartnersTable();
+                
+                // Limpar o formulário
+                form.reset();
+                
+                // Recalcular o total
+                calculateTotal();
+                
+                // Exibir mensagem de sucesso
+                alert('Parceiro cadastrado com sucesso!');
+            });
+        });
+    </script>
+</body>
+</html>

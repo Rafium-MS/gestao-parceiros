@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Marcas e Lojas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .form-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+
+        .form-group {
+            flex: 1 0 200px;
+            margin: 0 10px 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-reset {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background-color: #c0392b;
+        }
+
+        .brands-list {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .list-header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .prices-section .form-group {
+            flex: 1 0 180px;
+        }
+
+        .currency-input {
+            position: relative;
+        }
+
+        .currency-input::before {
+            content: "R$";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .currency-input input {
+            padding-left: 35px;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+
+        .brand-header {
+            background-color: #e8f4fc;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .brand-header:hover {
+            background-color: #d4e9f9;
+        }
+
+        .brand-details {
+            display: none;
+        }
+
+        .brand-expanded .brand-details {
+            display: table-row;
+        }
+
+        .brand-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .add-store-btn {
+            background-color: #9b59b6;
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-store-btn:hover {
+            background-color: #8e44ad;
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                flex: 1 0 100%;
+            }
+            
+            .prices-section .form-group {
+                flex: 1 0 calc(50% - 20px);
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .actions-cell {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<nav>
+  <a href="/">Início</a>
+  <a href="/parceiros">Parceiros</a>
+  <a href="/lojas">Lojas</a>
+  <a href="/conectar">Conectar</a>
+  <a href="/comprovantes">Comprovantes</a>
+  <a href="/relatorios">Relatórios</a>
+</nav>
+    <div class="container">
+        <header>
+            <h1>Cadastro de Marcas e Lojas</h1>
+            <p>Sistema para cadastro e gerenciamento de marcas e lojas parceiras</p>
+        </header>
+
+        <div class="form-container">
+            <h2 class="section-title">Cadastro de Marcas</h2>
+            <form id="brandForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="marca">NOME DA MARCA</label>
+                        <input type="text" id="marca" name="marca" required>
+                    </div>
+                </div>
+                	<!-- cadastrar marca poderia ser um modal -->	
+                <div class="btn-container">
+                    <button type="submit" class="btn-submit">Cadastrar Marca</button>
+                    <button type="reset" class="btn-reset">Limpar Formulário</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2 class="section-title">Cadastro de Lojas</h2>
+            <form id="storeForm">
+                <div class="form-section">
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="marca_id">MARCA</label>
+                            <select id="marca_id" name="marca_id" required>
+                                <option value="">Selecione uma marca</option>
+                                <!-- As opções serão preenchidas via JavaScript -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="loja">NOME DA LOJA</label>
+                            <input type="text" id="loja" name="loja" required>
+                        </div>
+                    </div>
+					                   <div class="form-group">
+                        <label for="cod_disagua">COD da Disagua</label>
+                        <input type="text" id="cod_disagua" name="cod_disagua">
+                    </div>
+                </div>
+					
+                <div class="form-section">
+                    <h2 class="section-title">Localização</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="local_entrega">LOCAL DA ENTREGA</label>
+                            <input type="text" id="local_entrega" name="local_entrega" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="endereco">ENDEREÇO</label>
+                            <input type="text" id="endereco" name="endereco">
+                        </div>
+                        <div class="form-group">
+                            <label for="municipio">MUNICIPIO</label>
+                            <input type="text" id="municipio" name="municipio" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="uf">UF</label>
+                            <select id="uf" name="uf" required>
+                                <option value="">Selecione</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Ceará</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espírito Santo</option>
+                                <option value="GO">Goiás</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Pará</option>
+                                <option value="PB">Paraíba</option>
+                                <option value="PR">Paraná</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piauí</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section prices-section">
+                    <h2 class="section-title">Valores dos Produtos</h2>
+                    <div class="form-row">
+                        <div class="form-group currency-input">
+                            <label for="valor_20l">VALOR 20 LITROS</label>
+                            <input type="number" id="valor_20l" name="valor_20l" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group currency-input">
+                            <label for="valor_10l">VALOR 10 LITROS</label>
+                            <input type="number" id="valor_10l" name="valor_10l" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group currency-input">
+                            <label for="valor_1500ml">VALOR 1500 ML</label>
+                            <input type="number" id="valor_1500ml" name="valor_1500ml" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group currency-input">
+                            <label for="valor_cx_copo">VALOR CX COPO</label>
+                            <input type="number" id="valor_cx_copo" name="valor_cx_copo" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="form-group currency-input">
+                            <label for="valor_vasilhame">VALOR VASILHAME</label>
+                            <input type="number" id="valor_vasilhame" name="valor_vasilhame" min="0" step="0.01" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-container">
+                    <button type="submit" class="btn-submit">Cadastrar Loja</button>
+                    <button type="reset" class="btn-reset">Limpar Formulário</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="brands-list">
+            <div class="list-header">
+                Marcas e Lojas Cadastradas
+            </div>
+            <table id="brandsTable">
+                <thead>
+                    <tr>
+                        <th>MARCA</th>
+                        <th>COD DISAGUA</th>
+                        <th>LOJAS</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="brandsTableBody">
+                    <!-- Dados serão inseridos aqui via JavaScript -->
+                </tbody>
+            </table>
+            <div id="emptyMessage" class="empty-message">
+                Nenhuma marca cadastrada ainda.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const brandForm = document.getElementById('brandForm');
+            const storeForm = document.getElementById('storeForm');
+            const brandsTableBody = document.getElementById('brandsTableBody');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const marcaSelect = document.getElementById('marca_id');
+            
+            // Arrays para armazenar as marcas e lojas
+            let brands = JSON.parse(localStorage.getItem('brands')) || [];
+            let stores = JSON.parse(localStorage.getItem('stores')) || [];
+            
+            // Variáveis para controlar a edição
+            let editingBrandIndex = -1;
+            let editingStoreIndex = -1;
+            
+            // Atualizar a tabela e o select ao carregar a página
+            updateBrandsTable();
+            updateBrandsSelect();
+            
+            // Função para atualizar o select de marcas
+            function updateBrandsSelect() {
+                marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
+                
+                brands.forEach((brand, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = brand.marca;
+                    marcaSelect.appendChild(option);
+                });
+            }
+            
+            // Função para atualizar a tabela de marcas e lojas
+            function updateBrandsTable() {
+                brandsTableBody.innerHTML = '';
+                
+                if (brands.length === 0) {
+                    emptyMessage.style.display = 'block';
+                    return;
+                }
+                
+                emptyMessage.style.display = 'none';
+                
+                brands.forEach((brand, brandIndex) => {
+                    // Filtrar lojas desta marca
+                    const brandStores = stores.filter(store => store.marca_id == brandIndex);
+                    
+                    // Linha da marca
+                    const brandRow = document.createElement('tr');
+                    brandRow.className = 'brand-header';
+                    brandRow.setAttribute('data-brand-index', brandIndex);
+                    
+                    brandRow.innerHTML = `
+                        <td class="brand-name">${brand.marca}</td>
+                        <td>${brand.cod_disagua}</td>
+                        <td>${brandStores.length} loja(s)</td>
+                        <td class="actions-cell">
+                            <button class="btn-edit" onclick="editBrand(${brandIndex})">Editar</button>
+                            <button class="btn-delete" onclick="deleteBrand(${brandIndex})">Excluir</button>
+                            <button class="add-store-btn" onclick="addStoreToBrand(${brandIndex})">+ Loja</button>
+                        </td>
+                    `;
+                    
+                    brandsTableBody.appendChild(brandRow);
+                    
+                    // Adicionar evento de clique para expandir/recolher
+                    brandRow.addEventListener('click', function(e) {
+                        // Não disparar se o clique foi em um botão
+                        if (e.target.tagName === 'BUTTON') return;
+                        
+                        this.classList.toggle('brand-expanded');
+                    });
+                    
+                    // Linha de detalhes (lojas da marca)
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.className = 'brand-details';
+                    
+                    if (brandStores.length === 0) {
+                        detailsRow.innerHTML = `
+                            <td colspan="4" style="text-align: center; color: #7f8c8d;">
+                                Nenhuma loja cadastrada para esta marca.
+                            </td>
+                        `;
+                    } else {
+                        let storesHTML = `
+                            <td colspan="4">
+                                <table style="width: 100%; background-color: #f9f9f9;">
+                                    <thead>
+                                        <tr>
+                                            <th>LOJA</th>
+                                            <th>LOCAL ENTREGA</th>
+                                            <th>ENDEREÇO</th>
+                                            <th>MUNICÍPIO</th>
+                                            <th>UF</th>
+                                            <th>VALOR 20L</th>
+                                            <th>VALOR 10L</th>
+                                            <th>VALOR 1500ML</th>
+                                            <th>VALOR CX COPO</th>
+                                            <th>VALOR VASILHAME</th>
+                                            <th>AÇÕES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        // Formatar valores monetários
+                        const formatCurrency = (value) => {
+                            return new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            }).format(value);
+                        };
+                        
+                        brandStores.forEach((store, storeIndex) => {
+                            storesHTML += `
+                                <tr>
+                                    <td>${store.loja}</td>
+                                    <td>${store.local_entrega}</td>
+                                    <td>${store.endereco}</td>
+                                    <td>${store.municipio}</td>
+                                    <td>${store.uf}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_20l))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_10l))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_1500ml))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_cx_copo))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_vasilhame))}</td>
+                                    <td class="actions-cell">
+                                        <button class="btn-edit" onclick="editStore(${brandIndex}, ${storeIndex})">Editar</button>
+                                        <button class="btn-delete" onclick="deleteStore(${brandIndex}, ${storeIndex})">Excluir</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        storesHTML += `
+                                    </tbody>
+                                </table>
+                            </td>
+                        `;
+                        
+                        detailsRow.innerHTML = storesHTML;
+                    }
+                    
+                    brandsTableBody.appendChild(detailsRow);
+                });
+            }
+            
+            // Função para preencher o formulário de marcas com dados para edição
+            window.editBrand = function(index) {
+                const brand = brands[index];
+                
+                // Preencher o formulário com os dados da marca
+                document.getElementById('marca').value = brand.marca;
+                document.getElementById('cod_disagua').value = brand.cod_disagua;
+                
+                // Alterar o texto do botão de submit
+                document.querySelector('#brandForm .btn-submit').textContent = 'Atualizar Marca';
+                
+                // Definir o índice que está sendo editado
+                editingBrandIndex = index;
+                
+                // Rolar para o topo do formulário
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            
+            // Função para preencher o formulário de lojas com dados para edição
+            window.editStore = function(brandIndex, storeIndex) {
+                // Encontrar a loja específica
+                const store = stores.find(store => store.marca_id == brandIndex && 
+                                                  stores.indexOf(store) === storeIndex);
+                
+                if (!store) return;
+                
+                // Preencher o formulário com os dados da loja
+                document.getElementById('marca_id').value = brandIndex;
+                document.getElementById('loja').value = store.loja;
+                document.getElementById('local_entrega').value = store.local_entrega;
+                document.getElementById('endereco').value = store.endereco;
+                document.getElementById('municipio').value = store.municipio;
+                document.getElementById('uf').value = store.uf;
+                document.getElementById('valor_20l').value = store.valor_20l;
+                document.getElementById('valor_10l').value = store.valor_10l;
+                document.getElementById('valor_1500ml').value = store.valor_1500ml;
+                document.getElementById('valor_cx_copo').value = store.valor_cx_copo;
+                document.getElementById('valor_vasilhame').value = store.valor_vasilhame;
+                
+                // Alterar o texto do botão de submit
+                document.querySelector('#storeForm .btn-submit').textContent = 'Atualizar Loja';
+                
+                // Definir o índice que está sendo editado
+                editingStoreIndex = storeIndex;
+                
+                // Rolar para o formulário de lojas
+                document.getElementById('storeForm').scrollIntoView({ behavior: 'smooth' });
+            };
+            
+            // Função para adicionar loja a uma marca específica
+            window.addStoreToBrand = function(brandIndex) {
+                document.getElementById('marca_id').value = brandIndex;
+                
+                // Rolar para o formulário de lojas
+                document.getElementById('storeForm').scrollIntoView({ behavior: 'smooth' });
+            };
+            
+            // Função para excluir uma marca
+            window.deleteBrand = function(index) {
+                if (confirm('Tem certeza que deseja excluir esta marca? Todas as lojas associadas também serão excluídas.')) {
+                    // Remover a marca
+                    brands.splice(index, 1);
+                    
+                    // Remover todas as lojas associadas a esta marca
+                    stores = stores.filter(store => store.marca_id != index);
+                    
+                    // Atualizar os índices das marcas nas lojas restantes
+                    stores.forEach(store => {
+                        if (store.marca_id > index) {
+                            store.marca_id--;
+                        }
+                    });
+                    
+                    localStorage.setItem('brands', JSON.stringify(brands));
+                    localStorage.setItem('stores', JSON.stringify(stores));
+                    updateBrandsTable();
+                    updateBrandsSelect();
+                    alert('Marca e lojas associadas excluídas com sucesso!');
+                }
+            };
+            
+            // Função para excluir uma loja
+            window.deleteStore = function(brandIndex, storeIndex) {
+                if (confirm('Tem certeza que deseja excluir esta loja?')) {
+                    // Encontrar o índice global da loja
+                    const globalStoreIndex = stores.findIndex(store => store.marca_id == brandIndex && 
+                                                                      stores.indexOf(store) === storeIndex);
+                    
+                    if (globalStoreIndex !== -1) {
+                        stores.splice(globalStoreIndex, 1);
+                        localStorage.setItem('stores', JSON.stringify(stores));
+                        updateBrandsTable();
+                        alert('Loja excluída com sucesso!');
+                    }
+                }
+            };
+            
+            // Evento de envio do formulário de marcas
+            brandForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Coletar dados do formulário
+                const formData = new FormData(brandForm);
+                const brandData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    brandData[key] = value;
+                }
+                
+                if (editingBrandIndex === -1) {
+                    // Adicionar nova marca
+                    brands.push(brandData);
+                    alert('Marca cadastrada com sucesso!');
+                } else {
+                    // Atualizar marca existente
+                    brands[editingBrandIndex] = brandData;
+                    alert('Marca atualizada com sucesso!');
+                    
+                    // Resetar o estado de edição
+                    editingBrandIndex = -1;
+                    document.querySelector('#brandForm .btn-submit').textContent = 'Cadastrar Marca';
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('brands', JSON.stringify(brands));
+                
+                // Atualizar a tabela e o select
+                updateBrandsTable();
+                updateBrandsSelect();
+                
+                // Limpar o formulário
+                brandForm.reset();
+            });
+            
+            // Evento de envio do formulário de lojas
+            storeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Coletar dados do formulário
+                const formData = new FormData(storeForm);
+                const storeData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    storeData[key] = value;
+                }
+                
+                // Converter marca_id para número
+                storeData.marca_id = parseInt(storeData.marca_id);
+                
+                if (editingStoreIndex === -1) {
+                    // Adicionar nova loja
+                    stores.push(storeData);
+                    alert('Loja cadastrada com sucesso!');
+                } else {
+                    // Encontrar o índice global da loja
+                    const globalStoreIndex = stores.findIndex(store => store.marca_id == storeData.marca_id && 
+                                                                      stores.indexOf(store) === editingStoreIndex);
+                    
+                    if (globalStoreIndex !== -1) {
+                        // Atualizar loja existente
+                        stores[globalStoreIndex] = storeData;
+                        alert('Loja atualizada com sucesso!');
+                    }
+                    
+                    // Resetar o estado de edição
+                    editingStoreIndex = -1;
+                    document.querySelector('#storeForm .btn-submit').textContent = 'Cadastrar Loja';
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('stores', JSON.stringify(stores));
+                
+                // Atualizar a tabela
+                updateBrandsTable();
+                
+                // Limpar o formulário
+                storeForm.reset();
+            });
+            
+            // Resetar os formulários quando os botões de limpar forem clicados
+            brandForm.addEventListener('reset', function() {
+                editingBrandIndex = -1;
+                document.querySelector('#brandForm .btn-submit').textContent = 'Cadastrar Marca';
+            });
+            
+            storeForm.addEventListener('reset', function() {
+                editingStoreIndex = -1;
+                document.querySelector('#storeForm .btn-submit').textContent = 'Cadastrar Loja';
+            });
+        });
+    </script>
+</body>
+</html>
