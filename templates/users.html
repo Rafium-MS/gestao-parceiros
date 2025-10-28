@@ -1,103 +1,157 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Usuários</title>
-<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f5f7fb;margin:0}nav{background:#111827;color:#fff;padding:12px 16px;display:flex;gap:12px}nav a{color:#fff;text-decoration:none;opacity:.9}nav a:hover{opacity:1}.wrap{max-width:1100px;margin:24px auto;padding:0 16px}.grid{display:grid;grid-template-columns:380px 1fr;gap:16px}.card{background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:16px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #e5e7eb}th{background:#f3f4f6}label{display:block;margin:8px 0 4px;font-weight:600}input,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px}button{padding:10px 14px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}.row{display:flex;gap:8px;align-items:center}.danger{background:#dc2626}.secondary{background:#6b7280}</style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuários</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body><nav><a href="/">Início</a><a href="/parceiros">Parceiros</a><a href="/lojas">Lojas</a><a href="/conectar">Conectar</a><a href="/comprovantes">Comprovantes</a><a href="/relatorios">Relatórios</a><span style="flex:1"></span><a href="/users">Usuários</a><a href="/account">Minha Conta</a><a href="/logout">Sair</a></nav>
-<div class="wrap"><h1>Usuários</h1><div class="grid">
-<div class="card"><h3>Novo usuário</h3><label>Usuário</label><input id="u-username" placeholder="jose.silva"><label>Senha</label><input id="u-password" type="password" placeholder="mín. 6 caracteres"><label>Papel</label><select id="u-role"><option value="operator">Operador</option><option value="viewer">Visualizador</option><option value="admin">Administrador</option></select><label>Ativo</label><select id="u-active"><option value="true" selected>Sim</option><option value="false">Não</option></select><button id="btn-create" style="margin-top:12px">Criar usuário</button><p style="color:#6b7280">Somente administradores acessam esta página.</p></div>
-<div class="card"><h3>Lista</h3><table><thead><tr><th>ID</th><th>Usuário</th><th>Papel</th><th>Ativo</th><th style="width:260px">Ações</th></tr></thead><tbody id="users-body"></tbody></table></div>
-</div></div>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  const tbody = document.getElementById('users-body');
-  const username = document.getElementById('u-username');
-  const password = document.getElementById('u-password');
-  const role = document.getElementById('u-role');
-  const active = document.getElementById('u-active');
-  const btnCreate = document.getElementById('btn-create');
-
-  async function loadUsers(){
-    const res = await fetch('/api/users');
-    if(!res.ok){ alert('Sem acesso (apenas admin).'); return; }
-    const data = await res.json();
-    render(data);
-  }
-
-  function render(list){
-    tbody.innerHTML='';
-    if(!list || list.length===0){
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6b7280">Nenhum usuário</td></tr>';
-      return;
-    }
-    list.forEach(u=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${u.id}</td>
-        <td>${u.username}</td>
-        <td>
-          <select data-id="${u.id}" class="sel-role">
-            <option value="operator" ${u.role==='operator'?'selected':''}>Operador</option>
-            <option value="viewer" ${u.role==='viewer'?'selected':''}>Visualizador</option>
-            <option value="admin" ${u.role==='admin'?'selected':''}>Administrador</option>
-          </select>
-        </td>
-        <td>
-          <select data-id="${u.id}" class="sel-active">
-            <option value="true" ${u.is_active?'selected':''}>Sim</option>
-            <option value="false" ${!u.is_active?'selected':''}>Não</option>
-          </select>
-        </td>
-        <td>
-          <div class="row">
-            <button class="secondary btn-pass" data-id="${u.id}">Redefinir senha</button>
-            <button class="danger btn-del" data-id="${u.id}">Excluir</button>
+<body>
+  {% include '_nav.html' %}
+  <main class="page-content">
+    <div class="wrap">
+      <h1>Usuários</h1>
+      <div class="grid has-sidebar">
+        <div class="card">
+          <h3>Novo usuário</h3>
+          <div class="form-field">
+            <label for="u-username">Usuário</label>
+            <input id="u-username" placeholder="jose.silva">
           </div>
-        </td>
-      `;
-      tr.querySelector('.sel-role').addEventListener('change', async (e)=>{
-        const id = e.target.getAttribute('data-id');
-        const val = e.target.value;
-        await fetch(`/api/users/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role: val}) });
-      });
-      tr.querySelector('.sel-active').addEventListener('change', async (e)=>{
-        const id = e.target.getAttribute('data-id');
-        const val = e.target.value === 'true';
-        await fetch(`/api/users/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({is_active: val}) });
-      });
-      tr.querySelector('.btn-pass').addEventListener('click', async (e)=>{
-        const id = e.target.getAttribute('data-id');
-        const np = prompt('Nova senha (mín. 6 caracteres):');
-        if (np===null) return;
-        if (np.length < 6){ alert('Senha muito curta.'); return; }
-        await fetch(`/api/users/${id}/password`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({new_password: np}) });
-        alert('Senha redefinida.');
-      });
-      tr.querySelector('.btn-del').addEventListener('click', async (e)=>{
-        const id = e.target.getAttribute('data-id');
-        if (!confirm('Excluir este usuário?')) return;
-        const r = await fetch(`/api/users/${id}`, { method:'DELETE' });
-        if(!r.ok){ const j = await r.json(); alert(j.error || 'Erro ao excluir.'); return; }
-        loadUsers();
-      });
-      tbody.appendChild(tr);
-    });
-  }
+          <div class="form-field">
+            <label for="u-password">Senha</label>
+            <input id="u-password" type="password" placeholder="mín. 6 caracteres">
+          </div>
+          <div class="form-field">
+            <label for="u-role">Papel</label>
+            <select id="u-role">
+              <option value="operator">Operador</option>
+              <option value="viewer">Visualizador</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="u-active">Ativo</label>
+            <select id="u-active">
+              <option value="true" selected>Sim</option>
+              <option value="false">Não</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-block" id="btn-create">Criar usuário</button>
+          <p class="text-muted">Somente administradores acessam esta página.</p>
+        </div>
+        <div class="card">
+          <h3>Lista</h3>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuário</th>
+                  <th>Papel</th>
+                  <th>Ativo</th>
+                  <th class="column-actions">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="users-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const tbody = document.getElementById('users-body');
+    const username = document.getElementById('u-username');
+    const password = document.getElementById('u-password');
+    const role = document.getElementById('u-role');
+    const active = document.getElementById('u-active');
+    const btnCreate = document.getElementById('btn-create');
 
-  btnCreate.addEventListener('click', async ()=>{
-    const u = username.value.trim();
-    const p = password.value;
-    if (u.length<3 || p.length<6){ alert('Usuário/senha inválidos.'); return; }
-    const res = await fetch('/api/users', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ username: u, password: p, role: role.value, is_active: active.value==='true' })
+    async function loadUsers(){
+      const res = await fetch('/api/users');
+      if(!res.ok){ alert('Sem acesso (apenas admin).'); return; }
+      const data = await res.json();
+      render(data);
+    }
+
+    function render(list){
+      tbody.innerHTML='';
+      if(!list || list.length===0){
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhum usuário</td></tr>';
+        return;
+      }
+      list.forEach(u=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>
+            <select data-id="${u.id}" class="sel-role">
+              <option value="operator" ${u.role==='operator'?'selected':''}>Operador</option>
+              <option value="viewer" ${u.role==='viewer'?'selected':''}>Visualizador</option>
+              <option value="admin" ${u.role==='admin'?'selected':''}>Administrador</option>
+            </select>
+          </td>
+          <td>
+            <select data-id="${u.id}" class="sel-active">
+              <option value="true" ${u.is_active?'selected':''}>Sim</option>
+              <option value="false" ${!u.is_active?'selected':''}>Não</option>
+            </select>
+          </td>
+          <td>
+            <div class="row">
+              <button class="btn btn-secondary btn-small btn-pass" data-id="${u.id}">Redefinir senha</button>
+              <button class="btn btn-danger btn-small btn-del" data-id="${u.id}">Excluir</button>
+            </div>
+          </td>
+        `;
+        tr.querySelector('.sel-role').addEventListener('change', async (e)=>{
+          const id = e.target.getAttribute('data-id');
+          const val = e.target.value;
+          await fetch(`/api/users/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role: val}) });
+        });
+        tr.querySelector('.sel-active').addEventListener('change', async (e)=>{
+          const id = e.target.getAttribute('data-id');
+          const val = e.target.value === 'true';
+          await fetch(`/api/users/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({is_active: val}) });
+        });
+        tr.querySelector('.btn-pass').addEventListener('click', async (e)=>{
+          const id = e.target.getAttribute('data-id');
+          const np = prompt('Nova senha (mín. 6 caracteres):');
+          if (np===null) return;
+          if (np.length < 6){ alert('Senha muito curta.'); return; }
+          await fetch(`/api/users/${id}/password`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({new_password: np}) });
+          alert('Senha redefinida.');
+        });
+        tr.querySelector('.btn-del').addEventListener('click', async (e)=>{
+          const id = e.target.getAttribute('data-id');
+          if (!confirm('Excluir este usuário?')) return;
+          const r = await fetch(`/api/users/${id}`, { method:'DELETE' });
+          if(!r.ok){ const j = await r.json(); alert(j.error || 'Erro ao excluir.'); return; }
+          loadUsers();
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    btnCreate.addEventListener('click', async ()=>{
+      const u = username.value.trim();
+      const p = password.value;
+      if (u.length<3 || p.length<6){ alert('Usuário/senha inválidos.'); return; }
+      const res = await fetch('/api/users', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: u, password: p, role: role.value, is_active: active.value==='true' })
+      });
+      if(!res.ok){ const j = await res.json(); alert(j.error || 'Erro ao criar.'); return; }
+      username.value=''; password.value=''; role.value='operator'; active.value='true';
+      loadUsers();
     });
-    if(!res.ok){ const j = await res.json(); alert(j.error || 'Erro ao criar.'); return; }
-    username.value=''; password.value=''; role.value='operator'; active.value='true';
+
     loadUsers();
   });
-
-  loadUsers();
-});
-</script>
-</body></html>
+  </script>
+</main>
+</body>
+</html>
