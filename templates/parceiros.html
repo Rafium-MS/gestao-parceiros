@@ -134,9 +134,10 @@
           </div>
 
           <div class="btn-container">
-            <button type="submit" class="btn btn-success">Cadastrar Parceiro</button>
+            <button type="submit" class="btn btn-success" id="partnerSubmitBtn">Cadastrar Parceiro</button>
             <button type="reset" class="btn btn-danger">Limpar formulário</button>
           </div>
+          <div id="partnerMessage" class="form-message" role="status" aria-live="polite"></div>
         </form>
       </div>
 
@@ -154,6 +155,7 @@
                 <th>Telefone</th>
                 <th>Email</th>
                 <th>Total</th>
+                <th class="column-actions">Ações</th>
               </tr>
             </thead>
             <tbody id="partnersTableBody"></tbody>
@@ -165,44 +167,112 @@
   </main>
 
   <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('partnerForm');
     const partnersTableBody = document.getElementById('partnersTableBody');
     const emptyMessage = document.getElementById('emptyMessage');
     const totalDisplay = document.getElementById('total-prices');
+    const priceInputs = form.querySelectorAll('.prices-section input[type="number"]');
+    const submitBtn = document.getElementById('partnerSubmitBtn');
+    const messageBox = document.getElementById('partnerMessage');
 
-    let partners = JSON.parse(localStorage.getItem('partners')) || [];
+    let partners = [];
+    let editingPartnerId = null;
 
-    updatePartnersTable();
-    calculateTotal();
+    loadPartners();
+    updateTotal();
 
-    const priceInputs = document.querySelectorAll('.prices-section input[type="number"]');
-    priceInputs.forEach(input => {
-      input.addEventListener('input', calculateTotal);
+    priceInputs.forEach((input) => input.addEventListener('input', updateTotal));
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const payload = buildPayload(new FormData(form));
+      const method = editingPartnerId ? 'PUT' : 'POST';
+      const url = editingPartnerId ? `/api/partners/${editingPartnerId}` : '/api/partners';
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = editingPartnerId ? 'Salvando alterações...' : 'Cadastrando...';
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || 'Não foi possível salvar o parceiro.');
+        }
+        displayMessage(editingPartnerId ? 'Parceiro atualizado com sucesso.' : 'Parceiro cadastrado com sucesso.', 'success');
+        form.reset();
+        editingPartnerId = null;
+        submitBtn.textContent = 'Cadastrar Parceiro';
+        await loadPartners();
+      } catch (error) {
+        displayMessage(error.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        updateTotal();
+      }
     });
 
-    function formatCurrency(value) {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-    }
+    form.addEventListener('reset', () => {
+      editingPartnerId = null;
+      submitBtn.textContent = 'Cadastrar Parceiro';
+      messageBox.textContent = '';
+      messageBox.className = 'form-message';
+      setTimeout(updateTotal, 0);
+    });
 
-    function calculateTotal() {
-      const values = Array.from(priceInputs).map(input => parseFloat(input.value) || 0);
-      const total = values.reduce((acc, curr) => acc + curr, 0);
-      totalDisplay.textContent = formatCurrency(total);
-    }
-
-    function updatePartnersTable() {
-      partnersTableBody.innerHTML = '';
-
-      if (partners.length === 0) {
-        emptyMessage.style.display = 'block';
+    partnersTableBody.addEventListener('click', (event) => {
+      const editBtn = event.target.closest('.btn-edit-partner');
+      if (editBtn) {
+        const partnerId = Number.parseInt(editBtn.dataset.id, 10);
+        const partner = partners.find((item) => item.id === partnerId);
+        if (partner) {
+          startEdit(partner);
+        }
         return;
       }
 
+      const deleteBtn = event.target.closest('.btn-delete-partner');
+      if (deleteBtn) {
+        const partnerId = Number.parseInt(deleteBtn.dataset.id, 10);
+        if (!Number.isNaN(partnerId)) {
+          deletePartner(partnerId);
+        }
+      }
+    });
+
+    async function loadPartners() {
+      try {
+        const response = await fetch('/api/partners');
+        if (!response.ok) {
+          throw new Error('Não foi possível carregar os parceiros.');
+        }
+        partners = await response.json();
+        renderPartners();
+      } catch (error) {
+        partners = [];
+        renderPartners();
+        displayMessage(error.message, 'error');
+      }
+    }
+
+    function renderPartners() {
+      partnersTableBody.innerHTML = '';
+      if (!partners.length) {
+        emptyMessage.style.display = 'block';
+        return;
+      }
       emptyMessage.style.display = 'none';
 
-      partners.forEach(partner => {
+      const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+      partners.forEach((partner) => {
         const row = document.createElement('tr');
+        const total = typeof partner.total === 'number'
+          ? partner.total
+          : ['cx_copo', 'dez_litros', 'vinte_litros', 'mil_quinhentos_ml', 'vasilhame']
+              .reduce((acc, field) => acc + (Number(partner[field]) || 0), 0);
         row.innerHTML = `
           <td>${partner.cidade}</td>
           <td>${partner.estado}</td>
@@ -211,32 +281,92 @@
           <td>${partner.cnpj_cpf}</td>
           <td>${partner.telefone}</td>
           <td>${partner.email || '-'}</td>
-          <td>${formatCurrency(partner.total)}</td>
+          <td>${currency.format(total || 0)}</td>
+          <td class="actions-cell">
+            <button type="button" class="btn btn-secondary btn-small btn-edit-partner" data-id="${partner.id}">Editar</button>
+            <button type="button" class="btn btn-danger btn-small btn-delete-partner" data-id="${partner.id}">Excluir</button>
+          </td>
         `;
         partnersTableBody.appendChild(row);
       });
     }
 
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const partnerData = {};
+    function buildPayload(formData) {
+      const payload = Object.fromEntries(formData.entries());
+      ['cidade', 'estado', 'parceiro', 'distribuidora', 'cnpj_cpf', 'telefone', 'email', 'banco', 'agencia_conta', 'pix']
+        .forEach((field) => {
+          if (payload[field] !== undefined && payload[field] !== null) {
+            payload[field] = payload[field].trim();
+            if (payload[field] === '') {
+              payload[field] = null;
+            }
+          }
+        });
+      payload.dia_pagamento = payload.dia_pagamento ? Number(payload.dia_pagamento) : null;
+      ['cx_copo', 'dez_litros', 'vinte_litros', 'mil_quinhentos_ml', 'vasilhame']
+        .forEach((field) => {
+          const value = payload[field];
+          payload[field] = value === null || value === '' ? 0 : Number(value);
+        });
+      return payload;
+    }
 
-      for (let [key, value] of formData.entries()) {
-        partnerData[key] = value;
+    function updateTotal() {
+      const total = Array.from(priceInputs)
+        .reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
+      totalDisplay.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+    }
+
+    function displayMessage(message, type = 'success') {
+      messageBox.textContent = message;
+      messageBox.className = type ? `form-message ${type}` : 'form-message';
+    }
+
+    function startEdit(partner) {
+      editingPartnerId = partner.id;
+      form.cidade.value = partner.cidade || '';
+      form.estado.value = partner.estado || '';
+      form.parceiro.value = partner.parceiro || '';
+      form.distribuidora.value = partner.distribuidora || '';
+      form.cnpj_cpf.value = partner.cnpj_cpf || '';
+      form.telefone.value = partner.telefone || '';
+      form.email.value = partner.email || '';
+      form.dia_pagamento.value = partner.dia_pagamento ?? '';
+      form.banco.value = partner.banco || '';
+      form.agencia_conta.value = partner.agencia_conta || '';
+      form.pix.value = partner.pix || '';
+      form.cx_copo.value = partner.cx_copo ?? 0;
+      form.dez_litros.value = partner.dez_litros ?? 0;
+      form.vinte_litros.value = partner.vinte_litros ?? 0;
+      form.mil_quinhentos_ml.value = partner.mil_quinhentos_ml ?? 0;
+      form.vasilhame.value = partner.vasilhame ?? 0;
+      submitBtn.textContent = 'Atualizar Parceiro';
+      displayMessage('Você está editando um parceiro. Salve ou limpe o formulário para cancelar.', 'success');
+      updateTotal();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deletePartner(partnerId) {
+      if (!confirm('Deseja realmente excluir este parceiro?')) {
+        return;
       }
-
-      const total = Array.from(priceInputs).reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
-      partnerData.total = total;
-
-      partners.push(partnerData);
-      localStorage.setItem('partners', JSON.stringify(partners));
-
-      updatePartnersTable();
-      form.reset();
-      calculateTotal();
-      alert('Parceiro cadastrado com sucesso!');
-    });
+      try {
+        const response = await fetch(`/api/partners/${partnerId}`, { method: 'DELETE' });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || 'Não foi possível excluir o parceiro.');
+        }
+        displayMessage('Parceiro removido com sucesso.', 'success');
+        if (editingPartnerId === partnerId) {
+          form.reset();
+          editingPartnerId = null;
+          submitBtn.textContent = 'Cadastrar Parceiro';
+        }
+        await loadPartners();
+      } catch (error) {
+        displayMessage(error.message, 'error');
+      }
+    }
   });
   </script>
   </main>

@@ -312,6 +312,21 @@ button:focus,
   justify-content: flex-start;
 }
 
+.form-message {
+  margin-top: 16px;
+  font-size: 0.95rem;
+  min-height: 1.2em;
+  color: var(--text-secondary);
+}
+
+.form-message.success {
+  color: var(--brand-success);
+}
+
+.form-message.error {
+  color: var(--brand-danger);
+}
+
 .table-wrapper {
   overflow-x: auto;
 }

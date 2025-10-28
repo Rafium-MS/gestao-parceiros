@@ -143,11 +143,11 @@
             <h2>Importação Concluída</h2>
             
             <div id="successMessage" class="alert alert-success hidden">
-                <strong>Sucesso!</strong> Todas as imagens foram importadas com sucesso.
+                <strong>Sucesso!</strong> <span id="successMessageText">Todas as imagens foram importadas com sucesso.</span>
             </div>
-            
+
             <div id="errorMessage" class="alert alert-error hidden">
-                <strong>Erro!</strong> Ocorreu um problema durante a importação.
+                <strong>Erro!</strong> <span id="errorMessageText">Ocorreu um problema durante a importação.</span>
             </div>
             
             <div class="summary-container">
@@ -171,11 +171,53 @@
                 <button type="button" class="btn btn-next" id="viewImages">Visualizar Imagens</button>
             </div>
         </div>
+
+        <section class="form-container">
+            <h2 class="section-title">Comprovantes cadastrados</h2>
+            <div class="table-wrapper">
+                <table class="table-compact" id="receiptsTable">
+                    <thead>
+                        <tr>
+                            <th>Arquivo</th>
+                            <th>Marca</th>
+                            <th>Tamanho</th>
+                            <th>Enviado em</th>
+                            <th class="column-actions">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receiptsTableBody"></tbody>
+                </table>
+            </div>
+            <p id="receiptsEmptyMessage" class="empty-message">Nenhum comprovante cadastrado.</p>
+        </section>
+
+        <section class="form-container hidden" id="receiptEditContainer">
+            <h3 class="section-title">Editar comprovante</h3>
+            <form id="receiptEditForm">
+                <input type="hidden" id="editReceiptId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editFilename">Nome do arquivo</label>
+                        <input type="text" id="editFilename" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editReceiptBrand">Marca associada</label>
+                        <select id="editReceiptBrand">
+                            <option value="">Sem marca</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-submit">Salvar alterações</button>
+                    <button type="button" class="btn btn-reset" id="cancelReceiptEdit">Cancelar</button>
+                </div>
+                <div id="receiptEditMessage" class="form-message" role="status" aria-live="polite"></div>
+            </form>
+        </section>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Elementos da interface
             const steps = document.querySelectorAll('.step');
             const stepContents = document.querySelectorAll('.step-content');
             const progressBar = document.getElementById('progressBar');
@@ -185,239 +227,264 @@
             const previewContainer = document.getElementById('previewContainer');
             const verificationResults = document.getElementById('verificationResults');
             const marcaSelect = document.getElementById('marca');
-            
-            // Botões de navegação
+
             const toStep2Btn = document.getElementById('toStep2');
-            const toStep1From2Btn = document.getElementById('toStep1');
+            const toStep1From2Btn = document.querySelector('#stepContent2 #toStep1');
             const toStep3Btn = document.getElementById('toStep3');
-            const toStep2From3Btn = document.getElementById('toStep2');
+            const toStep2From3Btn = document.querySelector('#stepContent3 #toStep2');
             const startImportBtn = document.getElementById('startImport');
-            const toStep1From4Btn = document.getElementById('toStep1');
+            const toStep1From4Btn = document.querySelector('#stepContent4 #toStep1');
             const viewImagesBtn = document.getElementById('viewImages');
-            
-            // Elementos de resumo
+
             const summaryCount = document.getElementById('summaryCount');
             const summarySize = document.getElementById('summarySize');
             const summaryBrand = document.getElementById('summaryBrand');
+
             const importedCount = document.getElementById('importedCount');
             const errorCount = document.getElementById('errorCount');
             const processingTime = document.getElementById('processingTime');
-            
-            // Mensagens de alerta
+
             const successMessage = document.getElementById('successMessage');
             const errorMessage = document.getElementById('errorMessage');
-            
-            // Estado da aplicação
+            const successMessageText = document.getElementById('successMessageText');
+            const errorMessageText = document.getElementById('errorMessageText');
+
+            const receiptsTableBody = document.getElementById('receiptsTableBody');
+            const receiptsEmptyMessage = document.getElementById('receiptsEmptyMessage');
+
+            const receiptEditContainer = document.getElementById('receiptEditContainer');
+            const receiptEditForm = document.getElementById('receiptEditForm');
+            const editReceiptId = document.getElementById('editReceiptId');
+            const editFilename = document.getElementById('editFilename');
+            const editReceiptBrand = document.getElementById('editReceiptBrand');
+            const cancelReceiptEditBtn = document.getElementById('cancelReceiptEdit');
+            const receiptEditMessage = document.getElementById('receiptEditMessage');
+
             let currentStep = 1;
             let selectedFiles = [];
-            let importResults = {
-                success: 0,
-                errors: 0
-            };
-            
-            // Carregar marcas do localStorage
+            let brands = [];
+            let receipts = [];
+            let editingReceiptId = null;
+
             loadBrands();
-            
-            // Função para carregar as marcas do localStorage
-            function loadBrands() {
-                const brands = JSON.parse(localStorage.getItem('brands')) || [];
-                marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
-                
-                brands.forEach((brand, index) => {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = brand.marca;
-                    marcaSelect.appendChild(option);
-                });
-            }
-            
-            // Configurar eventos de upload
+            loadReceipts();
+            updateSummary();
+
             browseFilesBtn.addEventListener('click', () => fileInput.click());
-            
             fileInput.addEventListener('change', handleFileSelect);
-            
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
+
+            uploadArea.addEventListener('dragover', (event) => {
+                event.preventDefault();
                 uploadArea.classList.add('dragover');
             });
-            
+
             uploadArea.addEventListener('dragleave', () => {
                 uploadArea.classList.remove('dragover');
             });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
+
+            uploadArea.addEventListener('drop', (event) => {
+                event.preventDefault();
                 uploadArea.classList.remove('dragover');
-                
-                if (e.dataTransfer.files.length) {
-                    handleFiles(e.dataTransfer.files);
+                if (event.dataTransfer.files.length) {
+                    handleFiles(event.dataTransfer.files);
                 }
             });
-            
-            // Função para lidar com a seleção de arquivos
-            function handleFileSelect(e) {
-                handleFiles(e.target.files);
-                fileInput.value = ''; // Reset para permitir selecionar os mesmos arquivos novamente
+
+            toStep2Btn.addEventListener('click', () => goToStep(2));
+            toStep1From2Btn.addEventListener('click', () => goToStep(1));
+            toStep3Btn.addEventListener('click', () => goToStep(3));
+            toStep2From3Btn.addEventListener('click', () => goToStep(2));
+            startImportBtn.addEventListener('click', () => goToStep(4));
+            toStep1From4Btn.addEventListener('click', () => {
+                selectedFiles = [];
+                previewContainer.innerHTML = '';
+                updateSummary();
+                successMessage.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                goToStep(1);
+            });
+
+            viewImagesBtn.addEventListener('click', () => {
+                document.getElementById('receiptsTable').scrollIntoView({ behavior: 'smooth' });
+            });
+
+            marcaSelect.addEventListener('change', updateSummary);
+
+            receiptsTableBody.addEventListener('click', (event) => {
+                const editBtn = event.target.closest('.btn-edit-receipt');
+                if (editBtn) {
+                    const receiptId = Number.parseInt(editBtn.dataset.id, 10);
+                    if (!Number.isNaN(receiptId)) {
+                        startReceiptEdit(receiptId);
+                    }
+                }
+            });
+
+            receiptEditForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!editingReceiptId) {
+                    return;
+                }
+                const payload = {
+                    filename: editFilename.value.trim(),
+                    brand_id: editReceiptBrand.value ? Number(editReceiptBrand.value) : null,
+                };
+                if (!payload.filename) {
+                    displayEditMessage('Informe um nome válido para o arquivo.', 'error');
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/receipts/${editingReceiptId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    if (!response.ok) {
+                        const error = await response.json().catch(() => ({}));
+                        throw new Error(error.error || 'Não foi possível atualizar o comprovante.');
+                    }
+                    displayEditMessage('Comprovante atualizado com sucesso.', 'success');
+                    await loadReceipts();
+                    const updated = receipts.find((item) => item.id === editingReceiptId);
+                    if (updated) {
+                        editFilename.value = updated.filename;
+                        editReceiptBrand.value = updated.brand_id ? String(updated.brand_id) : '';
+                    }
+                } catch (error) {
+                    displayEditMessage(error.message, 'error');
+                }
+            });
+
+            cancelReceiptEditBtn.addEventListener('click', () => {
+                closeReceiptEditor();
+            });
+
+            function handleFileSelect(event) {
+                handleFiles(event.target.files);
+                fileInput.value = '';
             }
-            
-            // Função para processar os arquivos selecionados
+
             function handleFiles(files) {
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    
-                    // Verificar se é uma imagem
+
                     if (!file.type.match('image.*')) {
                         alert(`O arquivo "${file.name}" não é uma imagem. Apenas arquivos de imagem são permitidos.`);
                         continue;
                     }
-                    
-                    // Verificar se o arquivo já foi selecionado
-                    if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+
+                    if (selectedFiles.some((f) => f.name === file.name && f.size === file.size)) {
                         continue;
                     }
-                    
+
                     selectedFiles.push(file);
                     createPreview(file);
                 }
-                
+
                 updateSummary();
             }
-            
-            // Função para criar pré-visualização de imagem
+
             function createPreview(file) {
                 const reader = new FileReader();
-                
-                reader.onload = function(e) {
+
+                reader.onload = function(event) {
                     const previewItem = document.createElement('div');
                     previewItem.className = 'preview-item';
-                    
+
                     const fileSize = (file.size / (1024 * 1024)).toFixed(2);
-                    
+
                     previewItem.innerHTML = `
-                        <img src="${e.target.result}" class="preview-image" alt="${file.name}">
+                        <img src="${event.target.result}" class="preview-image" alt="${file.name}">
                         <div class="preview-info">
                             <div class="preview-name">${file.name}</div>
                             <div class="preview-size">${fileSize} MB</div>
                         </div>
                         <button class="preview-remove" data-filename="${file.name}">×</button>
                     `;
-                    
+
                     previewContainer.appendChild(previewItem);
-                    
-                    // Adicionar evento para remover a imagem
+
                     const removeBtn = previewItem.querySelector('.preview-remove');
                     removeBtn.addEventListener('click', function() {
                         const filename = this.getAttribute('data-filename');
-                        selectedFiles = selectedFiles.filter(f => f.name !== filename);
+                        selectedFiles = selectedFiles.filter((f) => f.name !== filename);
                         previewContainer.removeChild(previewItem);
                         updateSummary();
                     });
                 };
-                
+
                 reader.readAsDataURL(file);
             }
-            
-            // Função para atualizar o resumo
+
             function updateSummary() {
                 const totalSize = selectedFiles.reduce((total, file) => total + file.size, 0);
                 const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-                
+
                 summaryCount.textContent = selectedFiles.length;
                 summarySize.textContent = `${totalSizeMB} MB`;
-                
-                const selectedBrandIndex = marcaSelect.value;
-                if (selectedBrandIndex) {
-                    const brands = JSON.parse(localStorage.getItem('brands')) || [];
-                    summaryBrand.textContent = brands[selectedBrandIndex].marca;
-                } else {
-                    summaryBrand.textContent = 'Nenhuma';
-                }
+
+                const selectedBrand = brands.find((brand) => String(brand.id) === marcaSelect.value);
+                summaryBrand.textContent = selectedBrand ? selectedBrand.marca : 'Nenhuma';
             }
-            
-            // Função para verificar as imagens
+
             function verifyImages() {
                 verificationResults.innerHTML = '';
-                
+
                 if (selectedFiles.length === 0) {
                     verificationResults.innerHTML = '<p>Nenhuma imagem selecionada para verificação.</p>';
                     return false;
                 }
-                
+
                 let allValid = true;
-                
-                selectedFiles.forEach(file => {
+
+                selectedFiles.forEach((file) => {
                     const verificationItem = document.createElement('div');
                     verificationItem.className = 'verification-item';
-                    
-                    // Verificações
-                    const maxSize = 10 * 1024 * 1024; // 10MB
+
+                    const maxSize = 10 * 1024 * 1024;
                     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                    
+
                     let icon = '✅';
                     let message = `${file.name} - OK`;
                     let status = 'success';
-                    
-                    // Verificar tipo de arquivo
+
                     if (!validTypes.includes(file.type)) {
                         icon = '❌';
                         message = `${file.name} - Tipo de arquivo não suportado`;
                         status = 'error';
                         allValid = false;
-                    }
-                    // Verificar tamanho do arquivo
-                    else if (file.size > maxSize) {
+                    } else if (file.size > maxSize) {
                         icon = '⚠️';
                         message = `${file.name} - Arquivo muito grande (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
                         status = 'warning';
                     }
-                    
+
                     verificationItem.innerHTML = `
                         <span class="verification-icon">${icon}</span>
                         <span class="verification-${status}">${message}</span>
                     `;
-                    
+
                     verificationResults.appendChild(verificationItem);
                 });
-                
+
                 return allValid;
             }
-            
-            // Função para simular a importação
-            function simulateImport() {
-                return new Promise((resolve) => {
-                    const startTime = new Date();
-                    
-                    // Simular processamento
-                    setTimeout(() => {
-                        const endTime = new Date();
-                        const processingTimeMs = endTime - startTime;
-                        
-                        // Simular resultados (90% de sucesso)
-                        importResults.success = Math.floor(selectedFiles.length * 0.9);
-                        importResults.errors = selectedFiles.length - importResults.success;
-                        
-                        resolve({
-                            success: importResults.success,
-                            errors: importResults.errors,
-                            processingTime: processingTimeMs / 1000
-                        });
-                    }, 2000);
-                });
-            }
-            
-            // Função para navegar entre as etapas
-            function goToStep(step) {
-                // Validar transições
-                if (step === 2 && selectedFiles.length === 0) {
-                    alert('Por favor, selecione pelo menos uma imagem antes de continuar.');
+
+            async function goToStep(step) {
+                if (step === currentStep) {
                     return;
                 }
-                
-                if (step === 2 && !marcaSelect.value) {
-                    alert('Por favor, selecione uma marca antes de continuar.');
-                    return;
+                if (step === 2) {
+                    if (selectedFiles.length === 0) {
+                        alert('Por favor, selecione pelo menos uma imagem antes de continuar.');
+                        return;
+                    }
+                    if (!marcaSelect.value) {
+                        alert('Por favor, selecione uma marca antes de continuar.');
+                        return;
+                    }
                 }
-                
+
                 if (step === 3) {
                     const allValid = verifyImages();
                     if (!allValid) {
@@ -425,41 +492,52 @@
                         return;
                     }
                 }
-                
+
                 if (step === 4) {
-                    // Iniciar importação
-                    startImportBtn.disabled = true;
-                    startImportBtn.textContent = 'Importando...';
-                    
-                    simulateImport().then(results => {
-                        // Atualizar resultados
-                        importedCount.textContent = results.success;
-                        errorCount.textContent = results.errors;
-                        processingTime.textContent = `${results.processingTime.toFixed(2)} segundos`;
-                        
-                        // Mostrar mensagem apropriada
-                        if (results.errors === 0) {
-                            successMessage.classList.remove('hidden');
-                            errorMessage.classList.add('hidden');
-                        } else {
-                            successMessage.classList.add('hidden');
-                            errorMessage.classList.remove('hidden');
-                        }
-                        
-                        // Atualizar interface
+                    if (selectedFiles.length === 0) {
+                        alert('Selecione ao menos uma imagem para importar.');
+                        return;
+                    }
+                    try {
+                        startImportBtn.disabled = true;
+                        startImportBtn.textContent = 'Importando...';
+                        const startTime = performance.now();
+                        const result = await uploadSelectedFiles();
+                        const duration = (performance.now() - startTime) / 1000;
+
+                        const saved = Array.isArray(result.saved) ? result.saved : [];
+                        importedCount.textContent = saved.length;
+                        errorCount.textContent = 0;
+                        processingTime.textContent = `${duration.toFixed(2)} segundos`;
+
+                        successMessageText.textContent = saved.length
+                            ? 'Todas as imagens foram importadas com sucesso.'
+                            : 'Importação concluída.';
+                        successMessage.classList.remove('hidden');
+                        errorMessage.classList.add('hidden');
+
+                        selectedFiles = [];
+                        previewContainer.innerHTML = '';
+                        updateSummary();
+                        await loadReceipts();
+                    } catch (error) {
+                        importedCount.textContent = '0';
+                        errorCount.textContent = `${selectedFiles.length}`;
+                        processingTime.textContent = '0 segundos';
+                        successMessage.classList.add('hidden');
+                        errorMessageText.textContent = error.message;
+                        errorMessage.classList.remove('hidden');
                         startImportBtn.disabled = false;
                         startImportBtn.textContent = 'Iniciar Importação';
-                    });
+                    }
+                    startImportBtn.disabled = false;
+                    startImportBtn.textContent = 'Iniciar Importação';
                 }
-                
-                // Atualizar a etapa atual
+
                 currentStep = step;
-                
-                // Atualizar a barra de progresso
                 const progressPercentage = ((step - 1) / (steps.length - 1)) * 100;
                 progressBar.style.width = `${progressPercentage}%`;
-                
-                // Atualizar os passos
+
                 steps.forEach((s, index) => {
                     if (index + 1 < step) {
                         s.classList.remove('active');
@@ -471,8 +549,7 @@
                         s.classList.remove('active', 'completed');
                     }
                 });
-                
-                // Atualizar o conteúdo das etapas
+
                 stepContents.forEach((content, index) => {
                     if (index + 1 === step) {
                         content.classList.add('active');
@@ -480,33 +557,163 @@
                         content.classList.remove('active');
                     }
                 });
-                
-                // Rolar para o topo
+
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-            
-            // Configurar eventos de navegação
-            toStep2Btn.addEventListener('click', () => goToStep(2));
-            toStep1From2Btn.addEventListener('click', () => goToStep(1));
-            toStep3Btn.addEventListener('click', () => goToStep(3));
-            toStep2From3Btn.addEventListener('click', () => goToStep(2));
-            startImportBtn.addEventListener('click', () => goToStep(4));
-            toStep1From4Btn.addEventListener('click', () => {
-                // Resetar para nova importação
-                selectedFiles = [];
-                previewContainer.innerHTML = '';
-                updateSummary();
-                goToStep(1);
-            });
-            
-            viewImagesBtn.addEventListener('click', () => {
-                alert('Funcionalidade de visualização de imagens seria implementada aqui.');
-            });
-            
-            // Atualizar o resumo quando a marca for alterada
-            marcaSelect.addEventListener('change', updateSummary);
+
+            async function uploadSelectedFiles() {
+                const formData = new FormData();
+                if (marcaSelect.value) {
+                    formData.append('brand_id', marcaSelect.value);
+                }
+                selectedFiles.forEach((file) => {
+                    formData.append('files', file, file.name);
+                });
+
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || 'Não foi possível importar as imagens.');
+                }
+
+                return response.json();
+            }
+
+            async function loadBrands() {
+                try {
+                    const response = await fetch('/api/brands');
+                    if (!response.ok) {
+                        throw new Error('Não foi possível carregar as marcas.');
+                    }
+                    brands = await response.json();
+                } catch (error) {
+                    brands = [];
+                    console.error(error);
+                } finally {
+                    populateBrandSelect(marcaSelect, 'Selecione uma marca');
+                    populateBrandSelect(editReceiptBrand, 'Sem marca');
+                    updateSummary();
+                }
+            }
+
+            async function loadReceipts() {
+                try {
+                    const response = await fetch('/api/receipts');
+                    if (!response.ok) {
+                        throw new Error('Não foi possível carregar os comprovantes.');
+                    }
+                    receipts = await response.json();
+                } catch (error) {
+                    receipts = [];
+                    console.error(error);
+                } finally {
+                    updateReceiptsTable();
+                }
+            }
+
+            function populateBrandSelect(selectElement, defaultLabel) {
+                const previousValue = selectElement.value;
+                selectElement.innerHTML = '';
+                if (defaultLabel !== undefined && defaultLabel !== null) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = defaultLabel;
+                    selectElement.appendChild(option);
+                }
+                const ordered = [...brands].sort((a, b) => a.marca.localeCompare(b.marca, 'pt-BR'));
+                ordered.forEach((brand) => {
+                    const option = document.createElement('option');
+                    option.value = brand.id;
+                    option.textContent = brand.marca;
+                    selectElement.appendChild(option);
+                });
+                if (previousValue && ordered.some((brand) => String(brand.id) === previousValue)) {
+                    selectElement.value = previousValue;
+                }
+            }
+
+            function updateReceiptsTable() {
+                receiptsTableBody.innerHTML = '';
+                if (!receipts.length) {
+                    receiptsEmptyMessage.style.display = 'block';
+                    closeReceiptEditor();
+                    return;
+                }
+                receiptsEmptyMessage.style.display = 'none';
+
+                receipts.forEach((receipt) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><a href="${receipt.url}" target="_blank" rel="noopener">${receipt.filename}</a></td>
+                        <td>${receipt.brand || '—'}</td>
+                        <td>${formatFileSize(receipt.size_bytes)}</td>
+                        <td>${formatDateTime(receipt.uploaded_at)}</td>
+                        <td class="actions-cell">
+                            <button type="button" class="btn btn-secondary btn-small btn-edit-receipt" data-id="${receipt.id}">Editar</button>
+                        </td>
+                    `;
+                    receiptsTableBody.appendChild(row);
+                });
+            }
+
+            function startReceiptEdit(receiptId) {
+                const receipt = receipts.find((item) => item.id === receiptId);
+                if (!receipt) {
+                    return;
+                }
+                populateBrandSelect(editReceiptBrand, 'Sem marca');
+                editingReceiptId = receiptId;
+                editReceiptId.value = receiptId;
+                editFilename.value = receipt.filename;
+                editReceiptBrand.value = receipt.brand_id ? String(receipt.brand_id) : '';
+                displayEditMessage('Atualize as informações e salve as alterações.', 'success');
+                receiptEditContainer.classList.remove('hidden');
+                receiptEditContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            function closeReceiptEditor() {
+                editingReceiptId = null;
+                editReceiptId.value = '';
+                receiptEditForm.reset();
+                displayEditMessage('', '');
+                receiptEditContainer.classList.add('hidden');
+            }
+
+            function displayEditMessage(message, type = '') {
+                receiptEditMessage.textContent = message;
+                receiptEditMessage.className = type ? `form-message ${type}` : 'form-message';
+            }
+
+            function formatFileSize(bytes) {
+                if (!bytes && bytes !== 0) {
+                    return '0 B';
+                }
+                if (bytes >= 1024 * 1024) {
+                    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+                }
+                if (bytes >= 1024) {
+                    return `${(bytes / 1024).toFixed(2)} KB`;
+                }
+                return `${bytes} B`;
+            }
+
+            function formatDateTime(value) {
+                if (!value) {
+                    return '—';
+                }
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) {
+                    return '—';
+                }
+                return date.toLocaleString('pt-BR');
+            }
         });
     </script>
+
   </main>
 </body>
 </html>
