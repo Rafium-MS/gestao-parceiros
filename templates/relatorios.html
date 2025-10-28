@@ -4,218 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatórios de Marcas e Lojas</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #2c3e50;
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-
-        .form-container {
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .form-section {
-            margin-bottom: 25px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eaeaea;
-        }
-
-        .form-section:last-of-type {
-            border-bottom: none;
-        }
-
-        .section-title {
-            font-size: 1.3rem;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #3498db;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -10px;
-        }
-
-        .form-group {
-            flex: 1 0 200px;
-            margin: 0 10px 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #34495e;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-
-        .btn-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-submit {
-            background-color: #2ecc71;
-            color: white;
-        }
-
-        .btn-submit:hover {
-            background-color: #27ae60;
-        }
-
-        .btn-reset {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .btn-reset:hover {
-            background-color: #c0392b;
-        }
-
-        .partners-list {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .list-header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 15px;
-            font-weight: 600;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eaeaea;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 20px;
-            color: #7f8c8d;
-        }
-
-        .volumes-section .form-group {
-            flex: 1 0 150px;
-        }
-
-        .total-display {
-            background-color: #ecf0f1;
-            padding: 10px 15px;
-            border-radius: 4px;
-            font-weight: 600;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        @media (max-width: 768px) {
-            .form-group {
-                flex: 1 0 100%;
-            }
-            
-            .volumes-section .form-group {
-                flex: 1 0 calc(50% - 20px);
-            }
-            
-            table {
-                display: block;
-                overflow-x: auto;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<nav>
-  <a href="/">Início</a>
-  <a href="/parceiros">Parceiros</a>
-  <a href="/lojas">Lojas</a>
-  <a href="/conectar">Conectar</a>
-  <a href="/comprovantes">Comprovantes</a>
-  <a href="/relatorios">Relatórios</a>
-  <span style="flex:1"></span>
-  <a href="/users">Usuários</a>
-  <a href="/account">Minha Conta</a>
-  <a href="/logout">Sair</a>
-</nav>
+  {% include '_nav.html' %}
+  <main class="page-content">
     <div class="container">
         <header>
             <h1>Relatórios de Marcas e Lojas</h1>
@@ -248,14 +41,14 @@
             </form>
         </div>
 
-        <div class="summary-cards" id="summaryCards" style="display: none;">
+        <div class="summary-cards" id="summaryCards" class="hidden">
             <!-- Cards de resumo serão inseridos aqui via JavaScript -->
         </div>
 
         <div class="reports-container">
             <div class="reports-header">
                 <span>Relatório Detalhado</span>
-                <div class="export-buttons" id="exportButtons" style="display: none;">
+                <div class="export-buttons" id="exportButtons" class="hidden">
                     <button class="btn-export" id="exportExcel">Exportar para Excel</button>
                     <button class="btn-export" id="exportPDF">Exportar para PDF</button>
                     <button class="btn-print" id="printReport">Imprimir Relatório</button>
@@ -587,5 +380,6 @@
             });
         });
     </script>
+  </main>
 </body>
 </html>

@@ -4,46 +4,43 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Disagua Distribuidora</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    nav {
-      background-color: #333;
-      overflow: hidden;
-    }
-    nav a {
-      float: left;
-      display: block;
-      color: white;
-      text-align: center;
-      padding: 14px 20px;
-      text-decoration: none;
-    }
-    nav a:hover {
-      background-color: #575757;
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-<nav>
-  <a href="#login">Login</a>
-  <a href="/">Início</a>
-  <a href="/parceiros">Parceiros</a>
-  <a href="/lojas">Lojas</a>
-  <a href="/conectar">Conectar</a>
-  <a href="/comprovantes">Comprovantes</a>
-  <a href="/relatorios">Relatórios</a>
-  <a href="administracao.html">Administração</a>
-  <a href="#logout">Logout</a>
-  <span style="flex:1"></span>
-  <a href="/users">Usuários</a>
-  <a href="/account">Minha Conta</a>
-  <a href="/logout">Sair</a>
-</nav>
-
+  {% include '_nav.html' %}
+  <main class="page-content">
+    <div class="shell">
+      <header class="page-header">
+        <h1 class="page-title">Bem-vindo{{ ' ' + current_user.username if current_user.is_authenticated else '' }}!</h1>
+        <p class="page-subtitle">Gerencie parceiros, lojas, conexões e relatórios em um só lugar.</p>
+      </header>
+      <div class="quick-links">
+        <a class="quick-link" href="{{ url_for('page_parceiros') }}">
+          <h3>Parceiros</h3>
+          <p>Cadastre parceiros e acompanhe seus dados atualizados.</p>
+        </a>
+        <a class="quick-link" href="{{ url_for('page_lojas') }}">
+          <h3>Lojas</h3>
+          <p>Gerencie marcas, lojas e políticas comerciais.</p>
+        </a>
+        <a class="quick-link" href="{{ url_for('page_conectar') }}">
+          <h3>Conectar</h3>
+          <p>Relacionar parceiros e lojas para criar oportunidades.</p>
+        </a>
+        <a class="quick-link" href="{{ url_for('page_comprovantes') }}">
+          <h3>Comprovantes</h3>
+          <p>Faça upload e organize comprovantes de pagamento.</p>
+        </a>
+        <a class="quick-link" href="{{ url_for('page_relatorios') }}">
+          <h3>Relatórios</h3>
+          <p>Visualize métricas detalhadas de marcas e volume.</p>
+        </a>
+        <a class="quick-link" href="{{ url_for('users_page') }}">
+          <h3>Usuários</h3>
+          <p>Controle o acesso da equipe ao portal de parceiros.</p>
+        </a>
+      </div>
+    </div>
+  </main>
 </body>
 </html>
