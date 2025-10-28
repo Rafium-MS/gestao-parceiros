@@ -29,7 +29,11 @@ def create_app():
             self.db_user = db_user
             self.id = str(db_user.id)
             self.username = db_user.username
-            self.is_active = db_user.is_active
+            self._active = getattr(db_user, "is_active", True)
+
+        @property
+        def is_active(self):
+            return bool(self._active)
 
     login_manager = LoginManager(app)
     login_manager.login_view = 'login'
