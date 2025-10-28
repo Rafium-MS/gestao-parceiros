@@ -1,11 +1,12 @@
 
 import os
 from datetime import datetime, date
-from flask import Flask, jsonify, request, send_from_directory, render_template, redirect, url_for
+from flask import Flask, jsonify, request, send_from_directory, render_template, redirect, url_for, send_file, session
 from flask_cors import CORS
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, scoped_session
-from models import Base, Partner, Brand, Store, Connection, ReportEntry, ReceiptImage
+from models import Base, Partner, Brand, Store, Connection, ReportEntry, ReceiptImage, User
+from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "disagua.db")
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
@@ -16,34 +17,89 @@ def create_app():
     app.config["JSON_AS_ASCII"] = False
     app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
     CORS(app)
+    app.secret_key = 'change-me'
+    login_manager = LoginManager(app)
+    login_manager.login_view = 'login'
 
     engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
     Base.metadata.create_all(engine)
+
+    class _LoginUser(UserMixin):
+        def __init__(self, db_user):
+            self.db_user = db_user
+            self.id = str(db_user.id)
+            self.username = db_user.username
+            self.is_active = db_user.is_active
+
     Session = scoped_session(sessionmaker(bind=engine, autoflush=False, future=True))
 
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        with Session() as s:
+            u = s.get(User, int(user_id))
+            return _LoginUser(u) if u else None
+    
     # ---------------------- PAGES ----------------------
     @app.get("/")
+    @login_required
     def home():
         return render_template("index.html")
     @app.get("/parceiros")
+    @login_required
     def page_parceiros():
         return render_template("parceiros.html")
     @app.get("/lojas")
+    @login_required
     def page_lojas():
         return render_template("lojas.html")
     @app.get("/conectar")
+    @login_required
     def page_conectar():
         return render_template("conectar.html")
     @app.get("/comprovantes")
+    @login_required
     def page_comprovantes():
         return render_template("comprovantes.html")
     @app.get("/relatorios")
+    @login_required
     def page_relatorios():
         return render_template("relatorios.html")
+
+
+    @app.get("/login")
+    def login():
+        return render_template("login.html")
+
+    @app.post("/login")
+    def do_login():
+        from werkzeug.security import check_password_hash, generate_password_hash
+        username = request.form.get("username","").strip()
+        password = request.form.get("password","")
+        with Session() as s:
+            u = s.query(User).filter(User.username==username).first()
+            if not u:
+                # seed default admin if DB empty and username == 'admin'
+                total = s.query(User).count()
+                if total == 0 and username == "admin":
+                    from werkzeug.security import generate_password_hash
+                    u = User(username="admin", password_hash=generate_password_hash("admin"))
+                    s.add(u); s.commit()
+            if not u or not check_password_hash(u.password_hash, password):
+                return render_template("login.html", error="Usuário ou senha inválidos.")
+            login_user(_LoginUser(u))
+            return redirect(url_for("home"))
+
+    @app.get("/logout")
+    def logout():
+        logout_user()
+        return redirect(url_for("login"))
+    
 
     # ---------------------- APIs ----------------------
     # Partners
     @app.get("/api/partners")
+    @login_required
     def get_partners():
         with Session() as s:
             rows = s.execute(select(Partner)).scalars().all()
@@ -56,6 +112,7 @@ def create_app():
             } for r in rows])
 
     @app.post("/api/partners")
+    @login_required
     def create_partner():
         data = request.json or {}
         with Session() as s:
@@ -65,12 +122,14 @@ def create_app():
 
     # Brands
     @app.get("/api/brands")
+    @login_required
     def get_brands():
         with Session() as s:
             rows = s.execute(select(Brand)).scalars().all()
             return jsonify([{"id": b.id, "marca": b.marca, "cod_disagua": b.cod_disagua} for b in rows])
 
     @app.post("/api/brands")
+    @login_required
     def create_brand():
         data = request.json or {}
         with Session() as s:
@@ -80,6 +139,7 @@ def create_app():
 
     # Stores
     @app.get("/api/stores")
+    @login_required
     def get_stores():
         with Session() as s:
             rows = s.execute(select(Store)).scalars().all()
@@ -93,6 +153,7 @@ def create_app():
             } for st in rows])
 
     @app.post("/api/stores")
+    @login_required
     def create_store():
         data = request.json or {}
         with Session() as s:
@@ -101,12 +162,14 @@ def create_app():
 
     # Connections
     @app.get("/api/connections")
+    @login_required
     def get_connections():
         with Session() as s:
             rows = s.execute(select(Connection)).scalars().all()
             return jsonify([{"id": c.id, "partner_id": c.partner_id, "store_id": c.store_id} for c in rows])
 
     @app.post("/api/connections")
+    @login_required
     def create_connection():
         data = request.json or {}
         with Session() as s:
@@ -115,6 +178,7 @@ def create_app():
 
     # Report entries
     @app.get("/api/report-data")
+    @login_required
     def get_report_data():
         # Optional filters: startDate, endDate, marca
         start = request.args.get("startDate")
@@ -136,6 +200,7 @@ def create_app():
             } for r in rows])
 
     @app.post("/api/report-data/seed")
+    @login_required
     def seed_report_data():
         # Seed sample data similar to current front-end generator
         n = int(request.args.get("n", 100))
@@ -167,6 +232,7 @@ def create_app():
 
     # Upload images (comprovantes)
     @app.post("/api/upload")
+    @login_required
     def upload_images():
         brand_id = request.form.get("brand_id")
         files = request.files.getlist("files")
@@ -182,6 +248,74 @@ def create_app():
                 saved.append({"id": rec.id, "filename": filename, "size_bytes": size_bytes})
             s.commit()
         return jsonify({"saved": saved})
+
+
+    @app.get("/api/report-data/export")
+    @login_required
+    def export_report():
+        import io
+        import pandas as pd
+        fmt = request.args.get("format","excel")
+        start = request.args.get("startDate")
+        end = request.args.get("endDate")
+        marca = request.args.get("marca")
+        with Session() as s:
+            q = s.query(ReportEntry)
+            from datetime import date
+            if start: q = q.filter(ReportEntry.data >= date.fromisoformat(start))
+            if end: q = q.filter(ReportEntry.data <= date.fromisoformat(end))
+            if marca: q = q.filter(ReportEntry.marca == marca)
+            rows = q.all()
+            data = [{
+                "Marca": r.marca,
+                "Loja": r.loja,
+                "Data": r.data.isoformat(),
+                "Valor 20L": r.valor_20l,
+                "Valor 10L": r.valor_10l,
+                "Valor 1500ML": r.valor_1500ml,
+                "Valor CX Copo": r.valor_cx_copo,
+                "Valor Vasilhame": r.valor_vasilhame,
+                "Total": (r.valor_20l + r.valor_10l + r.valor_1500ml + r.valor_cx_copo + r.valor_vasilhame)
+            } for r in rows]
+        if fmt == "excel":
+            df = pd.DataFrame(data)
+            bio = io.BytesIO()
+            with pd.ExcelWriter(bio, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False, sheet_name="Relatório")
+            bio.seek(0)
+            return send_file(bio, as_attachment=True, download_name="relatorio.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        else:
+            # Simple PDF table using reportlab
+            from reportlab.lib.pagesizes import A4
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.units import cm
+            from reportlab.lib import colors
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.styles import getSampleStyleSheet
+            bio = io.BytesIO()
+            doc = SimpleDocTemplate(bio, pagesize=A4)
+            styles = getSampleStyleSheet()
+            elems = []
+            elems.append(Paragraph("Relatório de Marcas e Lojas", styles['Title']))
+            elems.append(Spacer(1, 0.5*cm))
+            # Build table
+            if data:
+                headers = list(data[0].keys())
+                rows_tbl = [headers] + [[str(r[h]) for h in headers] for r in data]
+            else:
+                rows_tbl = [["Sem dados"]]
+            t = Table(rows_tbl, repeatRows=1)
+            t.setStyle(TableStyle([
+                ('BACKGROUND',(0,0),(-1,0), colors.lightgrey),
+                ('GRID',(0,0),(-1,-1), 0.25, colors.grey),
+                ('FONT',(0,0),(-1,0),'Helvetica-Bold'),
+                ('ROWBACKGROUNDS',(0,1),(-1,-1), [colors.white, colors.whitesmoke])
+            ]))
+            elems.append(t)
+            doc.build(elems)
+            bio.seek(0)
+            return send_file(bio, as_attachment=True, download_name="relatorio.pdf", mimetype="application/pdf")
+    
 
     @app.get("/uploads/<path:filename>")
     def get_upload(filename):

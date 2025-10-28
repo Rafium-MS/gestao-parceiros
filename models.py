@@ -73,3 +73,12 @@ class ReceiptImage(Base):
     filename = Column(String, nullable=False)
     size_bytes = Column(Integer, default=0)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+
+from sqlalchemy import Boolean
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
