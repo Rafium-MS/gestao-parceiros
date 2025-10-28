@@ -18,7 +18,7 @@ def create_app():
     app.config["JSON_AS_ASCII"] = False
     app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
     CORS(app)
-    app.secret_key = 'change-me'  # replace in production
+    app.secret_key = 'change-me'
 
     engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
     Base.metadata.create_all(engine)
@@ -53,6 +53,26 @@ def create_app():
                     return abort(403)
             return f(*args, **kwargs)
         return wrapper
+
+    def roles_allowed(*roles):
+        """Allow only if user role in roles; admin always allowed."""
+        def decorator(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                if not current_user.is_authenticated:
+                    from flask import abort
+                    return abort(401)
+                with Session() as s:
+                    u = s.get(User, int(current_user.id))
+                    if not u:
+                        from flask import abort
+                        return abort(401)
+                    if u.role != 'admin' and u.role not in roles:
+                        from flask import abort
+                        return abort(403)
+                return f(*args, **kwargs)
+            return wrapper
+        return decorator
 
     # ---------------------- PAGES ----------------------
     @app.get("/login")
@@ -143,6 +163,13 @@ def create_app():
         return render_template("users.html")
 
     # ---------------------- APIs ----------------------
+    @app.get("/api/me")
+    @login_required
+    def whoami():
+        with Session() as s:
+            u = s.get(User, int(current_user.id))
+            return jsonify({"id": u.id, "username": u.username, "role": u.role})
+
     # Partners
     @app.get("/api/partners")
     @login_required
@@ -159,6 +186,7 @@ def create_app():
 
     @app.post("/api/partners")
     @login_required
+    @roles_allowed("operator")
     def create_partner():
         data = request.json or {}
         with Session() as s:
@@ -168,6 +196,7 @@ def create_app():
 
     @app.put("/api/partners/<int:pid>")
     @login_required
+    @roles_allowed("operator")
     def update_partner(pid):
         data = request.json or {}
         with Session() as s:
@@ -180,6 +209,7 @@ def create_app():
 
     @app.delete("/api/partners/<int:pid>")
     @login_required
+    @roles_allowed("operator")
     def delete_partner(pid):
         with Session() as s:
             p = s.get(Partner, pid)
@@ -197,6 +227,7 @@ def create_app():
 
     @app.post("/api/brands")
     @login_required
+    @roles_allowed("operator")
     def create_brand():
         data = request.json or {}
         with Session() as s:
@@ -206,6 +237,7 @@ def create_app():
 
     @app.put("/api/brands/<int:bid>")
     @login_required
+    @roles_allowed("operator")
     def update_brand(bid):
         data = request.json or {}
         with Session() as s:
@@ -218,6 +250,7 @@ def create_app():
 
     @app.delete("/api/brands/<int:bid>")
     @login_required
+    @roles_allowed("operator")
     def delete_brand(bid):
         with Session() as s:
             b = s.get(Brand, bid)
@@ -242,6 +275,7 @@ def create_app():
 
     @app.post("/api/stores")
     @login_required
+    @roles_allowed("operator")
     def create_store():
         data = request.json or {}
         with Session() as s:
@@ -250,6 +284,7 @@ def create_app():
 
     @app.put("/api/stores/<int:sid>")
     @login_required
+    @roles_allowed("operator")
     def update_store(sid):
         data = request.json or {}
         with Session() as s:
@@ -262,6 +297,7 @@ def create_app():
 
     @app.delete("/api/stores/<int:sid>")
     @login_required
+    @roles_allowed("operator")
     def delete_store(sid):
         with Session() as s:
             st = s.get(Store, sid)
@@ -279,6 +315,7 @@ def create_app():
 
     @app.post("/api/connections")
     @login_required
+    @roles_allowed("operator")
     def create_connection():
         data = request.json or {}
         with Session() as s:
@@ -287,6 +324,7 @@ def create_app():
 
     @app.delete("/api/connections/<int:cid>")
     @login_required
+    @roles_allowed("operator")
     def delete_connection(cid):
         with Session() as s:
             c = s.get(Connection, cid)
@@ -318,6 +356,7 @@ def create_app():
 
     @app.post("/api/report-data/seed")
     @login_required
+    @roles_allowed("operator")
     def seed_report_data():
         n = int(request.args.get("n", 100))
         import random
@@ -346,9 +385,10 @@ def create_app():
             s.commit()
         return jsonify({"ok": True, "seeded": n})
 
-    # Upload images (comprovantes)
+    # Upload images
     @app.post("/api/upload")
     @login_required
+    @roles_allowed("operator")
     def upload_images():
         brand_id = request.form.get("brand_id")
         files = request.files.getlist("files")
@@ -365,7 +405,7 @@ def create_app():
             s.commit()
         return jsonify({"saved": saved})
 
-    # Export Excel/PDF
+    # Export
     @app.get("/api/report-data/export")
     @login_required
     def export_report():
@@ -404,7 +444,6 @@ def create_app():
             from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
             from reportlab.lib.styles import getSampleStyleSheet
             from reportlab.lib import colors
-            import io
             bio = io.BytesIO()
             doc = SimpleDocTemplate(bio, pagesize=A4)
             styles = getSampleStyleSheet()
@@ -424,7 +463,7 @@ def create_app():
             bio.seek(0)
             return send_file(bio, as_attachment=True, download_name="relatorio.pdf", mimetype="application/pdf")
 
-    # Users API (admin only)
+    # Users API
     @app.get("/api/users")
     @login_required
     @admin_required

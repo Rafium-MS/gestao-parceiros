@@ -1,42 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login • Disagua</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f5f7fb; margin:0; }
-    .wrap { min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
-    .card { width: 100%; max-width: 420px; background:white; border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,.08); padding:24px; }
-    h1 { margin:0 0 8px; font-size:1.5rem; }
-    p.sub { margin:0 0 24px; color:#5f6b7a; }
-    label { display:block; font-weight:600; margin:12px 0 6px; color:#374151; }
-    input { width:100%; padding:12px; border:1px solid #d1d5db; border-radius:8px; font-size:1rem; }
-    button { width:100%; margin-top:16px; padding:12px; border:0; border-radius:8px; background:#2563eb; color:white; font-weight:700; cursor:pointer; }
-    .error { background:#fee2e2; color:#991b1b; padding:10px 12px; border-radius:8px; margin-bottom:12px; }
-    .hint { color:#6b7280; font-size:.9rem; margin-top:12px; }
-    .brand { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-    .brand .logo { width:28px; height:28px; border-radius:6px; background:linear-gradient(135deg, #6a11cb, #2575fc); }
-  </style>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Login • Disagua</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f5f7fb;margin:0}.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{width:100%;max-width:420px;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:24px}h1{margin:0 0 8px}.sub{margin:0 0 24px;color:#5f6b7a}label{display:block;font-weight:600;margin:12px 0 6px;color:#374151}input{width:100%;padding:12px;border:1px solid #d1d5db;border-radius:8px}button{width:100%;margin-top:16px;padding:12px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer}.error{background:#fee2e2;color:#991b1b;padding:10px 12px;border-radius:8px;margin-bottom:12px}</style>
 </head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <div class="brand">
-      <div class="logo"></div>
-      <strong>Disagua</strong>
-    </div>
-    <h1>Entrar</h1>
-    <p class="sub">Use <strong>admin / admin</strong> no primeiro acesso.</p>
-    {% if error %}<div class="error">{{ error }}</div>{% endif %}
-    <form method="post" action="/login">
-      <label for="username">Usuário</label>
-      <input id="username" name="username" autocomplete="username" required>
-      <label for="password">Senha</label>
-      <input id="password" type="password" name="password" autocomplete="current-password" required>
-      <button type="submit">Entrar</button>
-    </form>
-  </div>
-</div>
-</body>
+<body><div class="wrap"><div class="card"><h1>Entrar</h1><p class="sub">Primeiro acesso: <b>admin / admin</b></p>{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<form method="post" action="/login"><label>Usuário</label><input name="username" required><label>Senha</label><input type="password" name="password" required><button type="submit">Entrar</button></form></div></div></body>
 </html>

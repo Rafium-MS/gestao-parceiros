@@ -1,68 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Minha conta • Disagua</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f5f7fb; margin:0; }
-    nav { background:#111827; color:white; padding:12px 16px; display:flex; gap:12px; }
-    nav a { color:white; text-decoration:none; opacity:.9; }
-    nav a:hover { opacity:1; }
-    .wrap { max-width: 720px; margin: 24px auto; padding: 0 16px; }
-    .card { background:white; border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,.08); padding:24px; }
-    h1 { margin:0 0 8px; font-size:1.4rem; }
-    p.sub { margin:0 0 24px; color:#5f6b7a; }
-    label { display:block; font-weight:600; margin:12px 0 6px; color:#374151; }
-    input { width:100%; padding:12px; border:1px solid #d1d5db; border-radius:8px; font-size:1rem; }
-    button { margin-top:16px; padding:12px 18px; border:0; border-radius:8px; background:#2563eb; color:white; font-weight:700; cursor:pointer; }
-    .row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    .alert { padding:10px 12px; border-radius:8px; margin-bottom:12px; }
-    .alert-success { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
-    .alert-error { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
-    .muted { color:#6b7280; margin-top:12px; font-size:.9rem; }
-  </style>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Minha conta</title>
+<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f5f7fb;margin:0}nav{background:#111827;color:#fff;padding:12px 16px;display:flex;gap:12px}nav a{color:#fff;text-decoration:none;opacity:.9}nav a:hover{opacity:1}.wrap{max-width:720px;margin:24px auto;padding:0 16px}.card{background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:24px}label{display:block;font-weight:600;margin:12px 0 6px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ok{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:10px;border-radius:8px}.err{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:10px;border-radius:8px}</style>
 </head>
-<body>
-<nav>
-  <a href="/">Início</a>
-  <a href="/parceiros">Parceiros</a>
-  <a href="/lojas">Lojas</a>
-  <a href="/conectar">Conectar</a>
-  <a href="/comprovantes">Comprovantes</a>
-  <a href="/relatorios">Relatórios</a>
-  <span style="flex:1"></span>
-  <a href="/users">Usuários</a>
-  <a href="/account">Minha Conta</a>
-  <a href="/logout">Sair</a>
-</nav>
-<div class="wrap">
-  <div class="card">
-    <h1>Minha conta</h1>
-    <p class="sub">Usuário: <strong>{{ username }}</strong></p>
-
-    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
-    {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
-
-    <form method="post" action="/account">
-      <label for="current_password">Senha atual</label>
-      <input id="current_password" name="current_password" type="password" autocomplete="current-password" required>
-
-      <div class="row">
-        <div>
-          <label for="new_password">Nova senha</label>
-          <input id="new_password" name="new_password" type="password" autocomplete="new-password" required>
-        </div>
-        <div>
-          <label for="confirm_password">Confirmar senha</label>
-          <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required>
-        </div>
-      </div>
-
-      <button type="submit">Salvar nova senha</button>
-      <div class="muted">Dica: use ao menos 8 caracteres, misturando letras, números e símbolos.</div>
-    </form>
-  </div>
-</div>
-</body>
-</html>
+<body><nav><a href="/">Início</a><a href="/parceiros">Parceiros</a><a href="/lojas">Lojas</a><a href="/conectar">Conectar</a><a href="/comprovantes">Comprovantes</a><a href="/relatorios">Relatórios</a><span style="flex:1"></span><a href="/users">Usuários</a><a href="/logout">Sair</a></nav>
+<div class="wrap"><div class="card"><h2>Minha conta</h2><p>Usuário: <b>{{ username }}</b></p>{% if success %}<div class="ok">{{ success }}</div>{% endif %}{% if error %}<div class="err">{{ error }}</div>{% endif %}
+<form method="post" action="/account"><label>Senha atual</label><input type="password" name="current_password" required><div class="row"><div><label>Nova senha</label><input type="password" name="new_password" required></div><div><label>Confirmar</label><input type="password" name="confirm_password" required></div></div><button type="submit" style="margin-top:12px">Salvar</button></form></div></div></body></html>
