@@ -1,6 +1,6 @@
 
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, UniqueConstraint
+from datetime import datetime, date
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, UniqueConstraint, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -15,7 +15,6 @@ class Partner(Base):
     cnpj_cpf = Column(String, nullable=False)
     telefone = Column(String, nullable=False)
     email = Column(String)
-    # Prices at partner side (optional for now)
     cx_copo = Column(Float, default=0.0)
     dez_litros = Column(Float, default=0.0)
     vinte_litros = Column(Float, default=0.0)
@@ -74,11 +73,10 @@ class ReceiptImage(Base):
     size_bytes = Column(Integer, default=0)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
-
-from sqlalchemy import Boolean
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
+    role = Column(String, default='operator')  # 'admin' | 'operator' | 'viewer'
     is_active = Column(Boolean, default=True)

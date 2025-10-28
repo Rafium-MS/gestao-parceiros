@@ -294,6 +294,10 @@
   <a href="/conectar">Conectar</a>
   <a href="/comprovantes">Comprovantes</a>
   <a href="/relatorios">Relatórios</a>
+  <span style="flex:1"></span>
+  <a href="/users">Usuários</a>
+  <a href="/account">Minha Conta</a>
+  <a href="/logout">Sair</a>
 </nav>
     <div class="container">
         <header>
@@ -450,220 +454,342 @@
     </div>
 
     <script>
-
-document.addEventListener('DOMContentLoaded', function() {
-    const brandForm = document.getElementById('brandForm');
-    const storeForm = document.getElementById('storeForm');
-    const brandsTableBody = document.getElementById('brandsTableBody');
-    const emptyMessage = document.getElementById('emptyMessage');
-    const marcaSelect = document.getElementById('marca_id');
-
-    let editingBrandId = null;
-    let editingStoreId = null;
-
-    async function getBrands(){ const r = await fetch('/api/brands'); return await r.json(); }
-    async function getStores(){ const r = await fetch('/api/stores'); return await r.json(); }
-
-    async function refreshSelect() {
-        marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
-        const brands = await getBrands();
-        brands.forEach(b => {
-            const option = document.createElement('option');
-            option.value = b.id;
-            option.textContent = b.marca;
-            marcaSelect.appendChild(option);
-        });
-    }
-
-    function BRL(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0)); }
-
-    async function refreshTable() {
-        brandsTableBody.innerHTML='';
-        const brands = await getBrands();
-        const stores = await getStores();
-
-        if (brands.length===0){
-            emptyMessage.style.display='block';
-            return;
-        }
-        emptyMessage.style.display='none';
-
-        brands.forEach(b => {
-            const brandStores = stores.filter(s => Number(s.marca_id) === Number(b.id));
-            const brandRow = document.createElement('tr');
-            brandRow.className='brand-header';
-            brandRow.innerHTML = `
-                <td class="brand-name">${b.marca}</td>
-                <td>${b.cod_disagua||''}</td>
-                <td>${brandStores.length} loja(s)</td>
-                <td class="actions-cell">
-                    <button class="btn-edit" data-id="${b.id}">Editar</button>
-                    <button class="btn-delete" data-id="${b.id}">Excluir</button>
-                    <button class="add-store-btn" data-id="${b.id}">+ Loja</button>
-                </td>
-            `;
-            brandsTableBody.appendChild(brandRow);
-
-            const detailsRow = document.createElement('tr');
-            if (brandStores.length===0){
-                detailsRow.innerHTML = `<td colspan="4" style="text-align:center; color:#7f8c8d;">Nenhuma loja cadastrada para esta marca.</td>`;
-            } else {
-                let rows = brandStores.map(st => `
-                    <tr data-storeid="${st.id}">
-                        <td>${st.loja}</td>
-                        <td>${st.local_entrega||''}</td>
-                        <td>${st.endereco||''}</td>
-                        <td>${st.municipio}</td>
-                        <td>${st.uf}</td>
-                        <td>${BRL(st.valor_20l)}</td>
-                        <td>${BRL(st.valor_10l)}</td>
-                        <td>${BRL(st.valor_1500ml)}</td>
-                        <td>${BRL(st.valor_cx_copo)}</td>
-                        <td>${BRL(st.valor_vasilhame)}</td>
-                        <td class="actions-cell">
-                            <button class="btn-edit-store" data-id="${st.id}">Editar</button>
-                            <button class="btn-delete-store" data-id="${st.id}">Excluir</button>
-                        </td>
-                    </tr>
-                `).join('');
-                detailsRow.innerHTML = `
-                    <td colspan="4">
-                        <table style="width:100%; background:#f9f9f9">
-                            <thead>
-                                <tr>
-                                    <th>LOJA</th><th>LOCAL ENTREGA</th><th>ENDEREÇO</th><th>MUNICÍPIO</th><th>UF</th>
-                                    <th>VALOR 20L</th><th>VALOR 10L</th><th>VALOR 1500ML</th><th>VALOR CX COPO</th><th>VALOR VASILHAME</th><th>AÇÕES</th>
-                                </tr>
-                            </thead>
-                            <tbody>${rows}</tbody>
-                        </table>
-                    </td>`;
+        document.addEventListener('DOMContentLoaded', function() {
+            const brandForm = document.getElementById('brandForm');
+            const storeForm = document.getElementById('storeForm');
+            const brandsTableBody = document.getElementById('brandsTableBody');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const marcaSelect = document.getElementById('marca_id');
+            
+            // Arrays para armazenar as marcas e lojas
+            let brands = JSON.parse(localStorage.getItem('brands')) || [];
+            let stores = JSON.parse(localStorage.getItem('stores')) || [];
+            
+            // Variáveis para controlar a edição
+            let editingBrandIndex = -1;
+            let editingStoreIndex = -1;
+            
+            // Atualizar a tabela e o select ao carregar a página
+            updateBrandsTable();
+            updateBrandsSelect();
+            
+            // Função para atualizar o select de marcas
+            function updateBrandsSelect() {
+                marcaSelect.innerHTML = '<option value="">Selecione uma marca</option>';
+                
+                brands.forEach((brand, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = brand.marca;
+                    marcaSelect.appendChild(option);
+                });
             }
-            brandsTableBody.appendChild(detailsRow);
-
-            brandRow.addEventListener('click', (e)=>{
-                const t = e.target;
-                if (t.tagName==='BUTTON') return;
-                detailsRow.style.display = (detailsRow.style.display==='table-row') ? 'none':'table-row';
-            });
-            brandRow.querySelector('.add-store-btn').addEventListener('click', (e)=>{
-                const id = e.target.getAttribute('data-id');
-                marcaSelect.value = id;
-                document.getElementById('storeForm').scrollIntoView({behavior:'smooth'});
-            });
-            brandRow.querySelector('.btn-edit').addEventListener('click', (e)=>{
-                const id = Number(e.target.getAttribute('data-id'));
-                editingBrandId = id;
-                document.getElementById('marca').value = b.marca;
-                document.getElementById('cod_disagua').value = b.cod_disagua || '';
+            
+            // Função para atualizar a tabela de marcas e lojas
+            function updateBrandsTable() {
+                brandsTableBody.innerHTML = '';
+                
+                if (brands.length === 0) {
+                    emptyMessage.style.display = 'block';
+                    return;
+                }
+                
+                emptyMessage.style.display = 'none';
+                
+                brands.forEach((brand, brandIndex) => {
+                    // Filtrar lojas desta marca
+                    const brandStores = stores.filter(store => store.marca_id == brandIndex);
+                    
+                    // Linha da marca
+                    const brandRow = document.createElement('tr');
+                    brandRow.className = 'brand-header';
+                    brandRow.setAttribute('data-brand-index', brandIndex);
+                    
+                    brandRow.innerHTML = `
+                        <td class="brand-name">${brand.marca}</td>
+                        <td>${brand.cod_disagua}</td>
+                        <td>${brandStores.length} loja(s)</td>
+                        <td class="actions-cell">
+                            <button class="btn-edit" onclick="editBrand(${brandIndex})">Editar</button>
+                            <button class="btn-delete" onclick="deleteBrand(${brandIndex})">Excluir</button>
+                            <button class="add-store-btn" onclick="addStoreToBrand(${brandIndex})">+ Loja</button>
+                        </td>
+                    `;
+                    
+                    brandsTableBody.appendChild(brandRow);
+                    
+                    // Adicionar evento de clique para expandir/recolher
+                    brandRow.addEventListener('click', function(e) {
+                        // Não disparar se o clique foi em um botão
+                        if (e.target.tagName === 'BUTTON') return;
+                        
+                        this.classList.toggle('brand-expanded');
+                    });
+                    
+                    // Linha de detalhes (lojas da marca)
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.className = 'brand-details';
+                    
+                    if (brandStores.length === 0) {
+                        detailsRow.innerHTML = `
+                            <td colspan="4" style="text-align: center; color: #7f8c8d;">
+                                Nenhuma loja cadastrada para esta marca.
+                            </td>
+                        `;
+                    } else {
+                        let storesHTML = `
+                            <td colspan="4">
+                                <table style="width: 100%; background-color: #f9f9f9;">
+                                    <thead>
+                                        <tr>
+                                            <th>LOJA</th>
+                                            <th>LOCAL ENTREGA</th>
+                                            <th>ENDEREÇO</th>
+                                            <th>MUNICÍPIO</th>
+                                            <th>UF</th>
+                                            <th>VALOR 20L</th>
+                                            <th>VALOR 10L</th>
+                                            <th>VALOR 1500ML</th>
+                                            <th>VALOR CX COPO</th>
+                                            <th>VALOR VASILHAME</th>
+                                            <th>AÇÕES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        // Formatar valores monetários
+                        const formatCurrency = (value) => {
+                            return new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            }).format(value);
+                        };
+                        
+                        brandStores.forEach((store, storeIndex) => {
+                            storesHTML += `
+                                <tr>
+                                    <td>${store.loja}</td>
+                                    <td>${store.local_entrega}</td>
+                                    <td>${store.endereco}</td>
+                                    <td>${store.municipio}</td>
+                                    <td>${store.uf}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_20l))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_10l))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_1500ml))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_cx_copo))}</td>
+                                    <td>${formatCurrency(parseFloat(store.valor_vasilhame))}</td>
+                                    <td class="actions-cell">
+                                        <button class="btn-edit" onclick="editStore(${brandIndex}, ${storeIndex})">Editar</button>
+                                        <button class="btn-delete" onclick="deleteStore(${brandIndex}, ${storeIndex})">Excluir</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        
+                        storesHTML += `
+                                    </tbody>
+                                </table>
+                            </td>
+                        `;
+                        
+                        detailsRow.innerHTML = storesHTML;
+                    }
+                    
+                    brandsTableBody.appendChild(detailsRow);
+                });
+            }
+            
+            // Função para preencher o formulário de marcas com dados para edição
+            window.editBrand = function(index) {
+                const brand = brands[index];
+                
+                // Preencher o formulário com os dados da marca
+                document.getElementById('marca').value = brand.marca;
+                document.getElementById('cod_disagua').value = brand.cod_disagua;
+                
+                // Alterar o texto do botão de submit
                 document.querySelector('#brandForm .btn-submit').textContent = 'Atualizar Marca';
-                window.scrollTo({top:0, behavior:'smooth'});
+                
+                // Definir o índice que está sendo editado
+                editingBrandIndex = index;
+                
+                // Rolar para o topo do formulário
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            
+            // Função para preencher o formulário de lojas com dados para edição
+            window.editStore = function(brandIndex, storeIndex) {
+                // Encontrar a loja específica
+                const store = stores.find(store => store.marca_id == brandIndex && 
+                                                  stores.indexOf(store) === storeIndex);
+                
+                if (!store) return;
+                
+                // Preencher o formulário com os dados da loja
+                document.getElementById('marca_id').value = brandIndex;
+                document.getElementById('loja').value = store.loja;
+                document.getElementById('local_entrega').value = store.local_entrega;
+                document.getElementById('endereco').value = store.endereco;
+                document.getElementById('municipio').value = store.municipio;
+                document.getElementById('uf').value = store.uf;
+                document.getElementById('valor_20l').value = store.valor_20l;
+                document.getElementById('valor_10l').value = store.valor_10l;
+                document.getElementById('valor_1500ml').value = store.valor_1500ml;
+                document.getElementById('valor_cx_copo').value = store.valor_cx_copo;
+                document.getElementById('valor_vasilhame').value = store.valor_vasilhame;
+                
+                // Alterar o texto do botão de submit
+                document.querySelector('#storeForm .btn-submit').textContent = 'Atualizar Loja';
+                
+                // Definir o índice que está sendo editado
+                editingStoreIndex = storeIndex;
+                
+                // Rolar para o formulário de lojas
+                document.getElementById('storeForm').scrollIntoView({ behavior: 'smooth' });
+            };
+            
+            // Função para adicionar loja a uma marca específica
+            window.addStoreToBrand = function(brandIndex) {
+                document.getElementById('marca_id').value = brandIndex;
+                
+                // Rolar para o formulário de lojas
+                document.getElementById('storeForm').scrollIntoView({ behavior: 'smooth' });
+            };
+            
+            // Função para excluir uma marca
+            window.deleteBrand = function(index) {
+                if (confirm('Tem certeza que deseja excluir esta marca? Todas as lojas associadas também serão excluídas.')) {
+                    // Remover a marca
+                    brands.splice(index, 1);
+                    
+                    // Remover todas as lojas associadas a esta marca
+                    stores = stores.filter(store => store.marca_id != index);
+                    
+                    // Atualizar os índices das marcas nas lojas restantes
+                    stores.forEach(store => {
+                        if (store.marca_id > index) {
+                            store.marca_id--;
+                        }
+                    });
+                    
+                    localStorage.setItem('brands', JSON.stringify(brands));
+                    localStorage.setItem('stores', JSON.stringify(stores));
+                    updateBrandsTable();
+                    updateBrandsSelect();
+                    alert('Marca e lojas associadas excluídas com sucesso!');
+                }
+            };
+            
+            // Função para excluir uma loja
+            window.deleteStore = function(brandIndex, storeIndex) {
+                if (confirm('Tem certeza que deseja excluir esta loja?')) {
+                    // Encontrar o índice global da loja
+                    const globalStoreIndex = stores.findIndex(store => store.marca_id == brandIndex && 
+                                                                      stores.indexOf(store) === storeIndex);
+                    
+                    if (globalStoreIndex !== -1) {
+                        stores.splice(globalStoreIndex, 1);
+                        localStorage.setItem('stores', JSON.stringify(stores));
+                        updateBrandsTable();
+                        alert('Loja excluída com sucesso!');
+                    }
+                }
+            };
+            
+            // Evento de envio do formulário de marcas
+            brandForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Coletar dados do formulário
+                const formData = new FormData(brandForm);
+                const brandData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    brandData[key] = value;
+                }
+                
+                if (editingBrandIndex === -1) {
+                    // Adicionar nova marca
+                    brands.push(brandData);
+                    alert('Marca cadastrada com sucesso!');
+                } else {
+                    // Atualizar marca existente
+                    brands[editingBrandIndex] = brandData;
+                    alert('Marca atualizada com sucesso!');
+                    
+                    // Resetar o estado de edição
+                    editingBrandIndex = -1;
+                    document.querySelector('#brandForm .btn-submit').textContent = 'Cadastrar Marca';
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('brands', JSON.stringify(brands));
+                
+                // Atualizar a tabela e o select
+                updateBrandsTable();
+                updateBrandsSelect();
+                
+                // Limpar o formulário
+                brandForm.reset();
             });
-            brandRow.querySelector('.btn-delete').addEventListener('click', async (e)=>{
-                const id = Number(e.target.getAttribute('data-id'));
-                if (!confirm('Excluir esta marca e lojas associadas?')) return;
-                const r = await fetch(`/api/brands/${id}`, { method:'DELETE' });
-                if (!r.ok){ alert('Erro ao excluir marca.'); return; }
-                await refreshSelect();
-                await refreshTable();
+            
+            // Evento de envio do formulário de lojas
+            storeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Coletar dados do formulário
+                const formData = new FormData(storeForm);
+                const storeData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    storeData[key] = value;
+                }
+                
+                // Converter marca_id para número
+                storeData.marca_id = parseInt(storeData.marca_id);
+                
+                if (editingStoreIndex === -1) {
+                    // Adicionar nova loja
+                    stores.push(storeData);
+                    alert('Loja cadastrada com sucesso!');
+                } else {
+                    // Encontrar o índice global da loja
+                    const globalStoreIndex = stores.findIndex(store => store.marca_id == storeData.marca_id && 
+                                                                      stores.indexOf(store) === editingStoreIndex);
+                    
+                    if (globalStoreIndex !== -1) {
+                        // Atualizar loja existente
+                        stores[globalStoreIndex] = storeData;
+                        alert('Loja atualizada com sucesso!');
+                    }
+                    
+                    // Resetar o estado de edição
+                    editingStoreIndex = -1;
+                    document.querySelector('#storeForm .btn-submit').textContent = 'Cadastrar Loja';
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('stores', JSON.stringify(stores));
+                
+                // Atualizar a tabela
+                updateBrandsTable();
+                
+                // Limpar o formulário
+                storeForm.reset();
             });
-
-            detailsRow.querySelectorAll('.btn-edit-store')?.forEach(btn=>{
-                btn.addEventListener('click', (e)=>{
-                    const sid = Number(e.target.getAttribute('data-id'));
-                    const st = brandStores.find(x=> Number(x.id)===sid);
-                    if (!st) return;
-                    editingStoreId = sid;
-                    document.getElementById('marca_id').value = b.id;
-                    document.getElementById('loja').value = st.loja;
-                    document.getElementById('local_entrega').value = st.local_entrega || '';
-                    document.getElementById('endereco').value = st.endereco || '';
-                    document.getElementById('municipio').value = st.municipio;
-                    document.getElementById('uf').value = st.uf;
-                    document.getElementById('valor_20l').value = st.valor_20l||0;
-                    document.getElementById('valor_10l').value = st.valor_10l||0;
-                    document.getElementById('valor_1500ml').value = st.valor_1500ml||0;
-                    document.getElementById('valor_cx_copo').value = st.valor_cx_copo||0;
-                    document.getElementById('valor_vasilhame').value = st.valor_vasilhame||0;
-                    document.querySelector('#storeForm .btn-submit').textContent = 'Atualizar Loja';
-                    document.getElementById('storeForm').scrollIntoView({behavior:'smooth'});
-                });
+            
+            // Resetar os formulários quando os botões de limpar forem clicados
+            brandForm.addEventListener('reset', function() {
+                editingBrandIndex = -1;
+                document.querySelector('#brandForm .btn-submit').textContent = 'Cadastrar Marca';
             });
-            detailsRow.querySelectorAll('.btn-delete-store')?.forEach(btn=>{
-                btn.addEventListener('click', async (e)=>{
-                    const sid = Number(e.target.getAttribute('data-id'));
-                    if (!confirm('Excluir esta loja?')) return;
-                    const r = await fetch(`/api/stores/${sid}`, { method:'DELETE' });
-                    if (!r.ok){ alert('Erro ao excluir loja.'); return; }
-                    await refreshTable();
-                });
+            
+            storeForm.addEventListener('reset', function() {
+                editingStoreIndex = -1;
+                document.querySelector('#storeForm .btn-submit').textContent = 'Cadastrar Loja';
             });
         });
-    }
-
-    brandForm.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        const fd = new FormData(brandForm);
-        const payload = { marca: fd.get('marca'), cod_disagua: fd.get('cod_disagua') || '' };
-        let res;
-        if (editingBrandId){
-            res = await fetch(`/api/brands/${editingBrandId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        } else {
-            res = await fetch('/api/brands', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        }
-        if(!res.ok){ alert('Erro ao salvar marca'); return; }
-        brandForm.reset();
-        editingBrandId = null;
-        document.querySelector('#brandForm .btn-submit').textContent = 'Cadastrar Marca';
-        await refreshSelect();
-        await refreshTable();
-        alert('Marca salva com sucesso!');
-    });
-
-    brandForm.addEventListener('reset', ()=>{
-        editingBrandId = null;
-        document.querySelector('#brandForm .btn-submit').textContent = 'Cadastrar Marca';
-    });
-
-    storeForm.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        const fd = new FormData(storeForm);
-        const payload = {
-            marca_id: Number(fd.get('marca_id')),
-            loja: fd.get('loja'),
-            cod_disagua: fd.get('cod_disagua') || '',
-            local_entrega: fd.get('local_entrega'),
-            endereco: fd.get('endereco') || '',
-            municipio: fd.get('municipio'),
-            uf: fd.get('uf'),
-            valor_20l: Number(fd.get('valor_20l')||0),
-            valor_10l: Number(fd.get('valor_10l')||0),
-            valor_1500ml: Number(fd.get('valor_1500ml')||0),
-            valor_cx_copo: Number(fd.get('valor_cx_copo')||0),
-            valor_vasilhame: Number(fd.get('valor_vasilhame')||0),
-        };
-        let res;
-        if (editingStoreId){
-            res = await fetch(`/api/stores/${editingStoreId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        } else {
-            res = await fetch('/api/stores', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        }
-        if(!res.ok){ alert('Erro ao salvar loja'); return; }
-        storeForm.reset();
-        editingStoreId = null;
-        document.querySelector('#storeForm .btn-submit').textContent = 'Cadastrar Loja';
-        await refreshTable();
-        alert('Loja salva com sucesso!');
-    });
-
-    storeForm.addEventListener('reset', ()=>{
-        editingStoreId = null;
-        document.querySelector('#storeForm .btn-submit').textContent = 'Cadastrar Loja';
-    });
-
-    (async () => { await refreshSelect(); await refreshTable(); })();
-});
-
-</script>
+    </script>
 </body>
 </html>

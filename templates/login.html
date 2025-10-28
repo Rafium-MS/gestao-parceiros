@@ -27,7 +27,7 @@
       <strong>Disagua</strong>
     </div>
     <h1>Entrar</h1>
-    <p class="sub">Use <strong>admin / admin</strong> no primeiro acesso (o usuário é criado automaticamente).</p>
+    <p class="sub">Use <strong>admin / admin</strong> no primeiro acesso.</p>
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
     <form method="post" action="/login">
       <label for="username">Usuário</label>
@@ -36,7 +36,6 @@
       <input id="password" type="password" name="password" autocomplete="current-password" required>
       <button type="submit">Entrar</button>
     </form>
-    <div class="hint">Depois você pode criar uma rota de administração para trocar a senha.</div>
   </div>
 </div>
 </body>

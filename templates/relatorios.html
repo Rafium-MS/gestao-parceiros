@@ -211,6 +211,10 @@
   <a href="/conectar">Conectar</a>
   <a href="/comprovantes">Comprovantes</a>
   <a href="/relatorios">Relatórios</a>
+  <span style="flex:1"></span>
+  <a href="/users">Usuários</a>
+  <a href="/account">Minha Conta</a>
+  <a href="/logout">Sair</a>
 </nav>
     <div class="container">
         <header>
@@ -238,11 +242,8 @@
                     </div>
                 </div>
                 
-                <div style="margin-top:10px"><button type="button" id="seedBtn" class="btn-submit">Gerar dados de exemplo</button></div>
-                
                 <div class="btn-container">
                     <button type="submit" class="btn-generate">Gerar Relatório</button>
-                    <button type="button" class="btn-generate" id="seedBtn">Gerar dados de exemplo</button>
                 </div>
             </form>
         </div>
@@ -285,132 +286,306 @@
     </div>
 
     <script>
-
-document.addEventListener('DOMContentLoaded', function() {
-    const reportForm = document.getElementById('reportForm');
-    const reportsTableBody = document.getElementById('reportsTableBody');
-    const emptyReportMessage = document.getElementById('emptyReportMessage');
-    const exportButtons = document.getElementById('exportButtons');
-    const summaryCards = document.getElementById('summaryCards');
-    const marcaSelect = document.getElementById('marca');
-    const seedBtn = document.getElementById('seedBtn');
-
-    async function loadBrands(){
-        const brands = await (await fetch('/api/brands')).json();
-        marcaSelect.innerHTML = '<option value="">Todas as Marcas</option>';
-        brands.forEach(b => {
-            const o = document.createElement('option');
-            o.value = b.marca; // usamos nome direto para filtrar na API
-            o.textContent = b.marca;
-            marcaSelect.appendChild(o);
-        });
-    }
-
-    function BRL(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0)); }
-
-    function updateSummaryCards(totalItems, grandTotal, total20L, total10L) {
-        summaryCards.innerHTML = `
-            <div class="summary-card"><h3>Total de Registros</h3><div class="value">${totalItems}</div></div>
-            <div class="summary-card"><h3>Valor Total</h3><div class="value">${BRL(grandTotal)}</div></div>
-            <div class="summary-card"><h3>Média por Registro</h3><div class="value">${BRL(grandTotal / Math.max(1,totalItems))}</div></div>
-            <div class="summary-card"><h3>Produto Mais Vendido</h3><div class="value">${Number(total20L)>=Number(total10L)?'20L':'10L'}</div></div>
-        `;
-    }
-
-    function renderTable(data){
-        reportsTableBody.innerHTML='';
-        if (!data || data.length===0){
-            emptyReportMessage.style.display='block';
-            exportButtons.style.display='none';
-            summaryCards.style.display='none';
-            return;
-        }
-        emptyReportMessage.style.display='none';
-        exportButtons.style.display='flex';
-        summaryCards.style.display='flex';
-
-        let total20L=0, total10L=0, total1500ml=0, totalCxCopo=0, totalVasilhame=0, grand=0;
-        const brandsMap = {};
-
-        data.forEach(it => {
-            const t = Number(it.valor_20l)+Number(it.valor_10l)+Number(it.valor_1500ml)+Number(it.valor_cx_copo)+Number(it.valor_vasilhame);
-            (brandsMap[it.marca] ||= []).push({...it, total:t});
-            total20L += Number(it.valor_20l);
-            total10L += Number(it.valor_10l);
-            total1500ml += Number(it.valor_1500ml);
-            totalCxCopo += Number(it.valor_cx_copo);
-            totalVasilhame += Number(it.valor_vasilhame);
-            grand += t;
-        });
-
-        Object.keys(brandsMap).forEach(marca => {
-            const header = document.createElement('tr');
-            header.className='brand-header';
-            header.innerHTML = `<td colspan="9">${marca}</td>`;
-            reportsTableBody.appendChild(header);
-
-            brandsMap[marca].forEach(item=>{
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td></td>
-                    <td>${item.loja}</td>
-                    <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
-                    <td class="currency-value">${BRL(item.valor_20l)}</td>
-                    <td class="currency-value">${BRL(item.valor_10l)}</td>
-                    <td class="currency-value">${BRL(item.valor_1500ml)}</td>
-                    <td class="currency-value">${BRL(item.valor_cx_copo)}</td>
-                    <td class="currency-value">${BRL(item.valor_vasilhame)}</td>
-                    <td class="currency-value">${BRL(item.total)}</td>
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportForm = document.getElementById('reportForm');
+            const reportsTableBody = document.getElementById('reportsTableBody');
+            const emptyReportMessage = document.getElementById('emptyReportMessage');
+            const exportButtons = document.getElementById('exportButtons');
+            const summaryCards = document.getElementById('summaryCards');
+            const marcaSelect = document.getElementById('marca');
+            const exportExcelBtn = document.getElementById('exportExcel');
+            const exportPDFBtn = document.getElementById('exportPDF');
+            const printReportBtn = document.getElementById('printReport');
+            
+            // Definir datas padrão (últimos 30 dias)
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            
+            document.getElementById('startDate').valueAsDate = startDate;
+            document.getElementById('endDate').valueAsDate = endDate;
+            
+            // Carregar marcas do localStorage
+            loadBrands();
+            
+            // Função para carregar as marcas do localStorage
+            function loadBrands() {
+                const brands = JSON.parse(localStorage.getItem('brands')) || [];
+                marcaSelect.innerHTML = '<option value="">Todas as Marcas</option>';
+                
+                brands.forEach((brand, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = brand.marca;
+                    marcaSelect.appendChild(option);
+                });
+            }
+            
+            // Gerar dados de exemplo se não existirem
+            function generateSampleData() {
+                const sampleData = JSON.parse(localStorage.getItem('reportData'));
+                
+                if (!sampleData || sampleData.length === 0) {
+                    const brands = JSON.parse(localStorage.getItem('brands')) || [];
+                    const stores = JSON.parse(localStorage.getItem('stores')) || [];
+                    
+                    if (brands.length === 0 || stores.length === 0) {
+                        alert('É necessário cadastrar marcas e lojas primeiro para gerar relatórios.');
+                        return [];
+                    }
+                    
+                    // Gerar dados de exemplo
+                    const data = [];
+                    const today = new Date();
+                    
+                    for (let i = 0; i < 100; i++) {
+                        const randomBrandIndex = Math.floor(Math.random() * brands.length);
+                        const brandStores = stores.filter(store => store.marca_id == randomBrandIndex);
+                        
+                        if (brandStores.length === 0) continue;
+                        
+                        const randomStoreIndex = Math.floor(Math.random() * brandStores.length);
+                        const store = brandStores[randomStoreIndex];
+                        
+                        const randomDate = new Date();
+                        randomDate.setDate(today.getDate() - Math.floor(Math.random() * 90));
+                        
+                        data.push({
+                            marca: brands[randomBrandIndex].marca,
+                            loja: store.loja,
+                            data: randomDate.toISOString().split('T')[0],
+                            valor_20l: (Math.random() * 100).toFixed(2),
+                            valor_10l: (Math.random() * 80).toFixed(2),
+                            valor_1500ml: (Math.random() * 50).toFixed(2),
+                            valor_cx_copo: (Math.random() * 120).toFixed(2),
+                            valor_vasilhame: (Math.random() * 30).toFixed(2)
+                        });
+                    }
+                    
+                    localStorage.setItem('reportData', JSON.stringify(data));
+                    return data;
+                }
+                
+                return sampleData;
+            }
+            
+            // Função para gerar o relatório
+            function generateReport(startDate, endDate, marcaId) {
+                const reportData = generateSampleData();
+                
+                if (reportData.length === 0) {
+                    return [];
+                }
+                
+                // Filtrar dados por data e marca
+                const filteredData = reportData.filter(item => {
+                    const itemDate = new Date(item.data);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    
+                    // Verificar se a data está dentro do intervalo
+                    const dateInRange = itemDate >= start && itemDate <= end;
+                    
+                    // Verificar se a marca corresponde
+                    let marcaMatches = true;
+                    if (marcaId !== "") {
+                        const brands = JSON.parse(localStorage.getItem('brands')) || [];
+                        const selectedBrand = brands[parseInt(marcaId)];
+                        marcaMatches = selectedBrand && item.marca === selectedBrand.marca;
+                    }
+                    
+                    return dateInRange && marcaMatches;
+                });
+                
+                return filteredData;
+            }
+            
+            // Função para atualizar a tabela de relatórios
+            function updateReportsTable(data) {
+                reportsTableBody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    emptyReportMessage.style.display = 'block';
+                    exportButtons.style.display = 'none';
+                    summaryCards.style.display = 'none';
+                    return;
+                }
+                
+                emptyReportMessage.style.display = 'none';
+                exportButtons.style.display = 'flex';
+                summaryCards.style.display = 'flex';
+                
+                // Calcular totais
+                let total20L = 0;
+                let total10L = 0;
+                let total1500ml = 0;
+                let totalCxCopo = 0;
+                let totalVasilhame = 0;
+                let grandTotal = 0;
+                
+                // Agrupar por marca para exibir totais
+                const brandsData = {};
+                
+                data.forEach(item => {
+                    if (!brandsData[item.marca]) {
+                        brandsData[item.marca] = {
+                            items: [],
+                            total20L: 0,
+                            total10L: 0,
+                            total1500ml: 0,
+                            totalCxCopo: 0,
+                            totalVasilhame: 0,
+                            total: 0
+                        };
+                    }
+                    
+                    const itemTotal = parseFloat(item.valor_20l) + parseFloat(item.valor_10l) + 
+                                     parseFloat(item.valor_1500ml) + parseFloat(item.valor_cx_copo) + 
+                                     parseFloat(item.valor_vasilhame);
+                    
+                    brandsData[item.marca].items.push({
+                        ...item,
+                        total: itemTotal
+                    });
+                    
+                    brandsData[item.marca].total20L += parseFloat(item.valor_20l);
+                    brandsData[item.marca].total10L += parseFloat(item.valor_10l);
+                    brandsData[item.marca].total1500ml += parseFloat(item.valor_1500ml);
+                    brandsData[item.marca].totalCxCopo += parseFloat(item.valor_cx_copo);
+                    brandsData[item.marca].totalVasilhame += parseFloat(item.valor_vasilhame);
+                    brandsData[item.marca].total += itemTotal;
+                    
+                    total20L += parseFloat(item.valor_20l);
+                    total10L += parseFloat(item.valor_10l);
+                    total1500ml += parseFloat(item.valor_1500ml);
+                    totalCxCopo += parseFloat(item.valor_cx_copo);
+                    totalVasilhame += parseFloat(item.valor_vasilhame);
+                    grandTotal += itemTotal;
+                });
+                
+                // Formatar valores monetários
+                const formatCurrency = (value) => {
+                    return new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    }).format(value);
+                };
+                
+                // Preencher a tabela
+                Object.keys(brandsData).forEach(marca => {
+                    const brandData = brandsData[marca];
+                    
+                    // Cabeçalho da marca
+                    const brandHeader = document.createElement('tr');
+                    brandHeader.className = 'brand-header';
+                    brandHeader.innerHTML = `
+                        <td colspan="9">${marca}</td>
+                    `;
+                    reportsTableBody.appendChild(brandHeader);
+                    
+                    // Itens da marca
+                    brandData.items.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td></td>
+                            <td>${item.loja}</td>
+                            <td>${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+                            <td class="currency-value">${formatCurrency(parseFloat(item.valor_20l))}</td>
+                            <td class="currency-value">${formatCurrency(parseFloat(item.valor_10l))}</td>
+                            <td class="currency-value">${formatCurrency(parseFloat(item.valor_1500ml))}</td>
+                            <td class="currency-value">${formatCurrency(parseFloat(item.valor_cx_copo))}</td>
+                            <td class="currency-value">${formatCurrency(parseFloat(item.valor_vasilhame))}</td>
+                            <td class="currency-value">${formatCurrency(item.total)}</td>
+                        `;
+                        reportsTableBody.appendChild(row);
+                    });
+                    
+                    // Total da marca
+                    const brandTotal = document.createElement('tr');
+                    brandTotal.className = 'brand-total';
+                    brandTotal.innerHTML = `
+                        <td colspan="3">Total ${marca}</td>
+                        <td class="currency-value">${formatCurrency(brandData.total20L)}</td>
+                        <td class="currency-value">${formatCurrency(brandData.total10L)}</td>
+                        <td class="currency-value">${formatCurrency(brandData.total1500ml)}</td>
+                        <td class="currency-value">${formatCurrency(brandData.totalCxCopo)}</td>
+                        <td class="currency-value">${formatCurrency(brandData.totalVasilhame)}</td>
+                        <td class="currency-value">${formatCurrency(brandData.total)}</td>
+                    `;
+                    reportsTableBody.appendChild(brandTotal);
+                });
+                
+                // Atualizar cards de resumo
+                updateSummaryCards(data.length, grandTotal, total20L, total10L);
+            }
+            
+            // Função para atualizar os cards de resumo
+            function updateSummaryCards(totalItems, grandTotal, total20L, total10L) {
+                summaryCards.innerHTML = `
+                    <div class="summary-card">
+                        <h3>Total de Registros</h3>
+                        <div class="value">${totalItems}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Valor Total</h3>
+                        <div class="value">${new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(grandTotal)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Média por Registro</h3>
+                        <div class="value">${new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(grandTotal / totalItems)}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Produto Mais Vendido</h3>
+                        <div class="value">${total20L > total10L ? '20L' : '10L'}</div>
+                    </div>
                 `;
-                reportsTableBody.appendChild(tr);
+            }
+            
+            // Evento de envio do formulário
+            reportForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const marcaId = document.getElementById('marca').value;
+                
+                if (!startDate || !endDate) {
+                    alert('Por favor, selecione as datas inicial e final.');
+                    return;
+                }
+                
+                if (new Date(startDate) > new Date(endDate)) {
+                    alert('A data inicial não pode ser maior que a data final.');
+                    return;
+                }
+                
+                const reportData = generateReport(startDate, endDate, marcaId);
+                updateReportsTable(reportData);
             });
-
-            const totals = brandsMap[marca].reduce((acc, it)=>{
-                acc.v20 += Number(it.valor_20l); acc.v10 += Number(it.valor_10l);
-                acc.v15 += Number(it.valor_1500ml); acc.cx += Number(it.valor_cx_copo);
-                acc.vas += Number(it.valor_vasilhame); acc.tt += Number(it.total); return acc;
-            }, {v20:0,v10:0,v15:0,cx:0,vas:0,tt:0});
-
-            const totalRow = document.createElement('tr');
-            totalRow.className='brand-total';
-            totalRow.innerHTML = `
-                <td colspan="3">Total ${marca}</td>
-                <td class="currency-value">${BRL(totals.v20)}</td>
-                <td class="currency-value">${BRL(totals.v10)}</td>
-                <td class="currency-value">${BRL(totals.v15)}</td>
-                <td class="currency-value">${BRL(totals.cx)}</td>
-                <td class="currency-value">${BRL(totals.vas)}</td>
-                <td class="currency-value">${BRL(totals.tt)}</td>`;
-            reportsTableBody.appendChild(totalRow);
+            
+            // Função para exportar para Excel
+            exportExcelBtn.addEventListener('click', function() {
+                alert('Funcionalidade de exportação para Excel seria implementada aqui.');
+                // Em uma implementação real, você usaria uma biblioteca como SheetJS
+            });
+            
+            // Função para exportar para PDF
+            exportPDFBtn.addEventListener('click', function() {
+                alert('Funcionalidade de exportação para PDF seria implementada aqui.');
+                // Em uma implementação real, você usaria uma biblioteca como jsPDF
+            });
+            
+            // Função para imprimir
+            printReportBtn.addEventListener('click', function() {
+                window.print();
+            });
         });
-
-        updateSummaryCards(data.length, grand, total20L, total10L);
-    }
-
-    reportForm.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const marca = document.getElementById('marca').value || '';
-        const url = new URL('/api/report-data', window.location.origin);
-        if (startDate) url.searchParams.set('startDate', startDate);
-        if (endDate) url.searchParams.set('endDate', endDate);
-        if (marca) url.searchParams.set('marca', marca);
-        const data = await (await fetch(url)).json();
-        renderTable(data);
-    });
-
-    seedBtn.addEventListener('click', async ()=>{
-        const n = prompt('Quantos registros de exemplo deseja criar?', '100');
-        if (n===null) return;
-        const res = await fetch('/api/report-data/seed?n='+encodeURIComponent(n), { method:'POST' });
-        if (!res.ok){ alert('Cadastre ao menos uma marca e loja antes de gerar dados.'); return; }
-        alert('Dados de exemplo gerados! Agora use o filtro e clique em "Gerar Relatório".');
-    });
-
-    loadBrands();
-});
-
-</script>
+    </script>
 </body>
 </html>
