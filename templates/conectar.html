@@ -1,595 +1,255 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Parceiro-Loja</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-
-        .filters-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-group {
-            flex: 1 0 200px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #34495e;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-
-        .btn-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background-color: #3498db;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #2980b9;
-        }
-
-        .btn-success {
-            background-color: #2ecc71;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background-color: #27ae60;
-        }
-
-        .btn-danger {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #c0392b;
-        }
-
-        .results-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            flex: 1 0 300px;
-        }
-
-        .card-header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 15px;
-            font-weight: 600;
-        }
-
-        .card-body {
-            padding: 15px;
-        }
-
-        .connection-item {
-            padding: 10px;
-            border-bottom: 1px solid #eaeaea;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .connection-item:last-child {
-            border-bottom: none;
-        }
-
-        .connection-info {
-            flex: 1;
-        }
-
-        .connection-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 20px;
-            color: #7f8c8d;
-        }
-
-        .status-connected {
-            color: #2ecc71;
-            font-weight: 600;
-        }
-
-        .status-disconnected {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            .form-group {
-                flex: 1 0 100%;
-            }
-            
-            .card {
-                flex: 1 0 100%;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conexão Parceiro-Loja</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<nav>
-  <a href="/">Início</a>
-  <a href="/parceiros">Parceiros</a>
-  <a href="/lojas">Lojas</a>
-  <a href="/conectar">Conectar</a>
-  <a href="/comprovantes">Comprovantes</a>
-  <a href="/relatorios">Relatórios</a>
-  <span style="flex:1"></span>
-  <a href="/users">Usuários</a>
-  <a href="/account">Minha Conta</a>
-  <a href="/logout">Sair</a>
-</nav>
-    <div class="container">
-        <header>
-            <h1>Conexão Parceiro-Loja</h1>
-            <p>Sistema para conectar parceiros às lojas com base na localização</p>
-        </header>
+  {% include '_nav.html' %}
+  <main class="page-content">
+    <div class="container container-wide">
+      <header class="section-header">
+        <h1>Conexão Parceiro-Loja</h1>
+        <p>Sistema para conectar parceiros às lojas com base na localização</p>
+      </header>
 
-        <div class="filters-container">
-            <h2>Filtros de Localização</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="estado">ESTADO</label>
-                    <select id="estado" name="estado">
-                        <option value="">Todos os estados</option>
-                        <option value="AC">Acre</option>
-                        <option value="AL">Alagoas</option>
-                        <option value="AP">Amapá</option>
-                        <option value="AM">Amazonas</option>
-                        <option value="BA">Bahia</option>
-                        <option value="CE">Ceará</option>
-                        <option value="DF">Distrito Federal</option>
-                        <option value="ES">Espírito Santo</option>
-                        <option value="GO">Goiás</option>
-                        <option value="MA">Maranhão</option>
-                        <option value="MT">Mato Grosso</option>
-                        <option value="MS">Mato Grosso do Sul</option>
-                        <option value="MG">Minas Gerais</option>
-                        <option value="PA">Pará</option>
-                        <option value="PB">Paraíba</option>
-                        <option value="PR">Paraná</option>
-                        <option value="PE">Pernambuco</option>
-                        <option value="PI">Piauí</option>
-                        <option value="RJ">Rio de Janeiro</option>
-                        <option value="RN">Rio Grande do Norte</option>
-                        <option value="RS">Rio Grande do Sul</option>
-                        <option value="RO">Rondônia</option>
-                        <option value="RR">Roraima</option>
-                        <option value="SC">Santa Catarina</option>
-                        <option value="SP">São Paulo</option>
-                        <option value="SE">Sergipe</option>
-                        <option value="TO">Tocantins</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="cidade">CIDADE</label>
-                    <input type="text" id="cidade" name="cidade" placeholder="Digite o nome da cidade">
-                </div>
-            </div>
-            <div class="btn-container">
-                <button id="searchBtn" class="btn-primary">Buscar Conexões</button>
-                <button id="resetBtn" class="btn-danger">Limpar Filtros</button>
-            </div>
+      <div class="filters-container">
+        <h2 class="section-title">Filtros de localização</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+              <option value="">Todos os estados</option>
+              <option value="AC">Acre</option>
+              <option value="AL">Alagoas</option>
+              <option value="AP">Amapá</option>
+              <option value="AM">Amazonas</option>
+              <option value="BA">Bahia</option>
+              <option value="CE">Ceará</option>
+              <option value="DF">Distrito Federal</option>
+              <option value="ES">Espírito Santo</option>
+              <option value="GO">Goiás</option>
+              <option value="MA">Maranhão</option>
+              <option value="MT">Mato Grosso</option>
+              <option value="MS">Mato Grosso do Sul</option>
+              <option value="MG">Minas Gerais</option>
+              <option value="PA">Pará</option>
+              <option value="PB">Paraíba</option>
+              <option value="PR">Paraná</option>
+              <option value="PE">Pernambuco</option>
+              <option value="PI">Piauí</option>
+              <option value="RJ">Rio de Janeiro</option>
+              <option value="RN">Rio Grande do Norte</option>
+              <option value="RS">Rio Grande do Sul</option>
+              <option value="RO">Rondônia</option>
+              <option value="RR">Roraima</option>
+              <option value="SC">Santa Catarina</option>
+              <option value="SP">São Paulo</option>
+              <option value="SE">Sergipe</option>
+              <option value="TO">Tocantins</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cidade">Cidade</label>
+            <input type="text" id="cidade" name="cidade" placeholder="Digite o nome da cidade">
+          </div>
         </div>
-
-        <div class="results-container">
-            <div class="card">
-                <div class="card-header">
-                    Parceiros Disponíveis
-                </div>
-                <div class="card-body" id="partnersList">
-                    <!-- Lista de parceiros será preenchida via JavaScript -->
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    Lojas Disponíveis
-                </div>
-                <div class="card-body" id="storesList">
-                    <!-- Lista de lojas será preenchida via JavaScript -->
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    Conexões Ativas
-                </div>
-                <div class="card-body" id="connectionsList">
-                    <!-- Lista de conexões será preenchida via JavaScript -->
-                </div>
-            </div>
+        <div class="btn-container">
+          <button id="searchBtn" class="btn btn-primary">Buscar conexões</button>
+          <button id="resetBtn" class="btn btn-danger">Limpar filtros</button>
         </div>
+      </div>
+
+      <div class="results-container">
+        <div class="card">
+          <div class="card-header">Parceiros disponíveis</div>
+          <div class="card-body" id="partnersList"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">Lojas disponíveis</div>
+          <div class="card-body" id="storesList"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">Conexões ativas</div>
+          <div class="card-body" id="connectionsList"></div>
+        </div>
+      </div>
     </div>
+  </main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const estadoSelect = document.getElementById('estado');
-            const cidadeInput = document.getElementById('cidade');
-            const searchBtn = document.getElementById('searchBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const partnersList = document.getElementById('partnersList');
-            const storesList = document.getElementById('storesList');
-            const connectionsList = document.getElementById('connectionsList');
-            
-            // Carregar dados dos parceiros e lojas do localStorage
-            let partners = JSON.parse(localStorage.getItem('partners')) || [];
-            let brands = JSON.parse(localStorage.getItem('brands')) || [];
-            let stores = JSON.parse(localStorage.getItem('stores')) || [];
-            let connections = JSON.parse(localStorage.getItem('connections')) || [];
-            
-            // Atualizar as listas ao carregar a página
-            updatePartnersList();
-            updateStoresList();
-            updateConnectionsList();
-            
-            // Evento de busca
-            searchBtn.addEventListener('click', function() {
-                updatePartnersList();
-                updateStoresList();
-                updateConnectionsList();
-            });
-            
-            // Evento de reset
-            resetBtn.addEventListener('click', function() {
-                estadoSelect.value = '';
-                cidadeInput.value = '';
-                updatePartnersList();
-                updateStoresList();
-                updateConnectionsList();
-            });
-            
-            // Função para atualizar a lista de parceiros
-            function updatePartnersList() {
-                partnersList.innerHTML = '';
-                
-                const estado = estadoSelect.value;
-                const cidade = cidadeInput.value.toLowerCase();
-                
-                // Filtrar parceiros com base nos critérios
-                const filteredPartners = partners.filter(partner => {
-                    let matchEstado = true;
-                    let matchCidade = true;
-                    
-                    if (estado) {
-                        matchEstado = partner.estado === estado;
-                    }
-                    
-                    if (cidade) {
-                        matchCidade = partner.cidade.toLowerCase().includes(cidade);
-                    }
-                    
-                    return matchEstado && matchCidade;
-                });
-                
-                if (filteredPartners.length === 0) {
-                    partnersList.innerHTML = '<div class="empty-message">Nenhum parceiro encontrado com os filtros aplicados.</div>';
-                    return;
-                }
-                
-                filteredPartners.forEach((partner, index) => {
-                    const partnerItem = document.createElement('div');
-                    partnerItem.className = 'connection-item';
-                    
-                    partnerItem.innerHTML = `
-                        <div class="connection-info">
-                            <strong>${partner.parceiro}</strong><br>
-                            ${partner.cidade} - ${partner.estado}<br>
-                            <small>${partner.distribuidora || 'Sem distribuidora'}</small>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-primary btn-small" onclick="connectPartner(${index})">Conectar</button>
-                        </div>
-                    `;
-                    
-                    partnersList.appendChild(partnerItem);
-                });
-            }
-            
-            // Função para atualizar a lista de lojas
-            function updateStoresList() {
-                storesList.innerHTML = '';
-                
-                const estado = estadoSelect.value;
-                const cidade = cidadeInput.value.toLowerCase();
-                
-                // Filtrar lojas com base nos critérios
-                const filteredStores = stores.filter(store => {
-                    let matchEstado = true;
-                    let matchCidade = true;
-                    
-                    if (estado) {
-                        matchEstado = store.uf === estado;
-                    }
-                    
-                    if (cidade) {
-                        matchCidade = store.municipio.toLowerCase().includes(cidade);
-                    }
-                    
-                    return matchEstado && matchCidade;
-                });
-                
-                if (filteredStores.length === 0) {
-                    storesList.innerHTML = '<div class="empty-message">Nenhuma loja encontrada com os filtros aplicados.</div>';
-                    return;
-                }
-                
-                filteredStores.forEach((store, index) => {
-                    const storeItem = document.createElement('div');
-                    storeItem.className = 'connection-item';
-                    
-                    // Encontrar a marca da loja
-                    const brand = brands[store.marca_id] || { marca: 'Marca não encontrada' };
-                    
-                    storeItem.innerHTML = `
-                        <div class="connection-info">
-                            <strong>${store.loja}</strong><br>
-                            ${brand.marca}<br>
-                            ${store.municipio} - ${store.uf}<br>
-                            <small>${store.local_entrega}</small>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-primary btn-small" onclick="connectStore(${index})">Conectar</button>
-                        </div>
-                    `;
-                    
-                    storesList.appendChild(storeItem);
-                });
-            }
-            
-            // Função para atualizar a lista de conexões
-            function updateConnectionsList() {
-                connectionsList.innerHTML = '';
-                
-                if (connections.length === 0) {
-                    connectionsList.innerHTML = '<div class="empty-message">Nenhuma conexão ativa.</div>';
-                    return;
-                }
-                
-                connections.forEach((connection, index) => {
-                    const connectionItem = document.createElement('div');
-                    connectionItem.className = 'connection-item';
-                    
-                    // Encontrar o parceiro e a loja
-                    const partner = partners[connection.partnerIndex];
-                    const store = stores[connection.storeIndex];
-                    const brand = brands[store.marca_id] || { marca: 'Marca não encontrada' };
-                    
-                    connectionItem.innerHTML = `
-                        <div class="connection-info">
-                            <strong>${partner.parceiro}</strong> ↔ <strong>${store.loja}</strong><br>
-                            ${partner.cidade} - ${partner.estado} → ${store.municipio} - ${store.uf}<br>
-                            <small>${brand.marca}</small><br>
-                            <span class="status-connected">CONECTADO</span>
-                        </div>
-                        <div class="connection-actions">
-                            <button class="btn-danger btn-small" onclick="disconnect(${index})">Desconectar</button>
-                        </div>
-                    `;
-                    
-                    connectionsList.appendChild(connectionItem);
-                });
-            }
-            
-            // Função para conectar um parceiro (global para ser acessível pelo onclick)
-            window.connectPartner = function(partnerIndex) {
-                const partner = partners[partnerIndex];
-                
-                // Filtrar lojas no mesmo estado e cidade
-                const matchingStores = stores.filter((store, index) => {
-                    return store.uf === partner.estado && 
-                           store.municipio.toLowerCase() === partner.cidade.toLowerCase();
-                });
-                
-                if (matchingStores.length === 0) {
-                    alert(`Não foram encontradas lojas em ${partner.cidade} - ${partner.estado} para conectar com este parceiro.`);
-                    return;
-                }
-                
-                // Mostrar opções de lojas para conectar
-                let storeOptions = '';
-                matchingStores.forEach((store, index) => {
-                    const brand = brands[store.marca_id] || { marca: 'Marca não encontrada' };
-                    storeOptions += `<option value="${stores.indexOf(store)}">${store.loja} (${brand.marca})</option>`;
-                });
-                
-                const selectedStoreIndex = prompt(`Selecione uma loja para conectar com ${partner.parceiro}:\n\n${matchingStores.map((store, i) => `${i+1}. ${store.loja}`).join('\n')}\n\nDigite o número da loja:`);
-                
-                if (selectedStoreIndex !== null) {
-                    const storeIndex = matchingStores[parseInt(selectedStoreIndex) - 1];
-                    
-                    if (storeIndex !== undefined) {
-                        // Verificar se já existe uma conexão
-                        const existingConnection = connections.find(conn => 
-                            conn.partnerIndex === partnerIndex && conn.storeIndex === stores.indexOf(matchingStores[storeIndex])
-                        );
-                        
-                        if (existingConnection) {
-                            alert('Esta conexão já existe!');
-                            return;
-                        }
-                        
-                        // Criar nova conexão
-                        connections.push({
-                            partnerIndex: partnerIndex,
-                            storeIndex: stores.indexOf(matchingStores[storeIndex])
-                        });
-                        
-                        // Salvar no localStorage
-                        localStorage.setItem('connections', JSON.stringify(connections));
-                        
-                        // Atualizar a lista de conexões
-                        updateConnectionsList();
-                        
-                        alert('Conexão estabelecida com sucesso!');
-                    } else {
-                        alert('Opção inválida!');
-                    }
-                }
-            };
-            
-            // Função para conectar uma loja (global para ser acessível pelo onclick)
-            window.connectStore = function(storeIndex) {
-                const store = stores[storeIndex];
-                
-                // Filtrar parceiros no mesmo estado e cidade
-                const matchingPartners = partners.filter((partner, index) => {
-                    return partner.estado === store.uf && 
-                           partner.cidade.toLowerCase() === store.municipio.toLowerCase();
-                });
-                
-                if (matchingPartners.length === 0) {
-                    alert(`Não foram encontrados parceiros em ${store.municipio} - ${store.uf} para conectar com esta loja.`);
-                    return;
-                }
-                
-                // Mostrar opções de parceiros para conectar
-                let partnerOptions = '';
-                matchingPartners.forEach((partner, index) => {
-                    partnerOptions += `<option value="${partners.indexOf(partner)}">${partner.parceiro} (${partner.distribuidora || 'Sem distribuidora'})</option>`;
-                });
-                
-                const selectedPartnerIndex = prompt(`Selecione um parceiro para conectar com ${store.loja}:\n\n${matchingPartners.map((partner, i) => `${i+1}. ${partner.parceiro}`).join('\n')}\n\nDigite o número do parceiro:`);
-                
-                if (selectedPartnerIndex !== null) {
-                    const partnerIndex = matchingPartners[parseInt(selectedPartnerIndex) - 1];
-                    
-                    if (partnerIndex !== undefined) {
-                        // Verificar se já existe uma conexão
-                        const existingConnection = connections.find(conn => 
-                            conn.storeIndex === storeIndex && conn.partnerIndex === partners.indexOf(matchingPartners[partnerIndex])
-                        );
-                        
-                        if (existingConnection) {
-                            alert('Esta conexão já existe!');
-                            return;
-                        }
-                        
-                        // Criar nova conexão
-                        connections.push({
-                            partnerIndex: partners.indexOf(matchingPartners[partnerIndex]),
-                            storeIndex: storeIndex
-                        });
-                        
-                        // Salvar no localStorage
-                        localStorage.setItem('connections', JSON.stringify(connections));
-                        
-                        // Atualizar a lista de conexões
-                        updateConnectionsList();
-                        
-                        alert('Conexão estabelecida com sucesso!');
-                    } else {
-                        alert('Opção inválida!');
-                    }
-                }
-            };
-            
-            // Função para desconectar (global para ser acessível pelo onclick)
-            window.disconnect = function(connectionIndex) {
-                if (confirm('Tem certeza que deseja desconectar esta parceria?')) {
-                    connections.splice(connectionIndex, 1);
-                    localStorage.setItem('connections', JSON.stringify(connections));
-                    updateConnectionsList();
-                    alert('Conexão removida com sucesso!');
-                }
-            };
-        });
-    </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const estadoSelect = document.getElementById('estado');
+    const cidadeInput = document.getElementById('cidade');
+    const searchBtn = document.getElementById('searchBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const partnersList = document.getElementById('partnersList');
+    const storesList = document.getElementById('storesList');
+    const connectionsList = document.getElementById('connectionsList');
+
+    let partners = JSON.parse(localStorage.getItem('partners')) || [];
+    let brands = JSON.parse(localStorage.getItem('brands')) || [];
+    let stores = JSON.parse(localStorage.getItem('stores')) || [];
+    let connections = JSON.parse(localStorage.getItem('connections')) || [];
+
+    updatePartnersList();
+    updateStoresList();
+    updateConnectionsList();
+
+    searchBtn.addEventListener('click', function() {
+      updatePartnersList();
+      updateStoresList();
+      updateConnectionsList();
+    });
+
+    resetBtn.addEventListener('click', function() {
+      estadoSelect.value = '';
+      cidadeInput.value = '';
+      updatePartnersList();
+      updateStoresList();
+      updateConnectionsList();
+    });
+
+    function updatePartnersList() {
+      partnersList.innerHTML = '';
+      const estado = estadoSelect.value;
+      const cidade = cidadeInput.value.toLowerCase();
+      const filteredPartners = partners.filter(partner => {
+        let matchEstado = true;
+        let matchCidade = true;
+        if (estado) {
+          matchEstado = partner.estado === estado;
+        }
+        if (cidade) {
+          matchCidade = partner.cidade.toLowerCase().includes(cidade);
+        }
+        return matchEstado && matchCidade;
+      });
+
+      if (filteredPartners.length === 0) {
+        partnersList.innerHTML = '<div class="empty-message">Nenhum parceiro encontrado com os filtros aplicados.</div>';
+        return;
+      }
+
+      filteredPartners.forEach((partner, index) => {
+        const partnerItem = document.createElement('div');
+        partnerItem.className = 'connection-item';
+        partnerItem.innerHTML = `
+          <div class="connection-info">
+            <strong>${partner.parceiro}</strong><br>
+            ${partner.cidade} - ${partner.estado}<br>
+            <small>${partner.distribuidora || 'Sem distribuidora'}</small>
+          </div>
+          <div class="connection-actions">
+            <button class="btn btn-primary btn-small" onclick="connectPartner(${index})">Conectar</button>
+          </div>`;
+        partnersList.appendChild(partnerItem);
+      });
+    }
+
+    function updateStoresList() {
+      storesList.innerHTML = '';
+      const estado = estadoSelect.value;
+      const cidade = cidadeInput.value.toLowerCase();
+      const filteredStores = stores.filter(store => {
+        let matchEstado = true;
+        let matchCidade = true;
+        if (estado) {
+          matchEstado = store.uf === estado;
+        }
+        if (cidade) {
+          matchCidade = store.municipio.toLowerCase().includes(cidade);
+        }
+        return matchEstado && matchCidade;
+      });
+
+      if (filteredStores.length === 0) {
+        storesList.innerHTML = '<div class="empty-message">Nenhuma loja encontrada com os filtros aplicados.</div>';
+        return;
+      }
+
+      filteredStores.forEach((store, index) => {
+        const brand = brands[store.marca_id];
+        const storeItem = document.createElement('div');
+        storeItem.className = 'connection-item';
+        storeItem.innerHTML = `
+          <div class="connection-info">
+            <strong>${store.loja}</strong><br>
+            ${store.municipio} - ${store.uf}<br>
+            <small>Marca: ${(brand && brand.marca) || 'N/D'}</small>
+          </div>
+          <div class="connection-actions">
+            <button class="btn btn-primary btn-small" onclick="connectStore(${index})">Conectar</button>
+          </div>`;
+        storesList.appendChild(storeItem);
+      });
+    }
+
+    function updateConnectionsList() {
+      connectionsList.innerHTML = '';
+      if (connections.length === 0) {
+        connectionsList.innerHTML = '<div class="empty-message">Nenhuma conexão ativa.</div>';
+        return;
+      }
+
+      connections.forEach((connection, index) => {
+        const partner = partners[connection.partnerIndex];
+        const store = stores[connection.storeIndex];
+        if (!partner || !store) return;
+        const connectionItem = document.createElement('div');
+        connectionItem.className = 'connection-item';
+        connectionItem.innerHTML = `
+          <div class="connection-info">
+            <strong>${partner.parceiro}</strong> &rarr; <strong>${store.loja}</strong><br>
+            <span class="status-connected">Conectado</span>
+          </div>
+          <div class="connection-actions">
+            <button class="btn btn-danger btn-small" onclick="disconnect(${index})">Desconectar</button>
+          </div>`;
+        connectionsList.appendChild(connectionItem);
+      });
+    }
+
+    window.connectPartner = function(partnerIndex) {
+      const availableStore = stores.findIndex(store => {
+        return !connections.some(conn => conn.storeIndex === stores.indexOf(store)) &&
+               (!estadoSelect.value || store.uf === estadoSelect.value);
+      });
+      if (availableStore === -1) {
+        alert('Nenhuma loja disponível para conexão.');
+        return;
+      }
+      connections.push({ partnerIndex, storeIndex: availableStore });
+      localStorage.setItem('connections', JSON.stringify(connections));
+      updateConnectionsList();
+      alert('Conexão criada com sucesso!');
+    };
+
+    window.connectStore = function(storeIndex) {
+      const availablePartner = partners.findIndex(partner => {
+        return !connections.some(conn => conn.partnerIndex === partners.indexOf(partner)) &&
+               (!estadoSelect.value || partner.estado === estadoSelect.value);
+      });
+      if (availablePartner === -1) {
+        alert('Nenhum parceiro disponível para conexão.');
+        return;
+      }
+      connections.push({ partnerIndex: availablePartner, storeIndex });
+      localStorage.setItem('connections', JSON.stringify(connections));
+      updateConnectionsList();
+      alert('Conexão criada com sucesso!');
+    };
+
+    window.disconnect = function(index) {
+      connections.splice(index, 1);
+      localStorage.setItem('connections', JSON.stringify(connections));
+      updateConnectionsList();
+      alert('Conexão removida.');
+    };
+  });
+  </script>
+  </main>
 </body>
 </html>
