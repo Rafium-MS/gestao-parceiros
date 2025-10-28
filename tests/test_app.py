@@ -63,3 +63,78 @@ def test_account_update_rejects_short_password(tmp_path, monkeypatch):
 
     assert response.status_code == 200
     assert "A nova senha deve ter ao menos 6 caracteres." in response.get_data(as_text=True)
+
+
+def test_account_update_requires_matching_confirmation(tmp_path, monkeypatch):
+    flask_app, _ = _create_test_app(tmp_path, monkeypatch)
+
+    with flask_app.test_client() as client:
+        login_response = client.post("/login", data={"username": "admin", "password": "admin"})
+        assert login_response.status_code == 302
+
+        response = client.post(
+            "/account",
+            data={
+                "current_password": "admin",
+                "new_password": "novasenha",
+                "confirm_password": "diferente",
+            },
+        )
+
+    assert response.status_code == 200
+    assert "A confirmação de senha não confere." in response.get_data(as_text=True)
+
+
+def test_duplicate_username_is_rejected(tmp_path, monkeypatch):
+    flask_app, db_path = _create_test_app(tmp_path, monkeypatch)
+
+    with flask_app.test_client() as client:
+        login_response = client.post("/login", data={"username": "admin", "password": "admin"})
+        assert login_response.status_code == 302
+
+        create_response = client.post(
+            "/api/users",
+            json={"username": "operador", "password": "secreta", "role": "operator"},
+        )
+        assert create_response.status_code == 201
+
+        duplicate_response = client.post(
+            "/api/users",
+            json={"username": "operador", "password": "outra123", "role": "operator"},
+        )
+
+    assert duplicate_response.status_code == 400
+    assert duplicate_response.get_json()["error"] == "username já existe"
+
+    Session = _get_session(db_path)
+    with Session() as session:
+        users = session.query(User).filter_by(username="operador").all()
+        assert len(users) == 1
+
+
+def test_non_admin_cannot_access_user_listing(tmp_path, monkeypatch):
+    flask_app, db_path = _create_test_app(tmp_path, monkeypatch)
+    Session = _get_session(db_path)
+
+    from werkzeug.security import generate_password_hash
+
+    with Session() as session:
+        operator = User(
+            username="operador",
+            password_hash=generate_password_hash("segredo"),
+            role="operator",
+        )
+        session.add(operator)
+        session.commit()
+
+    with flask_app.test_client() as client:
+        login_response = client.post(
+            "/login",
+            data={"username": "operador", "password": "segredo"},
+            follow_redirects=False,
+        )
+        assert login_response.status_code == 302
+
+        response = client.get("/api/users")
+
+    assert response.status_code == 403
