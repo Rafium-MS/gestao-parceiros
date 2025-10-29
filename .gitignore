@@ -15,4 +15,3 @@ disagua.db
 *.db
 __pycache__/app.cpython-313.pyc
 build/
-/__pycache__
