@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { SelectInput } from "@/components/ui/SelectInput";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
 import { listConnections, createConnection, deleteConnection } from "@/services/connections";
 import { listPartners, type PartnerRecord } from "@/services/partners";
@@ -334,11 +335,10 @@ export function ConnectPage() {
         size="sm"
         variant="danger"
         onClick={() => handleBulkDisconnect(selected, clearSelection)}
-        disabled={isBulkRemoving}
+        isLoading={isBulkRemoving}
+        loadingText="Removendo..."
       >
-        {isBulkRemoving
-          ? "Removendo..."
-          : `Desconectar ${selected.length > 1 ? "selecionadas" : "selecionada"}`}
+        {`Desconectar ${selected.length > 1 ? "selecionadas" : "selecionada"}`}
       </Button>
     ),
     [handleBulkDisconnect, isBulkRemoving],
@@ -497,8 +497,8 @@ export function ConnectPage() {
           </div>
 
           <div className={styles.formActions}>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Conectando..." : "Criar conexão"}
+            <Button type="submit" isLoading={isSubmitting} loadingText="Conectando...">
+              Criar conexão
             </Button>
           </div>
         </form>
@@ -506,7 +506,7 @@ export function ConnectPage() {
 
       <div className={styles.grid}>
         <Card title="Parceiros disponíveis" subtitle="Selecione um parceiro para iniciar a conexão.">
-          {isLoading ? <div className={styles.loadingMessage}>Carregando parceiros...</div> : null}
+          {isLoading ? <TableSkeleton columns={partnerColumns.length} /> : null}
           {!isLoading ? (
             <div className={styles.resultCount} role="status" aria-live="polite">
               {partnerResultLabel}
@@ -529,7 +529,7 @@ export function ConnectPage() {
         </Card>
 
         <Card title="Lojas disponíveis" subtitle="Escolha uma loja para vincular ao parceiro selecionado.">
-          {isLoading ? <div className={styles.loadingMessage}>Carregando lojas...</div> : null}
+          {isLoading ? <TableSkeleton columns={storeColumns.length} /> : null}
           {!isLoading ? (
             <div className={styles.resultCount} role="status" aria-live="polite">
               {storeResultLabel}
@@ -554,7 +554,7 @@ export function ConnectPage() {
 
       <Card title="Conexões ativas" subtitle="Gerencie os vínculos já estabelecidos.">
         {error ? <div className={styles.errorMessage}>{error}</div> : null}
-        {isLoading ? <div className={styles.loadingMessage}>Carregando conexões...</div> : null}
+        {isLoading ? <TableSkeleton columns={connectionColumns.length} /> : null}
         {!isLoading && connections.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhuma conexão ativa.</div>
         ) : null}

@@ -1,0 +1,28 @@
+.container {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background-color: rgba(226, 232, 240, 0.45);
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.header,
+.row {
+  display: grid;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.body {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.headerCell {
+  height: 1rem;
+}
+
+.cell {
+  height: 0.875rem;
+}

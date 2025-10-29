@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ReportFilters, ReportFiltersValue } from "@/components/reports/ReportFilters";
 import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { listReportEntries, type ReportEntry } from "@/services/reports";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 
@@ -281,7 +282,7 @@ export function ReportsPage() {
 
       <Card title="Performance consolidada" subtitle="Dados carregados diretamente das rotas Flask.">
         {error ? <div className={styles.errorMessage}>{error}</div> : null}
-        {isLoading ? <div className={styles.loadingMessage}>Carregando dados...</div> : null}
+        {isLoading ? <TableSkeleton columns={columns.length} /> : null}
 
         {!isLoading && rows.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhum registro encontrado para os filtros selecionados.</div>
