@@ -1,0 +1,33 @@
+.wrapper {
+  min-height: 100vh;
+  background-color: #f4f6fb;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+}
+
+.content {
+  margin: 0 auto;
+  width: min(100%, 1120px);
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 2.5rem;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.content h1 {
+  font-size: 2rem;
+  color: #1f2937;
+}
+
+.content p {
+  color: #4b5563;
+  line-height: 1.6;
+}
