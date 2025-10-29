@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,6 +17,7 @@ import {
   updateUserPassword,
 } from "@/services/users";
 import { useToast } from "@/contexts/ToastContext";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 import styles from "./UsersPage.module.css";
 
@@ -49,6 +50,7 @@ export function UsersPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const { showSuccess, showError, showWarning } = useToast();
+  const { confirm: requestConfirmation, dialog: confirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     setIsLoading(true);
@@ -67,6 +69,30 @@ export function UsersPage() {
         setIsLoading(false);
       });
   }, [showError]);
+
+  const handleDelete = useCallback(
+    async (user: UserRecord) => {
+      const confirmed = await requestConfirmation({
+        title: "Remover usuário",
+        description: `Tem certeza de que deseja excluir o usuário ${user.username}? Essa ação não poderá ser desfeita.`,
+        confirmLabel: "Excluir usuário",
+        confirmVariant: "danger",
+        tone: "danger",
+      });
+      if (!confirmed) {
+        return;
+      }
+      try {
+        await deleteUser(user.id);
+        setUsers((current) => current.filter((item) => item.id !== user.id));
+        showSuccess(`Usuário ${user.username} removido.`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Não foi possível excluir o usuário.";
+        showError(message);
+      }
+    },
+    [requestConfirmation, showError, showSuccess],
+  );
 
   const columns = useMemo<TableColumn<UserRecord>[]>(
     () => [
@@ -135,7 +161,7 @@ export function UsersPage() {
         ),
       },
     ],
-    [showError, showSuccess],
+    [handleDelete, showError, showSuccess],
   );
 
   const openPasswordModal = (user: UserRecord) => {
@@ -149,20 +175,6 @@ export function UsersPage() {
     setPasswordValue("");
     setPasswordError(null);
     setIsUpdatingPassword(false);
-  };
-
-  const handleDelete = async (user: UserRecord) => {
-    if (!window.confirm(`Deseja excluir o usuário ${user.username}?`)) {
-      return;
-    }
-    try {
-      await deleteUser(user.id);
-      setUsers((current) => current.filter((item) => item.id !== user.id));
-      showSuccess(`Usuário ${user.username} removido.`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Não foi possível excluir o usuário.";
-      showError(message);
-    }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -229,7 +241,9 @@ export function UsersPage() {
   };
 
   return (
-    <div className={styles.container}>
+    <>
+      {confirmDialog}
+      <div className={styles.container}>
       <header className="page-header">
         <h1>Usuários</h1>
         <p>Controle o acesso da equipe ao portal com base nos cadastros existentes no backend.</p>
@@ -341,5 +355,6 @@ export function UsersPage() {
         </form>
       </Modal>
     </div>
+    </>
   );
 }
