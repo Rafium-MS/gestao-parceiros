@@ -1,0 +1,33 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.label {
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.optional {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.helper {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.error {
+  font-size: 0.8rem;
+  color: var(--color-danger);
+}
