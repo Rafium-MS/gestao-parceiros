@@ -1,4 +1,4 @@
-import httpClient from "@/services/httpClient";
+import httpClient, { unwrapData, type ApiData } from "@/services/httpClient";
 
 type StoreRecord = {
   id: number;
@@ -17,10 +17,6 @@ type StoreRecord = {
   valor_vasilhame: number;
 };
 
-type StoresResponse = {
-  data: StoreRecord[];
-};
-
 type StorePayload = {
   marca_id: number;
   loja?: string;
@@ -36,34 +32,45 @@ type StorePayload = {
   valor_vasilhame?: number;
 };
 
-type StoreResponse = {
-  data: StoreRecord;
-};
-
-type DeleteStoreResponse = {
-  data: {
-    ok: boolean;
-  };
-};
-
 export async function listStores() {
-  const response = await httpClient.get<StoresResponse>("/api/stores");
-  return response.data;
+  const response = await httpClient.get<ApiData<StoreRecord[]> | StoreRecord[] | null>("/api/stores");
+  const data = unwrapData<StoreRecord[]>(response);
+  if (!Array.isArray(data)) {
+    throw new Error("Resposta inválida ao listar lojas.");
+  }
+  return data;
 }
 
 export async function createStore(payload: StorePayload) {
-  const response = await httpClient.post<StoreResponse>("/api/stores", payload);
-  return response.data;
+  const response = await httpClient.post<ApiData<StoreRecord> | StoreRecord | null>("/api/stores", payload);
+  const data = unwrapData<StoreRecord>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao criar loja.");
+  }
+  return data;
 }
 
 export async function updateStore(id: number, payload: Partial<StorePayload>) {
-  const response = await httpClient.put<StoreResponse>(`/api/stores/${id}`, payload);
-  return response.data;
+  const response = await httpClient.put<ApiData<StoreRecord> | StoreRecord | null>(
+    `/api/stores/${id}`,
+    payload,
+  );
+  const data = unwrapData<StoreRecord>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao atualizar loja.");
+  }
+  return data;
 }
 
 export async function deleteStore(id: number) {
-  const response = await httpClient.delete<DeleteStoreResponse>(`/api/stores/${id}`);
-  return response.data;
+  const response = await httpClient.delete<ApiData<{ ok: boolean }> | { ok: boolean } | null>(
+    `/api/stores/${id}`,
+  );
+  const data = unwrapData<{ ok: boolean }>(response);
+  if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
+    throw new Error("Resposta inválida ao excluir loja.");
+  }
+  return data;
 }
 
 export type { StoreRecord, StorePayload };

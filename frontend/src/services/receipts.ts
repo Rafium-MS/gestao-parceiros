@@ -1,4 +1,4 @@
-import httpClient from "@/services/httpClient";
+import httpClient, { unwrapData, type ApiData } from "@/services/httpClient";
 
 export type ReceiptRecord = {
   id: number;
@@ -15,35 +15,20 @@ export type UploadReceiptPayload = {
   brandId?: number | null;
 };
 
-type ReceiptListResponse = {
-  data: ReceiptRecord[];
-};
-
-type UploadResponse = {
-  data: {
-    saved: Array<{
-      id: number;
-      filename: string;
-      size_bytes: number;
-      brand_id: number | null;
-    }>;
-  };
-};
-
 type UpdateReceiptPayload = {
   filename?: string;
   brand_id?: number | null;
 };
 
-type MutationResponse = {
-  data: {
-    ok: boolean;
-  };
-};
-
 export async function listReceipts() {
-  const response = await httpClient.get<ReceiptListResponse>("/api/receipts");
-  return response.data;
+  const response = await httpClient.get<ApiData<ReceiptRecord[]> | ReceiptRecord[] | null>(
+    "/api/receipts",
+  );
+  const data = unwrapData<ReceiptRecord[]>(response);
+  if (!Array.isArray(data)) {
+    throw new Error("Resposta inválida ao listar comprovantes.");
+  }
+  return data;
 }
 
 export async function uploadReceipts({ files, brandId }: UploadReceiptPayload) {
@@ -53,15 +38,32 @@ export async function uploadReceipts({ files, brandId }: UploadReceiptPayload) {
     formData.append("brand_id", brandId.toString());
   }
 
-  const response = await httpClient.post<UploadResponse>("/api/upload", formData, {
+  const response = await httpClient.post<
+    ApiData<{ saved: Array<{ id: number; filename: string; size_bytes: number; brand_id: number | null }> }> |
+      { saved: Array<{ id: number; filename: string; size_bytes: number; brand_id: number | null }> } |
+      null
+  >("/api/upload", formData, {
     headers: {
       Accept: "application/json",
     },
   });
-  return response.data;
+  const data = unwrapData<{ saved: Array<{ id: number; filename: string; size_bytes: number; brand_id: number | null }> }>(
+    response,
+  );
+  if (!data || typeof data !== "object" || !Array.isArray(data.saved)) {
+    throw new Error("Resposta inválida ao enviar comprovantes.");
+  }
+  return data;
 }
 
 export async function updateReceipt(id: number, payload: UpdateReceiptPayload) {
-  const response = await httpClient.put<MutationResponse>(`/api/receipts/${id}`, payload);
-  return response.data;
+  const response = await httpClient.put<ApiData<{ ok: boolean }> | { ok: boolean } | null>(
+    `/api/receipts/${id}`,
+    payload,
+  );
+  const data = unwrapData<{ ok: boolean }>(response);
+  if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
+    throw new Error("Resposta inválida ao atualizar comprovante.");
+  }
+  return data;
 }
