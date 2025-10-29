@@ -2,7 +2,18 @@
 import os
 from functools import wraps
 from datetime import datetime, date
-from flask import Flask, jsonify, request, send_from_directory, render_template, redirect, url_for, send_file, session
+from flask import (
+    Flask,
+    jsonify,
+    request,
+    send_from_directory,
+    render_template,
+    redirect,
+    url_for,
+    send_file,
+    session,
+    abort,
+)
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
 from sqlalchemy import create_engine, select, text
@@ -11,8 +22,10 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 from models import Base, Partner, Brand, Store, Connection, ReportEntry, ReceiptImage, User
 from export_utils import ExportManager
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "disagua.db")
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+BASE_DIR = os.path.dirname(__file__)
+DB_PATH = os.path.join(BASE_DIR, "disagua.db")
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+FRONTEND_DIST_DIR = os.path.join(BASE_DIR, "frontend", "dist")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def create_app():
@@ -21,6 +34,29 @@ def create_app():
     app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
     CORS(app)
     app.secret_key = 'change-me'
+
+    def frontend_build_available():
+        index_file = os.path.join(FRONTEND_DIST_DIR, "index.html")
+        return os.path.isfile(index_file)
+
+    def render_frontend_or_template(template_name, **context):
+        if frontend_build_available():
+            return send_from_directory(FRONTEND_DIST_DIR, "index.html")
+        return render_template(template_name, **context)
+
+    if os.path.isdir(FRONTEND_DIST_DIR):
+        @app.get("/assets/<path:filename>")
+        def frontend_assets(filename):
+            if not frontend_build_available():
+                return abort(404)
+            assets_dir = os.path.join(FRONTEND_DIST_DIR, "assets")
+            return send_from_directory(assets_dir, filename)
+
+        @app.get("/favicon.svg")
+        def frontend_favicon():
+            if not frontend_build_available():
+                return abort(404)
+            return send_from_directory(FRONTEND_DIST_DIR, "favicon.svg")
 
     engine = create_engine(f"sqlite:///{DB_PATH}", future=True)
     Base.metadata.create_all(engine)
@@ -196,37 +232,37 @@ def create_app():
     @app.get("/")
     @login_required
     def home():
-        return render_template("index.html")
+        return render_frontend_or_template("index.html")
 
     @app.get("/parceiros")
     @login_required
     def page_parceiros():
-        return render_template("parceiros.html")
+        return render_frontend_or_template("parceiros.html")
 
     @app.get("/lojas")
     @login_required
     def page_lojas():
-        return render_template("lojas.html")
+        return render_frontend_or_template("lojas.html")
 
     @app.get("/conectar")
     @login_required
     def page_conectar():
-        return render_template("conectar.html")
+        return render_frontend_or_template("conectar.html")
 
     @app.get("/comprovantes")
     @login_required
     def page_comprovantes():
-        return render_template("comprovantes.html")
+        return render_frontend_or_template("comprovantes.html")
 
     @app.get("/relatorios")
     @login_required
     def page_relatorios():
-        return render_template("relatorios.html")
+        return render_frontend_or_template("relatorios.html")
 
     @app.get("/account")
     @login_required
     def account():
-        return render_template("account.html", username=current_user.username)
+        return render_frontend_or_template("account.html", username=current_user.username)
 
     @app.post("/account")
     @login_required
@@ -252,7 +288,7 @@ def create_app():
     @login_required
     @admin_required
     def users_page():
-        return render_template("users.html")
+        return render_frontend_or_template("users.html")
 
     # ---------------------- APIs ----------------------
     @app.get("/api/me")
