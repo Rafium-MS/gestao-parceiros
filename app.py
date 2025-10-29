@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, scoped_session
 from models import Base, Partner, Brand, Store, Connection, ReportEntry, ReceiptImage, User
+from export_utils import ExportManager
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "disagua.db")
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
@@ -694,9 +695,7 @@ def create_app():
     @app.get("/api/report-data/export")
     @login_required
     def export_report():
-        import io
-        import pandas as pd
-        fmt = request.args.get("format","excel")
+        fmt = request.args.get("format", "excel")
         start = request.args.get("startDate")
         end = request.args.get("endDate")
         marca = request.args.get("marca")
@@ -717,36 +716,19 @@ def create_app():
                 "Valor Vasilhame": r.valor_vasilhame,
                 "Total": (r.valor_20l + r.valor_10l + r.valor_1500ml + r.valor_cx_copo + r.valor_vasilhame)
             } for r in rows]
-        if fmt == "excel":
-            df = pd.DataFrame(data)
-            bio = io.BytesIO()
-            with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-                df.to_excel(writer, index=False, sheet_name="Relatório")
-            bio.seek(0)
-            return send_file(bio, as_attachment=True, download_name="relatorio.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        else:
-            from reportlab.lib.pagesizes import A4
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-            from reportlab.lib.styles import getSampleStyleSheet
-            from reportlab.lib import colors
-            bio = io.BytesIO()
-            doc = SimpleDocTemplate(bio, pagesize=A4)
-            styles = getSampleStyleSheet()
-            elems = [Paragraph("Relatório de Marcas e Lojas", styles['Title']), Spacer(1, 12)]
-            if data:
-                headers = list(data[0].keys())
-                rows_tbl = [headers] + [[str(r[h]) for h in headers] for r in data]
-            else:
-                rows_tbl = [["Sem dados"]]
-            t = Table(rows_tbl, repeatRows=1)
-            t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0), colors.lightgrey),
-                                   ('GRID',(0,0),(-1,-1), 0.25, colors.grey),
-                                   ('FONT',(0,0),(-1,0),'Helvetica-Bold'),
-                                   ('ROWBACKGROUNDS',(0,1),(-1,-1), [colors.white, colors.whitesmoke])]))
-            elems.append(t)
-            doc.build(elems)
-            bio.seek(0)
-            return send_file(bio, as_attachment=True, download_name="relatorio.pdf", mimetype="application/pdf")
+
+        manager = ExportManager()
+        try:
+            result = manager.export(data, fmt)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        return send_file(
+            result.buffer,
+            as_attachment=True,
+            download_name=result.filename,
+            mimetype=result.mimetype,
+        )
 
     # Users API
     @app.get("/api/users")
