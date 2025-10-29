@@ -84,3 +84,11 @@ button {
   margin: 0;
   color: var(--color-text-secondary);
 }
+
+.page-loading {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+}
