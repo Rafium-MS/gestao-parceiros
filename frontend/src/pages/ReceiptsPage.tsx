@@ -12,6 +12,7 @@ import { listBrands, type BrandRecord } from "@/services/brands";
 import { listReceipts, type ReceiptRecord, updateReceipt } from "@/services/receipts";
 import { env } from "@/config/env";
 import { formatDate } from "@/utils/formatters";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./ReceiptsPage.module.css";
 
@@ -139,8 +140,6 @@ export function ReceiptsPage() {
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
   const [isLoadingReceipts, setIsLoadingReceipts] = useState(false);
   const [receiptsError, setReceiptsError] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [editReceipt, setEditReceipt] = useState<ReceiptRecord | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({ filename: "", brand_id: "" });
@@ -149,6 +148,7 @@ export function ReceiptsPage() {
   const [zoomPreview, setZoomPreview] = useState<PreviewFile | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const dragDepthRef = useRef(0);
+  const { showError, showSuccess } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -187,6 +187,7 @@ export function ReceiptsPage() {
         const message = err instanceof Error ? err.message : "Não foi possível carregar os comprovantes.";
         setReceiptsError(message);
         setReceipts([]);
+        showError(message);
       })
       .finally(() => {
         setIsLoadingReceipts(false);
@@ -260,8 +261,6 @@ export function ReceiptsPage() {
       });
       return updated;
     });
-    setUploadError(null);
-    setUploadMessage(null);
   };
 
   const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
@@ -312,8 +311,6 @@ export function ReceiptsPage() {
 
   const goToStep = (nextStep: UploadStep) => {
     setStep(nextStep);
-    setUploadError(null);
-    setUploadMessage(null);
   };
 
   const updateUploadStatus = (previewUrl: string, partial: Partial<UploadStatus>) => {
@@ -331,8 +328,6 @@ export function ReceiptsPage() {
 
   const handleUpload = async () => {
     setIsUploading(true);
-    setUploadError(null);
-    setUploadMessage(null);
     try {
       const successfulUploads: string[] = [];
       const failedUploads: string[] = [];
@@ -357,20 +352,18 @@ export function ReceiptsPage() {
       const hasFailure = failedUploads.length > 0;
 
       if (hasSuccess) {
-        setUploadMessage(
-          hasFailure
-            ? `${successfulUploads.length} arquivo(s) enviado(s) com sucesso.`
-            : "Upload concluído com sucesso.",
-        );
+        const message = hasFailure
+          ? `${successfulUploads.length} arquivo(s) enviado(s) com sucesso.`
+          : "Upload concluído com sucesso.";
+        showSuccess(message);
         loadReceipts();
       }
 
       if (hasFailure) {
-        setUploadError(
-          hasSuccess
-            ? "Alguns arquivos não puderam ser enviados. Verifique os detalhes abaixo."
-            : "Não foi possível enviar os arquivos selecionados.",
-        );
+        const message = hasSuccess
+          ? "Alguns arquivos não puderam ser enviados. Verifique os detalhes abaixo."
+          : "Não foi possível enviar os arquivos selecionados.";
+        showError(message);
       }
 
       if (!hasFailure && hasSuccess) {
@@ -400,7 +393,7 @@ export function ReceiptsPage() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível enviar os arquivos.";
-      setUploadError(message);
+      showError(message);
     } finally {
       setIsUploading(false);
     }
@@ -440,9 +433,11 @@ export function ReceiptsPage() {
       });
       closeEdit();
       loadReceipts();
+      showSuccess("Comprovante atualizado com sucesso.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível atualizar o comprovante.";
       setEditErrors({ global: message });
+      showError(message);
     } finally {
       setIsSavingEdit(false);
     }
@@ -580,7 +575,6 @@ export function ReceiptsPage() {
           <section className={styles.stepContent}>
             <h2>Importação</h2>
             <p>Confirme o envio dos comprovantes selecionados. Você poderá editar os metadados após o upload.</p>
-            {uploadError ? <div className={styles.errorMessage}>{uploadError}</div> : null}
             <ul className={styles.progressList}>
               {selectedFiles.map((preview) => {
                 const status = uploadProgress[preview.previewUrl] ?? { status: "pending", progress: 0 };
@@ -629,11 +623,6 @@ export function ReceiptsPage() {
         {step === 4 ? (
           <section className={styles.stepContent}>
             <h2>Upload concluído</h2>
-            {uploadMessage ? (
-              <div className={styles.successMessage} role="status" aria-live="polite">
-                {uploadMessage}
-              </div>
-            ) : null}
             <p>Os comprovantes foram adicionados à sua biblioteca. Você pode editar informações individuais abaixo.</p>
             <div className={styles.stepActions}>
               <Button type="button" onClick={() => goToStep(1)}>
@@ -659,7 +648,6 @@ export function ReceiptsPage() {
           </Button>
         </div>
 
-        {receiptsError ? <div className={styles.errorMessage}>{receiptsError}</div> : null}
         {isLoadingReceipts ? <TableSkeleton columns={receiptColumns.length} /> : null}
         {!isLoadingReceipts && filteredReceipts.length === 0 && !receiptsError ? (
           <div className={styles.emptyState}>Nenhum comprovante cadastrado.</div>
@@ -694,7 +682,6 @@ export function ReceiptsPage() {
         }
       >
         <form id="receipt-edit-form" className={styles.form} onSubmit={handleEditSubmit}>
-          {editErrors.global ? <div className={styles.errorMessage}>{editErrors.global}</div> : null}
           <FormField label="Nome do arquivo" htmlFor="edit-filename" error={editErrors.filename}>
             <TextInput
               id="edit-filename"

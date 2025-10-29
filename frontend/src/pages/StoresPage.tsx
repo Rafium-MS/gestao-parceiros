@@ -24,6 +24,7 @@ import {
   updateStore,
 } from "@/services/stores";
 import { formatCurrency } from "@/utils/formatters";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./StoresPage.module.css";
 
@@ -35,7 +36,6 @@ type SummaryMetric = {
 
 type BrandFormErrors = {
   marca?: string;
-  global?: string;
 };
 
 type StoreFormErrors = {
@@ -44,7 +44,6 @@ type StoreFormErrors = {
   local_entrega?: string;
   municipio?: string;
   uf?: string;
-  global?: string;
 };
 
 type FormMode = "create" | "edit";
@@ -126,15 +125,14 @@ export function StoresPage() {
   const [brandErrors, setBrandErrors] = useState<BrandFormErrors>({});
   const [brandMode, setBrandMode] = useState<FormMode>("create");
   const [editingBrandId, setEditingBrandId] = useState<number | null>(null);
-  const [brandFeedback, setBrandFeedback] = useState<string | null>(null);
   const [isSubmittingBrand, setIsSubmittingBrand] = useState(false);
   const [storeForm, setStoreForm] = useState<StoreFormState>(defaultStoreForm);
   const [storeErrors, setStoreErrors] = useState<StoreFormErrors>({});
   const [storeMode, setStoreMode] = useState<FormMode>("create");
   const [editingStoreId, setEditingStoreId] = useState<number | null>(null);
-  const [storeFeedback, setStoreFeedback] = useState<string | null>(null);
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const [expandedBrands, setExpandedBrands] = useState<Set<number>>(new Set());
+  const { showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     loadAll();
@@ -154,6 +152,7 @@ export function StoresPage() {
         setError(message);
         setBrands([]);
         setStores([]);
+        showError(message);
       })
       .finally(() => {
         setIsLoading(false);
@@ -232,7 +231,6 @@ export function StoresPage() {
   const handleBrandSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBrandErrors({});
-    setBrandFeedback(null);
 
     if (!brandForm.marca?.trim()) {
       setBrandErrors({ marca: "Informe o nome da marca." });
@@ -246,13 +244,13 @@ export function StoresPage() {
           marca: brandForm.marca.trim(),
           cod_disagua: brandForm.cod_disagua?.trim() || undefined,
         });
-        setBrandFeedback("Marca cadastrada com sucesso.");
+        showSuccess("Marca cadastrada com sucesso.");
       } else if (editingBrandId !== null) {
         await updateBrand(editingBrandId, {
           marca: brandForm.marca.trim(),
           cod_disagua: brandForm.cod_disagua?.trim() || null,
         });
-        setBrandFeedback("Marca atualizada com sucesso.");
+        showSuccess("Marca atualizada com sucesso.");
       }
       setBrandForm({ marca: "", cod_disagua: "" });
       setBrandMode("create");
@@ -260,7 +258,7 @@ export function StoresPage() {
       await loadAll();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível salvar a marca.";
-      setBrandErrors({ global: message });
+      showError(message);
     } finally {
       setIsSubmittingBrand(false);
     }
@@ -271,7 +269,6 @@ export function StoresPage() {
     setBrandMode("create");
     setEditingBrandId(null);
     setBrandErrors({});
-    setBrandFeedback(null);
   };
 
   const startEditBrand = (brand: BrandRecord) => {
@@ -279,7 +276,7 @@ export function StoresPage() {
     setBrandMode("edit");
     setEditingBrandId(brand.id);
     setBrandErrors({});
-    setBrandFeedback("Editando marca. Salve ou cancele para concluir.");
+    showWarning("Editando marca. Salve ou cancele para concluir.");
   };
 
   const handleDeleteBrand = async (brand: BrandRecord) => {
@@ -289,16 +286,16 @@ export function StoresPage() {
     try {
       await deleteBrand(brand.id);
       await loadAll();
+      showSuccess("Marca excluída com sucesso.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível excluir a marca.";
-      setBrandErrors({ global: message });
+      showError(message);
     }
   };
 
   const handleStoreSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStoreErrors({});
-    setStoreFeedback(null);
 
     const errors: StoreFormErrors = {};
     if (!storeForm.marca_id) {
@@ -341,10 +338,10 @@ export function StoresPage() {
     try {
       if (storeMode === "create") {
         await createStore(payload);
-        setStoreFeedback("Loja cadastrada com sucesso.");
+        showSuccess("Loja cadastrada com sucesso.");
       } else if (editingStoreId !== null) {
         await updateStore(editingStoreId, payload);
-        setStoreFeedback("Loja atualizada com sucesso.");
+        showSuccess("Loja atualizada com sucesso.");
       }
       setStoreForm(defaultStoreForm);
       setStoreMode("create");
@@ -352,7 +349,7 @@ export function StoresPage() {
       await loadAll();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível salvar a loja.";
-      setStoreErrors({ global: message });
+      showError(message);
     } finally {
       setIsSubmittingStore(false);
     }
@@ -363,7 +360,6 @@ export function StoresPage() {
     setStoreMode("create");
     setEditingStoreId(null);
     setStoreErrors({});
-    setStoreFeedback(null);
   };
 
   const startEditStore = (store: StoreRecord) => {
@@ -384,7 +380,7 @@ export function StoresPage() {
     setStoreMode("edit");
     setEditingStoreId(store.id);
     setStoreErrors({});
-    setStoreFeedback("Editando loja. Salve ou cancele para concluir.");
+    showWarning("Editando loja. Salve ou cancele para concluir.");
   };
 
   const handleDeleteStore = async (store: StoreRecord) => {
@@ -394,9 +390,10 @@ export function StoresPage() {
     try {
       await deleteStore(store.id);
       await loadAll();
+      showSuccess("Loja excluída com sucesso.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível excluir a loja.";
-      setStoreErrors({ global: message });
+      showError(message);
     }
   };
 
@@ -405,7 +402,7 @@ export function StoresPage() {
     setStoreMode("create");
     setEditingStoreId(null);
     setStoreErrors({});
-    setStoreFeedback("Preencha os dados da nova loja.");
+    showWarning("Preencha os dados da nova loja.");
     document.getElementById("store-form")?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -446,13 +443,6 @@ export function StoresPage() {
       <div className={styles.managementGrid}>
         <Card title={brandMode === "create" ? "Cadastro de marcas" : "Editar marca"}>
           <form className={styles.form} onSubmit={handleBrandSubmit} onReset={handleBrandReset}>
-            {brandErrors.global ? <div className={styles.errorMessage}>{brandErrors.global}</div> : null}
-            {brandFeedback ? (
-              <div className={styles.successMessage} role="status" aria-live="polite">
-                {brandFeedback}
-              </div>
-            ) : null}
-
             <FormField label="Nome da marca" htmlFor="brand-name" error={brandErrors.marca}>
               <TextInput
                 id="brand-name"
@@ -490,13 +480,6 @@ export function StoresPage() {
             onSubmit={handleStoreSubmit}
             onReset={handleStoreReset}
           >
-            {storeErrors.global ? <div className={styles.errorMessage}>{storeErrors.global}</div> : null}
-            {storeFeedback ? (
-              <div className={styles.successMessage} role="status" aria-live="polite">
-                {storeFeedback}
-              </div>
-            ) : null}
-
             <FormField label="Marca" htmlFor="store-brand" error={storeErrors.marca_id}>
               <SelectInput
                 id="store-brand"
@@ -654,7 +637,6 @@ export function StoresPage() {
       </div>
 
       <Card title="Marcas cadastradas" subtitle="Informações sincronizadas com o banco de dados.">
-        {error ? <div className={styles.errorMessage}>{error}</div> : null}
         {isLoading ? <TableSkeleton columns={3} /> : null}
         {!isLoading && orderedBrands.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhuma marca cadastrada.</div>
@@ -748,7 +730,6 @@ export function StoresPage() {
       </Card>
 
       <Card title="Lojas cadastradas" subtitle="Listagem consolidada das unidades comerciais ativas.">
-        {error ? <div className={styles.errorMessage}>{error}</div> : null}
         {isLoading ? <TableSkeleton columns={storeColumns.length} /> : null}
         {!isLoading && stores.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhuma loja cadastrada.</div>

@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Navigate, useLocation, type Location } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./LoginPage.module.css";
 
@@ -15,9 +16,9 @@ export function LoginPage() {
   const state = location.state as LocationState | null;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState({ username: false, password: false });
+  const { showError, showWarning } = useToast();
 
   const usernameError = useMemo(() => {
     if (!username.trim()) {
@@ -46,11 +47,10 @@ export function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
     setTouchedFields({ username: true, password: true });
 
     if (!isFormValid) {
-      setError("Preencha os campos obrigatórios.");
+      showWarning("Preencha os campos obrigatórios.");
       return;
     }
 
@@ -58,7 +58,7 @@ export function LoginPage() {
       setIsSubmitting(true);
       await login(username.trim(), password);
     } catch (loginError) {
-      setError((loginError as Error).message);
+      showError((loginError as Error).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -71,7 +71,6 @@ export function LoginPage() {
         <p className={styles.subtitle}>
           Primeiro acesso: <strong>admin / admin</strong>
         </p>
-        {error ? <div className={styles.error}>{error}</div> : null}
         <form onSubmit={handleSubmit} className={styles.form}>
           <label
             className={`${styles.field} ${
