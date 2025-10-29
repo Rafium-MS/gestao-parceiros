@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -28,6 +28,8 @@ type ConnectionFormErrors = {
   storeId?: string;
   global?: string;
 };
+
+const FILTERS_STORAGE_KEY = "connect-page-filters";
 
 const BRAZIL_STATES = [
   "",
@@ -66,17 +68,33 @@ export function ConnectPage() {
   const [connections, setConnections] = useState<ConnectionView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState({ estado: "", cidade: "" });
+  const [filters, setFilters] = useState(() => {
+    if (typeof window === "undefined") {
+      return { estado: "", cidade: "" };
+    }
+    try {
+      const stored = window.localStorage.getItem(FILTERS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (typeof parsed === "object" && parsed) {
+          return {
+            estado: typeof parsed.estado === "string" ? parsed.estado : "",
+            cidade: typeof parsed.cidade === "string" ? parsed.cidade : "",
+          };
+        }
+      }
+    } catch (err) {
+      console.error("Não foi possível restaurar os filtros salvos", err);
+    }
+    return { estado: "", cidade: "" };
+  });
   const [form, setForm] = useState<ConnectionForm>({ partnerId: "", storeId: "" });
   const [formErrors, setFormErrors] = useState<ConnectionFormErrors>({});
   const [formFeedback, setFormFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBulkRemoving, setIsBulkRemoving] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setIsLoading(true);
     setError(null);
     Promise.all([listPartners(), listStores(), listConnections()])
@@ -101,7 +119,18 @@ export function ConnectPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
+  }, [filters]);
 
   const normalizedCity = filters.cidade.trim().toLowerCase();
 
@@ -126,18 +155,23 @@ export function ConnectPage() {
 
   const partnerColumns = useMemo<TableColumn<PartnerRecord>[]>(
     () => [
-      { header: "Parceiro", accessor: "parceiro" },
+      { header: "Parceiro", accessor: "parceiro", sortable: true },
       {
         header: "Local",
         render: (partner) => `${partner.cidade} - ${partner.estado}`,
+        sortable: true,
+        sortValue: (partner) => `${partner.cidade ?? ""} ${partner.estado ?? ""}`,
+        exportValue: (partner) => `${partner.cidade ?? ""} - ${partner.estado ?? ""}`,
       },
       {
         header: "Telefone",
         accessor: "telefone",
+        sortable: true,
       },
       {
         header: "Ações",
         width: "140px",
+        disableExport: true,
         render: (partner) => (
           <Button
             size="sm"
@@ -156,18 +190,23 @@ export function ConnectPage() {
 
   const storeColumns = useMemo<TableColumn<StoreRecord>[]>(
     () => [
-      { header: "Loja", accessor: "loja" },
+      { header: "Loja", accessor: "loja", sortable: true },
       {
         header: "Marca",
         accessor: "marca",
+        sortable: true,
       },
       {
         header: "Local",
         render: (store) => `${store.municipio} - ${store.uf}`,
+        sortable: true,
+        sortValue: (store) => `${store.municipio ?? ""} ${store.uf ?? ""}`,
+        exportValue: (store) => `${store.municipio ?? ""} - ${store.uf ?? ""}`,
       },
       {
         header: "Ações",
         width: "140px",
+        disableExport: true,
         render: (store) => (
           <Button
             size="sm"
@@ -184,23 +223,50 @@ export function ConnectPage() {
     [connectedStoreIds],
   );
 
+  const handleDelete = useCallback(
+    async (connectionId: number) => {
+      if (!window.confirm("Deseja remover esta conexão?")) {
+        return;
+      }
+      try {
+        await deleteConnection(connectionId);
+        setConnections((current) => current.filter((connection) => connection.id !== connectionId));
+        setError(null);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Não foi possível remover a conexão.";
+        setError(message);
+      }
+    },
+    [],
+  );
+
   const connectionColumns = useMemo<TableColumn<ConnectionView>[]>(
     () => [
       {
         header: "Parceiro",
         render: (connection) => connection.partner?.parceiro ?? "—",
+        sortable: true,
+        sortValue: (connection) => connection.partner?.parceiro ?? "",
+        exportValue: (connection) => connection.partner?.parceiro ?? "",
       },
       {
         header: "Loja",
         render: (connection) => connection.store?.loja ?? "—",
+        sortable: true,
+        sortValue: (connection) => connection.store?.loja ?? "",
+        exportValue: (connection) => connection.store?.loja ?? "",
       },
       {
         header: "Marca",
         render: (connection) => connection.store?.marca ?? "—",
+        sortable: true,
+        sortValue: (connection) => connection.store?.marca ?? "",
+        exportValue: (connection) => connection.store?.marca ?? "",
       },
       {
         header: "Ações",
         width: "140px",
+        disableExport: true,
         render: (connection) => (
           <Button size="sm" variant="danger" type="button" onClick={() => handleDelete(connection.id)}>
             Desconectar
@@ -208,7 +274,54 @@ export function ConnectPage() {
         ),
       },
     ],
+    [handleDelete],
+  );
+
+  const handleBulkDisconnect = useCallback(
+    async (selected: ConnectionView[], clearSelection: () => void) => {
+      if (selected.length === 0) {
+        return;
+      }
+
+      const confirmationMessage =
+        selected.length === 1
+          ? "Deseja remover a conexão selecionada?"
+          : `Deseja remover ${selected.length} conexões selecionadas?`;
+      if (!window.confirm(confirmationMessage)) {
+        return;
+      }
+
+      setIsBulkRemoving(true);
+      try {
+        await Promise.all(selected.map((connection) => deleteConnection(connection.id)));
+        const idsToRemove = new Set(selected.map((connection) => connection.id));
+        setConnections((current) => current.filter((connection) => !idsToRemove.has(connection.id)));
+        clearSelection();
+        setError(null);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Não foi possível remover as conexões.";
+        setError(message);
+      } finally {
+        setIsBulkRemoving(false);
+      }
+    },
     [],
+  );
+
+  const renderConnectionSelectionActions = useCallback(
+    (selected: ConnectionView[], clearSelection: () => void) => (
+      <Button
+        size="sm"
+        variant="danger"
+        onClick={() => handleBulkDisconnect(selected, clearSelection)}
+        disabled={isBulkRemoving}
+      >
+        {isBulkRemoving
+          ? "Removendo..."
+          : `Desconectar ${selected.length > 1 ? "selecionadas" : "selecionada"}`}
+      </Button>
+    ),
+    [handleBulkDisconnect, isBulkRemoving],
   );
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -250,19 +363,6 @@ export function ConnectPage() {
       setFormErrors({ global: message });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (connectionId: number) => {
-    if (!window.confirm("Deseja remover esta conexão?")) {
-      return;
-    }
-    try {
-      await deleteConnection(connectionId);
-      loadData();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Não foi possível remover a conexão.";
-      setError(message);
     }
   };
 
@@ -362,6 +462,10 @@ export function ConnectPage() {
               columns={partnerColumns}
               data={filteredPartners}
               keyExtractor={(partner) => partner.id.toString()}
+              enableSorting
+              enablePagination
+              enableExport
+              exportFileName="parceiros-disponiveis"
             />
           ) : null}
         </Card>
@@ -372,7 +476,15 @@ export function ConnectPage() {
             <div className={styles.emptyState}>Nenhuma loja encontrada para os filtros aplicados.</div>
           ) : null}
           {!isLoading && filteredStores.length > 0 ? (
-            <DataTable columns={storeColumns} data={filteredStores} keyExtractor={(store) => store.id.toString()} />
+            <DataTable
+              columns={storeColumns}
+              data={filteredStores}
+              keyExtractor={(store) => store.id.toString()}
+              enableSorting
+              enablePagination
+              enableExport
+              exportFileName="lojas-disponiveis"
+            />
           ) : null}
         </Card>
       </div>
@@ -384,7 +496,17 @@ export function ConnectPage() {
           <div className={styles.emptyState}>Nenhuma conexão ativa.</div>
         ) : null}
         {!isLoading && connections.length > 0 ? (
-          <DataTable columns={connectionColumns} data={connections} keyExtractor={(connection) => connection.id} />
+          <DataTable
+            columns={connectionColumns}
+            data={connections}
+            keyExtractor={(connection) => connection.id}
+            enableSorting
+            enablePagination
+            enableSelection
+            selectionActions={renderConnectionSelectionActions}
+            enableExport
+            exportFileName="conexoes"
+          />
         ) : null}
       </Card>
     </div>

@@ -2,12 +2,81 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid rgba(226, 232, 240, 0.8);
+  background-color: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  background-color: var(--color-surface-alt);
+}
+
+.selectionArea {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.selectionSummary {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.clearSelectionButton {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.clearSelectionButton:hover {
+  text-decoration: underline;
+}
+
+.exportActions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.exportButton {
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.exportButton:hover {
+  background-color: rgba(37, 99, 235, 0.16);
+  border-color: rgba(37, 99, 235, 0.6);
+}
+
+.exportButton:active {
+  background-color: rgba(37, 99, 235, 0.24);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background-color: var(--color-surface);
 }
 
 thead {
@@ -22,6 +91,27 @@ thead th {
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  user-select: none;
+}
+
+.sortableHeader {
+  cursor: pointer;
+}
+
+.headerContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sortIndicator,
+.sortIndicatorActive {
+  font-size: 0.7rem;
+  color: rgba(15, 23, 42, 0.25);
+}
+
+.sortIndicatorActive {
+  color: var(--color-primary);
 }
 
 tbody tr {
@@ -34,6 +124,23 @@ tbody tr:nth-child(even) {
 
 tbody tr:hover {
   background-color: rgba(37, 99, 235, 0.06);
+}
+
+.selectedRow {
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+.selectionHeader,
+.selectionCell {
+  width: 48px;
+  text-align: center !important;
+}
+
+.selectionCell input,
+.selectionHeader input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
 }
 
 td {
@@ -56,4 +163,60 @@ td {
   text-align: center;
   color: var(--color-text-muted);
   font-style: italic;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  background-color: var(--color-surface-alt);
+}
+
+.pageSizeControl label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.pageSizeControl select {
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background-color: var(--color-surface);
+}
+
+.pageControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.pageControls button {
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.pageControls button:hover:not(:disabled) {
+  background-color: rgba(226, 232, 240, 0.6);
+}
+
+.pageControls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageSummary {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
