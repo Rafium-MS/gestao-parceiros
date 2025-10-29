@@ -6,6 +6,7 @@ import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
 import { SelectInput } from "@/components/ui/SelectInput";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
 import { listBrands, type BrandRecord } from "@/services/brands";
 import { listReceipts, type ReceiptRecord, updateReceipt } from "@/services/receipts";
@@ -618,8 +619,8 @@ export function ReceiptsPage() {
               <Button type="button" variant="secondary" onClick={() => goToStep(2)} disabled={isUploading}>
                 Voltar
               </Button>
-              <Button type="button" onClick={handleUpload} disabled={isUploading}>
-                {isUploading ? "Enviando..." : "Iniciar importação"}
+              <Button type="button" onClick={handleUpload} isLoading={isUploading} loadingText="Enviando...">
+                Iniciar importação
               </Button>
             </div>
           </section>
@@ -659,7 +660,7 @@ export function ReceiptsPage() {
         </div>
 
         {receiptsError ? <div className={styles.errorMessage}>{receiptsError}</div> : null}
-        {isLoadingReceipts ? <div className={styles.loadingMessage}>Carregando comprovantes...</div> : null}
+        {isLoadingReceipts ? <TableSkeleton columns={receiptColumns.length} /> : null}
         {!isLoadingReceipts && filteredReceipts.length === 0 && !receiptsError ? (
           <div className={styles.emptyState}>Nenhum comprovante cadastrado.</div>
         ) : null}
@@ -681,8 +682,13 @@ export function ReceiptsPage() {
             <Button type="button" variant="ghost" onClick={closeEdit}>
               Cancelar
             </Button>
-            <Button type="submit" form="receipt-edit-form" disabled={isSavingEdit}>
-              {isSavingEdit ? "Salvando..." : "Salvar alterações"}
+            <Button
+              type="submit"
+              form="receipt-edit-form"
+              isLoading={isSavingEdit}
+              loadingText="Salvando..."
+            >
+              Salvar alterações
             </Button>
           </>
         }

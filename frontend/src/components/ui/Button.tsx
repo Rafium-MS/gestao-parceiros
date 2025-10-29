@@ -10,6 +10,8 @@ export type ButtonProps = {
   size?: ButtonSize;
   icon?: ReactNode;
   iconPosition?: "leading" | "trailing";
+  isLoading?: boolean;
+  loadingText?: string;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 export function Button({
@@ -19,6 +21,9 @@ export function Button({
   iconPosition = "leading",
   className,
   children,
+  isLoading = false,
+  loadingText,
+  disabled,
   ...props
 }: ButtonProps) {
   const classes = [
@@ -31,11 +36,22 @@ export function Button({
     .filter(Boolean)
     .join(" ");
 
+  const showLeadingIcon = icon && iconPosition === "leading" && !isLoading;
+  const showTrailingIcon = icon && iconPosition === "trailing" && !isLoading;
+  const content = isLoading && loadingText ? loadingText : children;
+
   return (
-    <button className={classes} {...props}>
-      {icon && iconPosition === "leading" ? icon : null}
-      {children}
-      {icon && iconPosition === "trailing" ? icon : null}
+    <button
+      className={classes}
+      data-loading={isLoading ? "true" : undefined}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      {...props}
+    >
+      {showLeadingIcon ? icon : null}
+      {isLoading ? <span className={styles.spinner} aria-hidden="true" /> : null}
+      {content}
+      {showTrailingIcon ? icon : null}
     </button>
   );
 }

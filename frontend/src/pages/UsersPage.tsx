@@ -6,6 +6,7 @@ import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
 import { SelectInput } from "@/components/ui/SelectInput";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
 import {
   createUser,
@@ -298,8 +299,8 @@ export function UsersPage() {
             </div>
 
             <div className={styles.formActions}>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Salvando..." : "Criar usuário"}
+              <Button type="submit" isLoading={isSubmitting} loadingText="Salvando...">
+                Criar usuário
               </Button>
             </div>
           </form>
@@ -313,7 +314,7 @@ export function UsersPage() {
               {tableMessage}
             </div>
           ) : null}
-          {isLoading ? <div className={styles.loadingMessage}>Carregando usuários...</div> : null}
+          {isLoading ? <TableSkeleton columns={columns.length} /> : null}
           {!isLoading && users.length === 0 && !error ? (
             <div className={styles.emptyState}>
               Nenhum usuário encontrado. Apenas administradores podem gerenciar esta área.
@@ -334,8 +335,13 @@ export function UsersPage() {
             <Button variant="ghost" type="button" onClick={closePasswordModal}>
               Cancelar
             </Button>
-            <Button type="submit" form="password-form" disabled={isUpdatingPassword}>
-              {isUpdatingPassword ? "Salvando..." : "Atualizar senha"}
+            <Button
+              type="submit"
+              form="password-form"
+              isLoading={isUpdatingPassword}
+              loadingText="Salvando..."
+            >
+              Atualizar senha
             </Button>
           </>
         }

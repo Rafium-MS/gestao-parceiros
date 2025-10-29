@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { SelectInput } from "@/components/ui/SelectInput";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
 import {
   createBrand,
@@ -471,14 +472,14 @@ export function StoresPage() {
               />
             </FormField>
 
-            <div className={styles.formActions}>
-              <Button type="submit" disabled={isSubmittingBrand}>
-                {isSubmittingBrand ? "Salvando..." : brandMode === "create" ? "Cadastrar marca" : "Atualizar marca"}
-              </Button>
-              <Button type="reset" variant="ghost">
-                Limpar
-              </Button>
-            </div>
+              <div className={styles.formActions}>
+                <Button type="submit" isLoading={isSubmittingBrand} loadingText="Salvando...">
+                  {brandMode === "create" ? "Cadastrar marca" : "Atualizar marca"}
+                </Button>
+                <Button type="reset" variant="ghost">
+                  Limpar
+                </Button>
+              </div>
           </form>
         </Card>
 
@@ -641,8 +642,8 @@ export function StoresPage() {
             </div>
 
             <div className={styles.formActions}>
-              <Button type="submit" disabled={isSubmittingStore}>
-                {isSubmittingStore ? "Salvando..." : storeMode === "create" ? "Cadastrar loja" : "Atualizar loja"}
+              <Button type="submit" isLoading={isSubmittingStore} loadingText="Salvando...">
+                {storeMode === "create" ? "Cadastrar loja" : "Atualizar loja"}
               </Button>
               <Button type="reset" variant="ghost">
                 Limpar
@@ -654,7 +655,7 @@ export function StoresPage() {
 
       <Card title="Marcas cadastradas" subtitle="Informações sincronizadas com o banco de dados.">
         {error ? <div className={styles.errorMessage}>{error}</div> : null}
-        {isLoading ? <div className={styles.loadingMessage}>Carregando marcas...</div> : null}
+        {isLoading ? <TableSkeleton columns={3} /> : null}
         {!isLoading && orderedBrands.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhuma marca cadastrada.</div>
         ) : null}
@@ -748,7 +749,7 @@ export function StoresPage() {
 
       <Card title="Lojas cadastradas" subtitle="Listagem consolidada das unidades comerciais ativas.">
         {error ? <div className={styles.errorMessage}>{error}</div> : null}
-        {isLoading ? <div className={styles.loadingMessage}>Carregando lojas...</div> : null}
+        {isLoading ? <TableSkeleton columns={storeColumns.length} /> : null}
         {!isLoading && stores.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhuma loja cadastrada.</div>
         ) : null}

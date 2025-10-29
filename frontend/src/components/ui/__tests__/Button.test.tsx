@@ -45,4 +45,17 @@ describe("Button", () => {
     const button = screen.getByRole("button", { name: "Adicionar" });
     expect(button).toHaveClass(styles.iconOnly);
   });
+
+  it("shows a spinner and disables interactions while loading", () => {
+    render(
+      <Button isLoading loadingText="Salvando...">
+        Salvar
+      </Button>
+    );
+
+    const button = screen.getByRole("button", { name: "Salvando..." });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("data-loading", "true");
+    expect(button.querySelector(`.${styles.spinner}`)).toBeInTheDocument();
+  });
 });

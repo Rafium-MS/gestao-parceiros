@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
+import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import {
@@ -664,7 +665,7 @@ export function PartnersTable() {
       </div>
 
       {fetchError ? <div className={styles.errorMessage}>{fetchError}</div> : null}
-      {isLoading ? <div className={styles.feedback}>Carregando parceiros...</div> : null}
+      {isLoading ? <TableSkeleton columns={columns.length} /> : null}
 
       {!isLoading && partners.length === 0 && !fetchError ? (
         <div className={styles.feedback}>Nenhum parceiro cadastrado até o momento.</div>
@@ -694,8 +695,13 @@ export function PartnersTable() {
             <Button variant="ghost" onClick={handleClose} type="button">
               Cancelar
             </Button>
-            <Button type="submit" form="partner-form" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : mode === "create" ? "Salvar parceiro" : "Atualizar parceiro"}
+            <Button
+              type="submit"
+              form="partner-form"
+              isLoading={isSubmitting}
+              loadingText="Salvando..."
+            >
+              {mode === "create" ? "Salvar parceiro" : "Atualizar parceiro"}
             </Button>
           </>
         }
