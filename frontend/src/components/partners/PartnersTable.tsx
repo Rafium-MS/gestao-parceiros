@@ -1,11 +1,10 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
-import { SelectInput } from "@/components/ui/SelectInput";
 import { TextInput } from "@/components/ui/TextInput";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import {
@@ -17,7 +16,8 @@ import {
   updatePartner,
 } from "@/services/partners";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import { isCnpj, isRequired } from "@/utils/validators";
+import { formatCpfCnpj, formatCurrencyFromNumber, formatCurrencyInput, formatPhone } from "@/utils/masks";
+import { isCpfOrCnpj, isRequired } from "@/utils/validators";
 
 import styles from "./PartnersTable.module.css";
 
@@ -58,11 +58,11 @@ const defaultForm: PartnerForm = {
   banco: "",
   agencia_conta: "",
   pix: "",
-  cx_copo: "0",
-  dez_litros: "0",
-  vinte_litros: "0",
-  mil_quinhentos_ml: "0",
-  vasilhame: "0",
+  cx_copo: "",
+  dez_litros: "",
+  vinte_litros: "",
+  mil_quinhentos_ml: "",
+  vasilhame: "",
 };
 
 const numberFormatter = new Intl.NumberFormat("pt-BR", {
@@ -100,6 +100,8 @@ const BRAZIL_STATES: Array<{ value: string; label: string }> = [
   { value: "TO", label: "Tocantins" },
 ];
 
+const BRAZIL_STATE_CODES = new Set(BRAZIL_STATES.map((state) => state.value));
+
 const PRICE_FIELDS: Array<keyof PartnerForm> = [
   "cx_copo",
   "dez_litros",
@@ -108,12 +110,19 @@ const PRICE_FIELDS: Array<keyof PartnerForm> = [
   "vasilhame",
 ];
 
+const FORM_DRAFT_STORAGE_KEY = "partners:form-draft";
+
 function normalizeText(value: string) {
   return value.trim();
 }
 
 function parseCurrency(value: string) {
-  const parsed = Number.parseFloat(value.replace(",", "."));
+  if (!value) {
+    return 0;
+  }
+
+  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const parsed = Number.parseFloat(normalized);
   if (Number.isNaN(parsed)) {
     return 0;
   }
@@ -135,6 +144,214 @@ export function PartnersTable() {
   const [editingPartner, setEditingPartner] = useState<PartnerRecord | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const { isOpen, open, close } = useDisclosure();
+
+  const fieldValidators = useMemo<
+    Partial<Record<keyof PartnerForm, (value: string, currentForm: PartnerForm) => string | undefined>>
+  >(
+    () => ({
+      parceiro: (value) => {
+        if (!isRequired(value)) {
+          return "Informe o nome do parceiro.";
+        }
+        return undefined;
+      },
+      cnpj_cpf: (value) => {
+        if (!isRequired(value)) {
+          return "Informe o CPF ou CNPJ.";
+        }
+        if (!isCpfOrCnpj(value)) {
+          return "Informe um CPF ou CNPJ válido.";
+        }
+        return undefined;
+      },
+      cidade: (value) => {
+        if (!isRequired(value)) {
+          return "Informe a cidade.";
+        }
+        return undefined;
+      },
+      estado: (value) => {
+        if (!isRequired(value)) {
+          return "Informe a UF.";
+        }
+
+        const normalized = value.trim().toUpperCase();
+        if (!BRAZIL_STATE_CODES.has(normalized)) {
+          return "Selecione uma UF válida.";
+        }
+
+        return undefined;
+      },
+      telefone: (value) => {
+        if (!isRequired(value)) {
+          return "Informe um telefone de contato.";
+        }
+
+        const digits = value.replace(/\D/g, "");
+        if (digits.length < 10) {
+          return "Informe um telefone válido.";
+        }
+
+        return undefined;
+      },
+      dia_pagamento: (value) => {
+        if (!value) {
+          return undefined;
+        }
+
+        const day = Number(value);
+        if (Number.isNaN(day) || day < 1 || day > 31) {
+          return "Informe um dia entre 1 e 31.";
+        }
+
+        return undefined;
+      },
+    }),
+    [],
+  );
+
+  const formatFieldValue = useCallback((field: keyof PartnerForm, value: string) => {
+    if (field === "telefone") {
+      return formatPhone(value);
+    }
+
+    if (field === "cnpj_cpf") {
+      return formatCpfCnpj(value);
+    }
+
+    if (field === "estado") {
+      return value.replace(/[^a-zA-Z]/g, "").slice(0, 2).toUpperCase();
+    }
+
+    if (PRICE_FIELDS.includes(field)) {
+      if (!value) {
+        return "";
+      }
+      return formatCurrencyInput(value);
+    }
+
+    return value;
+  }, []);
+
+  const handleFieldChange = useCallback(
+    (field: keyof PartnerForm) => (event: ChangeEvent<HTMLInputElement>) => {
+      const rawValue = event.target.value;
+      setForm((current) => {
+        const formattedValue = formatFieldValue(field, rawValue);
+        const nextForm = { ...current, [field]: formattedValue };
+        const validator = fieldValidators[field];
+
+        if (validator) {
+          const message = validator(formattedValue, nextForm);
+          setErrors((currentErrors) => {
+            const { global, ...rest } = currentErrors;
+            const hadGlobal = global !== undefined;
+
+            if (message) {
+              if (rest[field] === message && !hadGlobal) {
+                return currentErrors;
+              }
+              return { ...rest, [field]: message };
+            }
+
+            if (!(field in rest)) {
+              return hadGlobal ? rest : currentErrors;
+            }
+
+            const { [field]: _removed, ...remaining } = rest;
+            return remaining;
+          });
+        } else {
+          setErrors((currentErrors) => {
+            if (currentErrors.global === undefined) {
+              return currentErrors;
+            }
+            const { global, ...rest } = currentErrors;
+            return rest;
+          });
+        }
+
+        return nextForm;
+      });
+    },
+    [fieldValidators, formatFieldValue],
+  );
+
+  const validateField = useCallback(
+    (field: keyof PartnerForm, value: string, currentForm: PartnerForm) => {
+      const validator = fieldValidators[field];
+      return validator ? validator(value, currentForm) : undefined;
+    },
+    [fieldValidators],
+  );
+
+  const validateForm = useCallback(
+    (formState: PartnerForm) => {
+      const fieldsToValidate: Array<keyof PartnerForm> = [
+        "parceiro",
+        "cnpj_cpf",
+        "cidade",
+        "estado",
+        "telefone",
+        "dia_pagamento",
+      ];
+
+      const validationErrors: FormErrors = {};
+      fieldsToValidate.forEach((field) => {
+        const error = validateField(field, formState[field], formState);
+        if (error) {
+          validationErrors[field] = error;
+        }
+      });
+
+      return validationErrors;
+    },
+    [validateField],
+  );
+
+  const citySuggestions = useMemo(() => {
+    const cities = partners
+      .map((partner) => partner.cidade?.trim())
+      .filter((city): city is string => Boolean(city));
+
+    return Array.from(new Set(cities)).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
+    );
+  }, [partners]);
+
+  const cityDatalistId = "partner-city-options";
+  const stateDatalistId = "partner-state-options";
+
+  const loadDraft = useCallback((): PartnerForm | null => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(FORM_DRAFT_STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+
+      const parsed = JSON.parse(stored) as Partial<PartnerForm>;
+      return { ...defaultForm, ...parsed };
+    } catch (error) {
+      console.error("Erro ao carregar rascunho do parceiro", error);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || mode !== "create" || !isOpen) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(FORM_DRAFT_STORAGE_KEY, JSON.stringify(form));
+    } catch (error) {
+      console.error("Erro ao salvar rascunho do parceiro", error);
+    }
+  }, [form, mode, isOpen]);
 
   useEffect(() => {
     let active = true;
@@ -226,21 +443,21 @@ export function PartnersTable() {
     setEditingPartner(partner);
     setForm({
       parceiro: partner.parceiro ?? "",
-      cnpj_cpf: partner.cnpj_cpf ?? "",
+      cnpj_cpf: formatCpfCnpj(partner.cnpj_cpf ?? ""),
       cidade: partner.cidade ?? "",
       estado: partner.estado ?? "",
-      telefone: partner.telefone ?? "",
+      telefone: formatPhone(partner.telefone ?? ""),
       email: partner.email ?? "",
       distribuidora: partner.distribuidora ?? "",
       dia_pagamento: partner.dia_pagamento ? String(partner.dia_pagamento) : "",
       banco: partner.banco ?? "",
       agencia_conta: partner.agencia_conta ?? "",
       pix: partner.pix ?? "",
-      cx_copo: String(partner.cx_copo ?? 0),
-      dez_litros: String(partner.dez_litros ?? 0),
-      vinte_litros: String(partner.vinte_litros ?? 0),
-      mil_quinhentos_ml: String(partner.mil_quinhentos_ml ?? 0),
-      vasilhame: String(partner.vasilhame ?? 0),
+      cx_copo: formatCurrencyFromNumber(partner.cx_copo ?? null),
+      dez_litros: formatCurrencyFromNumber(partner.dez_litros ?? null),
+      vinte_litros: formatCurrencyFromNumber(partner.vinte_litros ?? null),
+      mil_quinhentos_ml: formatCurrencyFromNumber(partner.mil_quinhentos_ml ?? null),
+      vasilhame: formatCurrencyFromNumber(partner.vasilhame ?? null),
     });
     setErrors({});
     open();
@@ -351,8 +568,14 @@ export function PartnersTable() {
   const handleOpenCreate = () => {
     setMode("create");
     setEditingPartner(null);
-    setForm(defaultForm);
-    setErrors({});
+    const draft = loadDraft();
+    if (draft) {
+      setForm(draft);
+      setErrors(validateForm(draft));
+    } else {
+      setForm(defaultForm);
+      setErrors({});
+    }
     open();
   };
 
@@ -368,30 +591,7 @@ export function PartnersTable() {
     event.preventDefault();
     setErrors({});
 
-    const validationErrors: FormErrors = {};
-
-    if (!isRequired(form.parceiro)) {
-      validationErrors.parceiro = "Informe o nome do parceiro.";
-    }
-    if (!isRequired(form.cnpj_cpf) || !isCnpj(form.cnpj_cpf)) {
-      validationErrors.cnpj_cpf = "Informe um CNPJ válido.";
-    }
-    if (!isRequired(form.cidade)) {
-      validationErrors.cidade = "Informe a cidade.";
-    }
-    if (!isRequired(form.estado)) {
-      validationErrors.estado = "Informe a UF.";
-    }
-    if (!isRequired(form.telefone)) {
-      validationErrors.telefone = "Informe um telefone de contato.";
-    }
-    if (form.dia_pagamento) {
-      const day = Number(form.dia_pagamento);
-      if (Number.isNaN(day) || day < 1 || day > 31) {
-        validationErrors.dia_pagamento = "Informe um dia entre 1 e 31.";
-      }
-    }
-
+    const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -421,6 +621,13 @@ export function PartnersTable() {
       if (mode === "create") {
         const created = await createPartner(payload);
         setPartners((current) => [created, ...current]);
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.removeItem(FORM_DRAFT_STORAGE_KEY);
+          } catch (error) {
+            console.error("Erro ao limpar rascunho do parceiro", error);
+          }
+        }
       } else if (editingPartner) {
         const updated = await updatePartner(editingPartner.id, payload);
         setPartners((current) =>
@@ -496,6 +703,17 @@ export function PartnersTable() {
         <form id="partner-form" className={styles.modalForm} onSubmit={handleSubmit}>
           {errors.global ? <div className={styles.errorMessage}>{errors.global}</div> : null}
 
+          <datalist id={cityDatalistId}>
+            {citySuggestions.map((city) => (
+              <option key={city} value={city} />
+            ))}
+          </datalist>
+          <datalist id={stateDatalistId}>
+            {BRAZIL_STATES.map((uf) => (
+              <option key={uf.value} value={uf.value} label={uf.label} />
+            ))}
+          </datalist>
+
           <section className={styles.formSection}>
             <h2 className={styles.formSectionTitle}>Informações do parceiro</h2>
 
@@ -504,20 +722,21 @@ export function PartnersTable() {
                 id="partner-name"
                 placeholder="Ex.: Distribuidora Azul"
                 value={form.parceiro}
-                onChange={(event) => setForm((current) => ({ ...current, parceiro: event.target.value }))}
+                onChange={handleFieldChange("parceiro")}
                 hasError={Boolean(errors.parceiro)}
                 required
               />
             </FormField>
 
             <div className={styles.formRow}>
-              <FormField label="CNPJ" htmlFor="partner-cnpj" error={errors.cnpj_cpf}>
+              <FormField label="CPF ou CNPJ" htmlFor="partner-cnpj" error={errors.cnpj_cpf}>
                 <TextInput
                   id="partner-cnpj"
                   placeholder="00.000.000/0000-00"
                   value={form.cnpj_cpf}
-                  onChange={(event) => setForm((current) => ({ ...current, cnpj_cpf: event.target.value }))}
+                  onChange={handleFieldChange("cnpj_cpf")}
                   hasError={Boolean(errors.cnpj_cpf)}
+                  inputMode="numeric"
                   required
                 />
               </FormField>
@@ -526,8 +745,9 @@ export function PartnersTable() {
                   id="partner-phone"
                   placeholder="(00) 0000-0000"
                   value={form.telefone}
-                  onChange={(event) => setForm((current) => ({ ...current, telefone: event.target.value }))}
+                  onChange={handleFieldChange("telefone")}
                   hasError={Boolean(errors.telefone)}
+                  inputMode="tel"
                   required
                 />
               </FormField>
@@ -539,29 +759,24 @@ export function PartnersTable() {
                   id="partner-city"
                   placeholder="Ex.: São Paulo"
                   value={form.cidade}
-                  onChange={(event) => setForm((current) => ({ ...current, cidade: event.target.value }))}
+                  onChange={handleFieldChange("cidade")}
                   hasError={Boolean(errors.cidade)}
+                  list={cityDatalistId}
                   required
                 />
               </FormField>
 
               <FormField label="UF" htmlFor="partner-state" error={errors.estado}>
-                <SelectInput
+                <TextInput
                   id="partner-state"
+                  placeholder="Ex.: SP"
                   value={form.estado}
-                  onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value }))}
+                  onChange={handleFieldChange("estado")}
                   hasError={Boolean(errors.estado)}
+                  list={stateDatalistId}
+                  maxLength={2}
                   required
-                >
-                  <option value="" disabled>
-                    Selecione
-                  </option>
-                  {BRAZIL_STATES.map((uf) => (
-                    <option key={uf.value} value={uf.value}>
-                      {uf.label}
-                    </option>
-                  ))}
-                </SelectInput>
+                />
               </FormField>
             </div>
 
@@ -571,7 +786,7 @@ export function PartnersTable() {
                   id="partner-email"
                   placeholder="contato@empresa.com"
                   value={form.email}
-                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                  onChange={handleFieldChange("email")}
                   type="email"
                 />
               </FormField>
@@ -580,7 +795,7 @@ export function PartnersTable() {
                   id="partner-distributor"
                   placeholder="Nome da distribuidora"
                   value={form.distribuidora}
-                  onChange={(event) => setForm((current) => ({ ...current, distribuidora: event.target.value }))}
+                  onChange={handleFieldChange("distribuidora")}
                 />
               </FormField>
             </div>
@@ -597,7 +812,7 @@ export function PartnersTable() {
                   min={1}
                   max={31}
                   value={form.dia_pagamento}
-                  onChange={(event) => setForm((current) => ({ ...current, dia_pagamento: event.target.value }))}
+                  onChange={handleFieldChange("dia_pagamento")}
                   hasError={Boolean(errors.dia_pagamento)}
                 />
               </FormField>
@@ -605,21 +820,21 @@ export function PartnersTable() {
                 <TextInput
                   id="partner-bank"
                   value={form.banco}
-                  onChange={(event) => setForm((current) => ({ ...current, banco: event.target.value }))}
+                  onChange={handleFieldChange("banco")}
                 />
               </FormField>
               <FormField label="Agência e conta" htmlFor="partner-account">
                 <TextInput
                   id="partner-account"
                   value={form.agencia_conta}
-                  onChange={(event) => setForm((current) => ({ ...current, agencia_conta: event.target.value }))}
+                  onChange={handleFieldChange("agencia_conta")}
                 />
               </FormField>
               <FormField label="Chave PIX" htmlFor="partner-pix">
                 <TextInput
                   id="partner-pix"
                   value={form.pix}
-                  onChange={(event) => setForm((current) => ({ ...current, pix: event.target.value }))}
+                  onChange={handleFieldChange("pix")}
                 />
               </FormField>
             </div>
@@ -632,31 +847,31 @@ export function PartnersTable() {
               <FormField label="Valor CX Copo" htmlFor="partner-cx_copo">
                 <TextInput
                   id="partner-cx_copo"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
                   value={form.cx_copo}
-                  onChange={(event) => setForm((current) => ({ ...current, cx_copo: event.target.value }))}
+                  onChange={handleFieldChange("cx_copo")}
+                  inputMode="decimal"
+                  placeholder="0,00"
                 />
               </FormField>
               <FormField label="Valor 10 litros" htmlFor="partner-dez_litros">
                 <TextInput
                   id="partner-dez_litros"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
                   value={form.dez_litros}
-                  onChange={(event) => setForm((current) => ({ ...current, dez_litros: event.target.value }))}
+                  onChange={handleFieldChange("dez_litros")}
+                  inputMode="decimal"
+                  placeholder="0,00"
                 />
               </FormField>
               <FormField label="Valor 20 litros" htmlFor="partner-vinte_litros">
                 <TextInput
                   id="partner-vinte_litros"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
                   value={form.vinte_litros}
-                  onChange={(event) => setForm((current) => ({ ...current, vinte_litros: event.target.value }))}
+                  onChange={handleFieldChange("vinte_litros")}
+                  inputMode="decimal"
+                  placeholder="0,00"
                 />
               </FormField>
             </div>
@@ -665,21 +880,21 @@ export function PartnersTable() {
               <FormField label="Valor 1500 ml" htmlFor="partner-mil_quinhentos_ml">
                 <TextInput
                   id="partner-mil_quinhentos_ml"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
                   value={form.mil_quinhentos_ml}
-                  onChange={(event) => setForm((current) => ({ ...current, mil_quinhentos_ml: event.target.value }))}
+                  onChange={handleFieldChange("mil_quinhentos_ml")}
+                  inputMode="decimal"
+                  placeholder="0,00"
                 />
               </FormField>
               <FormField label="Valor vasilhame" htmlFor="partner-vasilhame">
                 <TextInput
                   id="partner-vasilhame"
-                  type="number"
-                  min={0}
-                  step="0.01"
+                  type="text"
                   value={form.vasilhame}
-                  onChange={(event) => setForm((current) => ({ ...current, vasilhame: event.target.value }))}
+                  onChange={handleFieldChange("vasilhame")}
+                  inputMode="decimal"
+                  placeholder="0,00"
                 />
               </FormField>
             </div>

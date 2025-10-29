@@ -10,7 +10,7 @@ export function minLength(value: string, length: number) {
   return value.trim().length >= length;
 }
 
-export function isCnpj(value: string) {
+export function isCpfOrCnpj(value: string) {
   const digits = value.replace(/[^\d]/g, "");
-  return digits.length === 14;
+  return digits.length === 11 || digits.length === 14;
 }
