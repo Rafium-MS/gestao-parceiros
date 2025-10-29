@@ -1,73 +1,90 @@
-import {
-  ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+
+import { type AuthenticatedUser, fetchCurrentUser, login as apiLogin, logout as apiLogout } from "@/services/auth";
+import { HttpError, onUnauthorized } from "@/services/httpClient";
 
 type AuthContextValue = {
+  user: AuthenticatedUser | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
-const STORAGE_KEY = "gestao-parceiros.authenticated";
-
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-function readInitialAuthState() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "true";
-  } catch (error) {
-    console.warn("Não foi possível ler o estado de autenticação persistido.", error);
-    return false;
-  }
-}
 
 type AuthProviderProps = {
   children: ReactNode;
 };
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(readInitialAuthState);
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const detachUnauthorized = onUnauthorized(() => {
+      if (isMounted) {
+        setUser(null);
+      }
+    });
+
+    fetchCurrentUser()
+      .then((currentUser) => {
+        if (isMounted) {
+          setUser(currentUser);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setUser(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      detachUnauthorized();
+    };
+  }, []);
 
   const login = useCallback(async (username: string, password: string) => {
     if (!username || !password) {
       throw new Error("Usuário e senha são obrigatórios.");
     }
 
-    setIsAuthenticated(true);
-
     try {
-      window.localStorage.setItem(STORAGE_KEY, "true");
+      const authenticated = await apiLogin(username, password);
+      setUser(authenticated);
     } catch (error) {
-      console.warn("Não foi possível persistir o estado de autenticação.", error);
+      if (error instanceof HttpError) {
+        throw new Error(error.message);
+      }
+      throw error;
     }
   }, []);
 
-  const logout = useCallback(() => {
-    setIsAuthenticated(false);
-
+  const logout = useCallback(async () => {
     try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch (error) {
-      console.warn("Não foi possível remover o estado de autenticação persistido.", error);
+      await apiLogout();
+    } finally {
+      setUser(null);
     }
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      isAuthenticated,
+      user,
+      isAuthenticated: Boolean(user),
+      isLoading,
       login,
       logout,
     }),
-    [isAuthenticated, login, logout],
+    [isLoading, login, logout, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

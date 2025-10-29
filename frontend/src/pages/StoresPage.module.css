@@ -1,41 +1,51 @@
-.highlights {
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--spacing-lg);
 }
 
-.highlightCard {
+.summaryCard {
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   background-color: var(--color-surface-alt);
   border: 1px solid rgba(226, 232, 240, 0.7);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
-.highlightLabel {
+.summaryLabel {
   font-size: 0.85rem;
   text-transform: uppercase;
   color: var(--color-text-muted);
   letter-spacing: 0.08em;
 }
 
-.highlightValue {
+.summaryValue {
   font-size: 1.75rem;
   font-weight: var(--font-weight-semibold);
 }
 
-.highlightTrend {
+.summaryHelper {
   font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }
 
-.trendUp {
-  color: var(--color-success);
+.grid {
+  display: grid;
+  gap: var(--spacing-xl);
 }
 
-.trendDown {
-  color: var(--color-danger);
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .errorMessage {

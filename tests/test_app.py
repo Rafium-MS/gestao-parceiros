@@ -97,6 +97,7 @@ def test_duplicate_username_is_rejected(tmp_path, monkeypatch):
             json={"username": "operador", "password": "secreta", "role": "operator"},
         )
         assert create_response.status_code == 201
+        assert create_response.get_json()["data"]["id"]
 
         duplicate_response = client.post(
             "/api/users",
@@ -104,7 +105,7 @@ def test_duplicate_username_is_rejected(tmp_path, monkeypatch):
         )
 
     assert duplicate_response.status_code == 400
-    assert duplicate_response.get_json()["error"] == "username já existe"
+    assert duplicate_response.get_json()["error"]["message"] == "username já existe"
 
     Session = _get_session(db_path)
     with Session() as session:
@@ -138,3 +139,38 @@ def test_non_admin_cannot_access_user_listing(tmp_path, monkeypatch):
         response = client.get("/api/users")
 
     assert response.status_code == 403
+
+
+def test_api_login_and_partner_flow(tmp_path, monkeypatch):
+    flask_app, _ = _create_test_app(tmp_path, monkeypatch)
+
+    with flask_app.test_client() as client:
+        login_response = client.post(
+            "/api/login",
+            json={"username": "admin", "password": "admin"},
+        )
+
+        assert login_response.status_code == 200
+        data = login_response.get_json()["data"]
+        assert data["user"]["username"] == "admin"
+
+        create_partner_response = client.post(
+            "/api/partners",
+            json={
+                "cidade": "São Paulo",
+                "estado": "SP",
+                "parceiro": "Distribuidora Azul",
+                "cnpj_cpf": "12.345.678/0001-99",
+                "telefone": "11999999999",
+                "email": "contato@azul.com",
+            },
+        )
+
+        assert create_partner_response.status_code == 201
+        partner_payload = create_partner_response.get_json()["data"]
+        assert partner_payload["parceiro"] == "Distribuidora Azul"
+
+        partners_response = client.get("/api/partners")
+        assert partners_response.status_code == 200
+        partners = partners_response.get_json()["data"]
+        assert any(partner["id"] == partner_payload["id"] for partner in partners)

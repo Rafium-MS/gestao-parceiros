@@ -1,160 +1,152 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
-import { Badge, BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
-import { SelectInput } from "@/components/ui/SelectInput";
 import { TextInput } from "@/components/ui/TextInput";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { formatCurrency, formatDate, formatPercentage } from "@/utils/formatters";
+import { createPartner, listPartners, PartnerPayload, PartnerRecord } from "@/services/partners";
+import { formatDate } from "@/utils/formatters";
 import { isCnpj, isRequired } from "@/utils/validators";
 
 import styles from "./PartnersTable.module.css";
 
-type PartnerStatus = "Ativo" | "Pendente" | "Suspenso";
-
-type Partner = {
-  id: string;
-  name: string;
-  cnpj: string;
-  segment: string;
-  status: PartnerStatus;
-  lastSale: string;
-  revenue: number;
-  completeness: number;
-};
-
 type PartnerForm = {
-  name: string;
-  cnpj: string;
-  segment: string;
-  status: PartnerStatus;
+  parceiro: string;
+  cnpj_cpf: string;
+  cidade: string;
+  estado: string;
+  telefone: string;
+  email: string;
+  distribuidora: string;
 };
 
-const initialPartners: Partner[] = [
-  {
-    id: "P-001",
-    name: "Rio Água Distribuidora",
-    cnpj: "12.345.678/0001-99",
-    segment: "Atacado",
-    status: "Ativo",
-    lastSale: "2023-12-18",
-    revenue: 325_500,
-    completeness: 92,
-  },
-  {
-    id: "P-002",
-    name: "Nordeste Bebidas LTDA",
-    cnpj: "98.765.432/0001-55",
-    segment: "Food Service",
-    status: "Pendente",
-    lastSale: "2023-11-30",
-    revenue: 148_200,
-    completeness: 68,
-  },
-  {
-    id: "P-003",
-    name: "Aqua Premium Comercial",
-    cnpj: "11.222.333/0001-44",
-    segment: "Varejo",
-    status: "Ativo",
-    lastSale: "2023-12-02",
-    revenue: 210_890,
-    completeness: 84,
-  },
-  {
-    id: "P-004",
-    name: "Grupo Fonte Clara",
-    cnpj: "88.999.777/0001-10",
-    segment: "Exportação",
-    status: "Suspenso",
-    lastSale: "2023-10-11",
-    revenue: 87_400,
-    completeness: 54,
-  },
-];
-
-const statusTone: Record<PartnerStatus, BadgeTone> = {
-  Ativo: "success",
-  Pendente: "warning",
-  Suspenso: "danger",
+type FormErrors = Partial<Record<keyof PartnerForm, string>> & {
+  global?: string;
 };
 
 const defaultForm: PartnerForm = {
-  name: "",
-  cnpj: "",
-  segment: "Atacado",
-  status: "Ativo",
+  parceiro: "",
+  cnpj_cpf: "",
+  cidade: "",
+  estado: "",
+  telefone: "",
+  email: "",
+  distribuidora: "",
 };
 
-export function PartnersTable() {
-  const [partners, setPartners] = useState(initialPartners);
-  const [form, setForm] = useState(defaultForm);
-  const [errors, setErrors] = useState<Partial<Record<keyof PartnerForm, string>>>({});
+const numberFormatter = new Intl.NumberFormat("pt-BR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
 
+function normalizeText(value: string) {
+  return value.trim();
+}
+
+export function PartnersTable() {
+  const [partners, setPartners] = useState<PartnerRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [form, setForm] = useState<PartnerForm>(defaultForm);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen, open, close } = useDisclosure();
 
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    listPartners()
+      .then((data) => {
+        if (active) {
+          setPartners(data);
+          setFetchError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          const message = error instanceof Error ? error.message : "Não foi possível carregar os parceiros.";
+          setFetchError(message);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const metrics = useMemo(() => {
-    const activeCount = partners.filter((partner) => partner.status === "Ativo").length;
-    const pendingCount = partners.filter((partner) => partner.status === "Pendente").length;
-    const totalRevenue = partners.reduce((total, partner) => total + partner.revenue, 0);
-    const averageCompleteness = partners.reduce((total, partner) => total + partner.completeness, 0) / partners.length;
+    if (partners.length === 0) {
+      return [
+        {
+          label: "Parceiros cadastrados",
+          value: "0",
+          delta: "Cadastre novos parceiros para começar",
+        },
+      ];
+    }
+
+    const totalPartners = partners.length;
+    const statesCovered = new Set(partners.map((partner) => partner.estado).filter(Boolean)).size;
+    const contactsWithEmail = partners.filter((partner) => Boolean(partner.email)).length;
+    const totalVolume = partners.reduce((total, partner) => total + partner.total, 0);
+    const citiesCovered = new Set(partners.map((partner) => partner.cidade).filter(Boolean)).size;
 
     return [
       {
-        label: "Parceiros ativos",
-        value: activeCount,
-        delta: "+12% vs mês anterior",
+        label: "Parceiros cadastrados",
+        value: totalPartners.toString(),
+        delta: `${citiesCovered} cidades atendidas`,
       },
       {
-        label: "Pendentes de integração",
-        value: pendingCount,
-        delta: "-3% esta semana",
+        label: "Cobertura geográfica",
+        value: `${statesCovered} UF${statesCovered === 1 ? "" : "s"}`,
+        delta: "Expanda para novas regiões",
       },
       {
-        label: "Receita consolidada",
-        value: formatCurrency(totalRevenue),
-        delta: "+8% em 30 dias",
+        label: "Contatos com e-mail",
+        value: contactsWithEmail.toString(),
+        delta:
+          totalPartners > 0
+            ? `${Math.round((contactsWithEmail / totalPartners) * 100)}% da base com contato digital`
+            : "Atualize os cadastros",
       },
       {
-        label: "Dados completos",
-        value: formatPercentage(averageCompleteness / 100, "pt-BR", 0),
-        delta: "Meta: 95%",
+        label: "Volume contratado",
+        value: numberFormatter.format(totalVolume),
+        delta: "Soma das categorias cadastradas",
       },
     ];
   }, [partners]);
 
-  const columns: TableColumn<Partner>[] = useMemo(
+  const columns = useMemo<TableColumn<PartnerRecord>[]>(
     () => [
-      { header: "Parceiro", accessor: "name" },
-      { header: "CNPJ", accessor: "cnpj" },
-      { header: "Segmento", accessor: "segment" },
+      { header: "Parceiro", accessor: "parceiro" },
+      { header: "Documento", accessor: "cnpj_cpf" },
       {
-        header: "Status",
-        render: (partner) => <Badge tone={statusTone[partner.status]}>{partner.status}</Badge>,
+        header: "Localização",
+        render: (partner) => `${partner.cidade} - ${partner.estado}`,
+      },
+      { header: "Telefone", accessor: "telefone" },
+      {
+        header: "E-mail",
+        render: (partner) => partner.email ?? "—",
       },
       {
-        header: "Última venda",
-        render: (partner) => formatDate(partner.lastSale),
-      },
-      {
-        header: "Receita (30d)",
+        header: "Volume total",
         align: "right",
-        render: (partner) => formatCurrency(partner.revenue),
+        render: (partner) => numberFormatter.format(partner.total),
       },
       {
         header: "Cadastro",
-        render: (partner) => (
-          <div>
-            <div className={styles.progressBar}>
-              <span className={styles.progressValue} style={{ width: `${partner.completeness}%` }} />
-            </div>
-            <small>{partner.completeness}%</small>
-          </div>
-        ),
+        render: (partner) => (partner.created_at ? formatDate(partner.created_at) : "—"),
       },
     ],
     [],
@@ -163,48 +155,64 @@ export function PartnersTable() {
   const handleClose = () => {
     setForm(defaultForm);
     setErrors({});
+    setIsSubmitting(false);
     close();
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrors({});
 
-    const validationErrors: Partial<Record<keyof PartnerForm, string>> = {};
-    if (!isRequired(form.name)) {
-      validationErrors.name = "Informe o nome do parceiro";
-    }
-    if (!isRequired(form.cnpj) || !isCnpj(form.cnpj)) {
-      validationErrors.cnpj = "Informe um CNPJ válido";
-    }
-    if (!isRequired(form.segment)) {
-      validationErrors.segment = "Informe o segmento";
-    }
+    const validationErrors: FormErrors = {};
 
-    setErrors(validationErrors);
+    if (!isRequired(form.parceiro)) {
+      validationErrors.parceiro = "Informe o nome do parceiro.";
+    }
+    if (!isRequired(form.cnpj_cpf) || !isCnpj(form.cnpj_cpf)) {
+      validationErrors.cnpj_cpf = "Informe um CNPJ válido.";
+    }
+    if (!isRequired(form.cidade)) {
+      validationErrors.cidade = "Informe a cidade.";
+    }
+    if (!isRequired(form.estado)) {
+      validationErrors.estado = "Informe a UF.";
+    }
+    if (!isRequired(form.telefone)) {
+      validationErrors.telefone = "Informe um telefone de contato.";
+    }
 
     if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    const newPartner: Partner = {
-      id: `P-${String(partners.length + 1).padStart(3, "0")}`,
-      name: form.name,
-      cnpj: form.cnpj,
-      segment: form.segment,
-      status: form.status,
-      lastSale: new Date().toISOString(),
-      revenue: 0,
-      completeness: 45,
+    const payload: PartnerPayload = {
+      parceiro: normalizeText(form.parceiro),
+      cnpj_cpf: normalizeText(form.cnpj_cpf),
+      cidade: normalizeText(form.cidade),
+      estado: normalizeText(form.estado).toUpperCase(),
+      telefone: normalizeText(form.telefone),
+      distribuidora: form.distribuidora ? normalizeText(form.distribuidora) : undefined,
+      email: form.email ? normalizeText(form.email) : undefined,
     };
 
-    setPartners((current) => [newPartner, ...current]);
-    handleClose();
+    setIsSubmitting(true);
+    try {
+      const created = await createPartner(payload);
+      setPartners((current) => [created, ...current]);
+      handleClose();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível salvar o parceiro.";
+      setErrors({ global: message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Card
       title="Parceiros cadastrados"
-      subtitle="Acompanhe a maturidade comercial e operacional dos parceiros ativos."
+      subtitle="Acompanhe e cadastre os parceiros que fazem parte da rede de distribuição."
       actions={<Button onClick={open}>Adicionar parceiro</Button>}
     >
       <div className={styles.metrics}>
@@ -217,7 +225,16 @@ export function PartnersTable() {
         ))}
       </div>
 
-      <DataTable columns={columns} data={partners} keyExtractor={(partner) => partner.id} />
+      {fetchError ? <div className={styles.errorMessage}>{fetchError}</div> : null}
+      {isLoading ? <div className={styles.feedback}>Carregando parceiros...</div> : null}
+
+      {!isLoading && partners.length === 0 && !fetchError ? (
+        <div className={styles.feedback}>Nenhum parceiro cadastrado até o momento.</div>
+      ) : null}
+
+      {!isLoading && partners.length > 0 ? (
+        <DataTable columns={columns} data={partners} keyExtractor={(partner) => partner.id.toString()} />
+      ) : null}
 
       <Modal
         isOpen={isOpen}
@@ -228,57 +245,85 @@ export function PartnersTable() {
             <Button variant="ghost" onClick={handleClose} type="button">
               Cancelar
             </Button>
-            <Button type="submit" form="partner-form">
-              Salvar parceiro
+            <Button type="submit" form="partner-form" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar parceiro"}
             </Button>
           </>
         }
       >
         <form id="partner-form" className={styles.modalForm} onSubmit={handleSubmit}>
-          <FormField label="Nome fantasia" htmlFor="partner-name" error={errors.name}>
+          {errors.global ? <div className={styles.errorMessage}>{errors.global}</div> : null}
+
+          <FormField label="Nome fantasia" htmlFor="partner-name" error={errors.parceiro}>
             <TextInput
               id="partner-name"
               placeholder="Ex.: Distribuidora Azul"
-              value={form.name}
-              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-              hasError={Boolean(errors.name)}
+              value={form.parceiro}
+              onChange={(event) => setForm((current) => ({ ...current, parceiro: event.target.value }))}
+              hasError={Boolean(errors.parceiro)}
             />
           </FormField>
 
           <div className={styles.formRow}>
-            <FormField label="CNPJ" htmlFor="partner-cnpj" error={errors.cnpj}>
+            <FormField label="CNPJ" htmlFor="partner-cnpj" error={errors.cnpj_cpf}>
               <TextInput
                 id="partner-cnpj"
                 placeholder="00.000.000/0000-00"
-                value={form.cnpj}
-                onChange={(event) => setForm((current) => ({ ...current, cnpj: event.target.value }))}
-                hasError={Boolean(errors.cnpj)}
+                value={form.cnpj_cpf}
+                onChange={(event) => setForm((current) => ({ ...current, cnpj_cpf: event.target.value }))}
+                hasError={Boolean(errors.cnpj_cpf)}
               />
             </FormField>
 
-            <FormField label="Segmento" htmlFor="partner-segment" error={errors.segment}>
+            <FormField label="Telefone" htmlFor="partner-phone" error={errors.telefone}>
               <TextInput
-                id="partner-segment"
-                placeholder="Ex.: Varejo"
-                value={form.segment}
-                onChange={(event) => setForm((current) => ({ ...current, segment: event.target.value }))}
-                hasError={Boolean(errors.segment)}
+                id="partner-phone"
+                placeholder="(00) 0000-0000"
+                value={form.telefone}
+                onChange={(event) => setForm((current) => ({ ...current, telefone: event.target.value }))}
+                hasError={Boolean(errors.telefone)}
               />
             </FormField>
           </div>
 
-          <FormField label="Status operacional" htmlFor="partner-status">
-            <SelectInput
-              id="partner-status"
-              value={form.status}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, status: event.target.value as PartnerStatus }))
-              }
-            >
-              <option value="Ativo">Ativo</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Suspenso">Suspenso</option>
-            </SelectInput>
+          <div className={styles.formRow}>
+            <FormField label="Cidade" htmlFor="partner-city" error={errors.cidade}>
+              <TextInput
+                id="partner-city"
+                placeholder="Ex.: São Paulo"
+                value={form.cidade}
+                onChange={(event) => setForm((current) => ({ ...current, cidade: event.target.value }))}
+                hasError={Boolean(errors.cidade)}
+              />
+            </FormField>
+
+            <FormField label="UF" htmlFor="partner-state" error={errors.estado}>
+              <TextInput
+                id="partner-state"
+                placeholder="SP"
+                value={form.estado}
+                onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value }))}
+                hasError={Boolean(errors.estado)}
+              />
+            </FormField>
+          </div>
+
+          <FormField label="E-mail" htmlFor="partner-email" optional>
+            <TextInput
+              id="partner-email"
+              placeholder="contato@empresa.com"
+              value={form.email}
+              onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+            />
+          </FormField>
+
+          <FormField label="Distribuidora" htmlFor="partner-distributor" optional>
+            <TextInput
+              id="partner-distributor"
+              placeholder="Nome da distribuidora"
+              value={form.distribuidora}
+              onChange={(event) => setForm((current) => ({ ...current, distribuidora: event.target.value }))}
+            />
           </FormField>
         </form>
       </Modal>

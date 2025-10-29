@@ -1,21 +1,17 @@
-import { env } from "@/config/env";
+import httpClient from "@/services/httpClient";
 
 type ApiStatusResponse = {
-  username?: string;
+  data: {
+    id: number;
+    username: string;
+  };
 };
 
 export async function fetchStatus(): Promise<string> {
-  const response = await fetch(`${env.apiBaseUrl}/api/me`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to reach API");
+  try {
+    const response = await httpClient.get<ApiStatusResponse>("/api/me");
+    return `Autenticado como ${response.data.username}.`;
+  } catch (error) {
+    return "API disponível, faça login para continuar.";
   }
-
-  const data = (await response.json()) as ApiStatusResponse;
-  if (data.username) {
-    return `Autenticado como ${data.username}.`;
-  }
-  return "API disponível, faça login para continuar.";
 }
