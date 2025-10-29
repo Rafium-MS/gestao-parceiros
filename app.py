@@ -19,6 +19,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, U
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, scoped_session
+from jinja2 import TemplateNotFound
 from models import Base, Partner, Brand, Store, Connection, ReportEntry, ReceiptImage, User
 from export_utils import ExportManager
 
@@ -61,7 +62,17 @@ def create_app():
     def render_frontend_or_template(template_name, **context):
         if frontend_build_available():
             return send_from_directory(FRONTEND_DIST_DIR, "index.html")
-        return render_template(template_name, **context)
+        try:
+            return render_template(template_name, **context)
+        except TemplateNotFound:
+            messages = []
+            if context.get("error"):
+                messages.append(str(context["error"]))
+            if context.get("success"):
+                messages.append(str(context["success"]))
+            if not messages:
+                messages.append("Interface web indisponível. Compile o frontend React (frontend/dist).")
+            return app.response_class("\n".join(messages), mimetype="text/plain")
 
     if os.path.isdir(FRONTEND_DIST_DIR):
         @app.get("/assets/<path:filename>")
@@ -311,7 +322,9 @@ def create_app():
     # ---------------------- PAGES ----------------------
     @app.get("/login")
     def login():
-        return render_template("login.html")
+        if current_user.is_authenticated:
+            return redirect(url_for("home"))
+        return render_frontend_or_template("login.html")
 
     @app.post("/login")
     def do_login():
@@ -326,7 +339,7 @@ def create_app():
                     u = User(username="admin", password_hash=generate_password_hash("admin"), role="admin")
                     s.add(u); s.commit()
             if not u or not check_password_hash(u.password_hash, password):
-                return render_template("login.html", error="Usuário ou senha inválidos.")
+                return render_frontend_or_template("login.html", error="Usuário ou senha inválidos.")
             login_user(_LoginUser(u))
             return redirect(url_for("home"))
 
@@ -414,23 +427,41 @@ def create_app():
         new_pwd = request.form.get("new_password","")
         confirm_pwd = request.form.get("confirm_password","")
         if len(new_pwd) < 6:
-            return render_template("account.html", username=current_user.username, error="A nova senha deve ter ao menos 6 caracteres.")
+            return render_frontend_or_template(
+                "account.html",
+                username=current_user.username,
+                error="A nova senha deve ter ao menos 6 caracteres.",
+            )
         if new_pwd != confirm_pwd:
-            return render_template("account.html", username=current_user.username, error="A confirmação de senha não confere.")
+            return render_frontend_or_template(
+                "account.html",
+                username=current_user.username,
+                error="A confirmação de senha não confere.",
+            )
         with Session() as s:
             u = s.get(User, int(current_user.id))
             if not u or not check_password_hash(u.password_hash, current_pwd):
-                return render_template("account.html", username=current_user.username, error="Senha atual incorreta.")
+                return render_frontend_or_template(
+                    "account.html",
+                    username=current_user.username,
+                    error="Senha atual incorreta.",
+                )
             from werkzeug.security import generate_password_hash
             u.password_hash = generate_password_hash(new_pwd)
             s.commit()
-        return render_template("account.html", username=current_user.username, success="Senha alterada com sucesso.")
+        return render_frontend_or_template(
+            "account.html",
+            username=current_user.username,
+            success="Senha alterada com sucesso.",
+        )
 
-    @app.get("/users")
+    @app.get("/usuarios")
     @login_required
     @admin_required
     def users_page():
         return render_frontend_or_template("users.html")
+
+    app.add_url_rule("/users", view_func=users_page)
 
     # ---------------------- APIs ----------------------
     @app.get("/api/me")
