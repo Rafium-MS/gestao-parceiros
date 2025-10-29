@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -25,6 +25,7 @@ import {
 } from "@/services/stores";
 import { formatCurrency } from "@/utils/formatters";
 import { useToast } from "@/contexts/ToastContext";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 import styles from "./StoresPage.module.css";
 
@@ -133,12 +134,9 @@ export function StoresPage() {
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
   const [expandedBrands, setExpandedBrands] = useState<Set<number>>(new Set());
   const { showSuccess, showError, showWarning } = useToast();
+  const { confirm: requestConfirmation, dialog: confirmDialog } = useConfirmDialog();
 
-  useEffect(() => {
-    loadAll();
-  }, []);
-
-  const loadAll = () => {
+  const loadAll = useCallback(() => {
     setIsLoading(true);
     setError(null);
 
@@ -157,7 +155,11 @@ export function StoresPage() {
       .finally(() => {
         setIsLoading(false);
       });
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   const metrics = useMemo<SummaryMetric[]>(() => {
     const totalBrands = brands.length;
@@ -280,7 +282,14 @@ export function StoresPage() {
   };
 
   const handleDeleteBrand = async (brand: BrandRecord) => {
-    if (!window.confirm(`Deseja excluir a marca ${brand.marca}?`)) {
+    const confirmed = await requestConfirmation({
+      title: "Remover marca",
+      description: `Tem certeza de que deseja excluir a marca ${brand.marca}? Essa ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir marca",
+      confirmVariant: "danger",
+      tone: "danger",
+    });
+    if (!confirmed) {
       return;
     }
     try {
@@ -384,7 +393,14 @@ export function StoresPage() {
   };
 
   const handleDeleteStore = async (store: StoreRecord) => {
-    if (!window.confirm(`Deseja excluir a loja ${store.loja}?`)) {
+    const confirmed = await requestConfirmation({
+      title: "Remover loja",
+      description: `Tem certeza de que deseja excluir a loja ${store.loja}? Essa ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir loja",
+      confirmVariant: "danger",
+      tone: "danger",
+    });
+    if (!confirmed) {
       return;
     }
     try {
@@ -424,7 +440,9 @@ export function StoresPage() {
   );
 
   return (
-    <div className={styles.container}>
+    <>
+      {confirmDialog}
+      <div className={styles.container}>
       <header className="page-header">
         <h1>Marcas e Lojas</h1>
         <p>Gerencie marcas, lojas e políticas comerciais com base nos dados registrados pelo backend.</p>
@@ -739,5 +757,6 @@ export function StoresPage() {
         ) : null}
       </Card>
     </div>
+    </>
   );
 }

@@ -90,6 +90,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {

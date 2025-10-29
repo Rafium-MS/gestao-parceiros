@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
 import { useDisclosure } from "@/hooks/useDisclosure";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import {
   createPartner,
   deletePartner,
@@ -145,6 +146,7 @@ export function PartnersTable() {
   const [editingPartner, setEditingPartner] = useState<PartnerRecord | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const { isOpen, open, close } = useDisclosure();
+  const { confirm: requestConfirmation, dialog: confirmDialog } = useConfirmDialog();
 
   const fieldValidators = useMemo<
     Partial<Record<keyof PartnerForm, (value: string, currentForm: PartnerForm) => string | undefined>>
@@ -259,7 +261,8 @@ export function PartnersTable() {
               return hadGlobal ? rest : currentErrors;
             }
 
-            const { [field]: _removed, ...remaining } = rest;
+            const remaining = { ...rest };
+            delete remaining[field];
             return remaining;
           });
         } else {
@@ -267,7 +270,8 @@ export function PartnersTable() {
             if (currentErrors.global === undefined) {
               return currentErrors;
             }
-            const { global, ...rest } = currentErrors;
+            const rest = { ...currentErrors };
+            delete rest.global;
             return rest;
           });
         }
@@ -426,7 +430,14 @@ export function PartnersTable() {
   }, [partners]);
 
   const handleDelete = useCallback(async (partner: PartnerRecord) => {
-    if (!window.confirm(`Deseja excluir o parceiro ${partner.parceiro}?`)) {
+    const confirmed = await requestConfirmation({
+      title: "Remover parceiro",
+      description: `Tem certeza de que deseja excluir o parceiro ${partner.parceiro}? Essa ação não poderá ser desfeita.`,
+      confirmLabel: "Excluir parceiro",
+      confirmVariant: "danger",
+      tone: "danger",
+    });
+    if (!confirmed) {
       return;
     }
     try {
@@ -437,7 +448,7 @@ export function PartnersTable() {
       const message = error instanceof Error ? error.message : "Não foi possível excluir o parceiro.";
       setFetchError(message);
     }
-  }, []);
+  }, [requestConfirmation]);
 
   const handleEdit = useCallback((partner: PartnerRecord) => {
     setMode("edit");
@@ -470,11 +481,16 @@ export function PartnersTable() {
         return;
       }
 
-      const confirmationMessage =
-        selected.length === 1
-          ? `Deseja excluir o parceiro ${selected[0].parceiro}?`
-          : `Deseja excluir ${selected.length} parceiros selecionados?`;
-      if (!window.confirm(confirmationMessage)) {
+      const confirmed = await requestConfirmation({
+        title: selected.length === 1 ? "Remover parceiro" : "Remover parceiros",
+        description: selected.length === 1
+          ? `Tem certeza de que deseja excluir o parceiro ${selected[0].parceiro}? Essa ação não poderá ser desfeita.`
+          : `Tem certeza de que deseja excluir ${selected.length} parceiros selecionados? Essa ação não poderá ser desfeita.`,
+        confirmLabel: selected.length === 1 ? "Excluir parceiro" : "Excluir parceiros",
+        confirmVariant: "danger",
+        tone: "danger",
+      });
+      if (!confirmed) {
         return;
       }
 
@@ -495,7 +511,7 @@ export function PartnersTable() {
         setIsBulkDeleting(false);
       }
     },
-    [],
+    [requestConfirmation],
   );
 
   const renderSelectionActions = useCallback(
@@ -645,7 +661,9 @@ export function PartnersTable() {
   };
 
   return (
-    <Card
+    <>
+      {confirmDialog}
+      <Card
       title="Parceiros cadastrados"
       subtitle="Acompanhe e cadastre os parceiros que fazem parte da rede de distribuição."
       actions={
@@ -912,5 +930,6 @@ export function PartnersTable() {
         </form>
       </Modal>
     </Card>
+    </>
   );
 }

@@ -11,6 +11,7 @@ import { listConnections, createConnection, deleteConnection } from "@/services/
 import { listPartners, type PartnerRecord } from "@/services/partners";
 import { listStores, type StoreRecord } from "@/services/stores";
 import { useToast } from "@/contexts/ToastContext";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 import styles from "./ConnectPage.module.css";
 
@@ -94,6 +95,7 @@ export function ConnectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkRemoving, setIsBulkRemoving] = useState(false);
   const { showSuccess, showError, showWarning } = useToast();
+  const { confirm: requestConfirmation, dialog: confirmDialog } = useConfirmDialog();
 
   const loadData = useCallback(() => {
     setIsLoading(true);
@@ -247,7 +249,14 @@ export function ConnectPage() {
 
   const handleDelete = useCallback(
     async (connectionId: number) => {
-      if (!window.confirm("Deseja remover esta conexão?")) {
+      const confirmed = await requestConfirmation({
+        title: "Remover conexão",
+        description: "Tem certeza de que deseja remover esta conexão? Essa ação não poderá ser desfeita.",
+        confirmLabel: "Remover",
+        confirmVariant: "danger",
+        tone: "danger",
+      });
+      if (!confirmed) {
         return;
       }
       try {
@@ -261,7 +270,7 @@ export function ConnectPage() {
         showError(message);
       }
     },
-    [showError, showSuccess],
+    [requestConfirmation, showError, showSuccess],
   );
 
   const connectionColumns = useMemo<TableColumn<ConnectionView>[]>(
@@ -307,11 +316,17 @@ export function ConnectPage() {
         return;
       }
 
-      const confirmationMessage =
-        selected.length === 1
-          ? "Deseja remover a conexão selecionada?"
-          : `Deseja remover ${selected.length} conexões selecionadas?`;
-      if (!window.confirm(confirmationMessage)) {
+      const confirmed = await requestConfirmation({
+        title: selected.length === 1 ? "Remover conexão" : "Remover conexões",
+        description:
+          selected.length === 1
+            ? "Tem certeza de que deseja remover a conexão selecionada? Essa ação não poderá ser desfeita."
+            : `Tem certeza de que deseja remover ${selected.length} conexões selecionadas? Essa ação não poderá ser desfeita.`,
+        confirmLabel: selected.length === 1 ? "Remover" : "Remover todas",
+        confirmVariant: "danger",
+        tone: "danger",
+      });
+      if (!confirmed) {
         return;
       }
 
@@ -335,7 +350,7 @@ export function ConnectPage() {
         setIsBulkRemoving(false);
       }
     },
-    [showError, showSuccess],
+    [requestConfirmation, showError, showSuccess],
   );
 
   const renderConnectionSelectionActions = useCallback(
@@ -395,7 +410,9 @@ export function ConnectPage() {
   };
 
   return (
-    <div className={styles.container}>
+    <>
+      {confirmDialog}
+      <div className={styles.container}>
       <header className="page-header">
         <h1>Conectar Parceiros e Lojas</h1>
         <p>Disponibilize oportunidades de venda criando relações entre parceiros e marcas.</p>
@@ -573,5 +590,6 @@ export function ConnectPage() {
         ) : null}
       </Card>
     </div>
+    </>
   );
 }

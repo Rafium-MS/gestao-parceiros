@@ -174,7 +174,7 @@ export function ReportsPage() {
     return () => {
       active = false;
     };
-  }, [appliedFilters]);
+  }, [appliedFilters, showError]);
 
   const rows = useMemo(() => buildRows(entries, appliedFilters), [entries, appliedFilters]);
 
