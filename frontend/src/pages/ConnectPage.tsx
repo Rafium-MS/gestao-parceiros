@@ -10,6 +10,7 @@ import { TextInput } from "@/components/ui/TextInput";
 import { listConnections, createConnection, deleteConnection } from "@/services/connections";
 import { listPartners, type PartnerRecord } from "@/services/partners";
 import { listStores, type StoreRecord } from "@/services/stores";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./ConnectPage.module.css";
 
@@ -27,7 +28,6 @@ type ConnectionForm = {
 type ConnectionFormErrors = {
   partnerId?: string;
   storeId?: string;
-  global?: string;
 };
 
 const FILTERS_STORAGE_KEY = "connect-page-filters";
@@ -91,9 +91,9 @@ export function ConnectPage() {
   });
   const [form, setForm] = useState<ConnectionForm>({ partnerId: "", storeId: "" });
   const [formErrors, setFormErrors] = useState<ConnectionFormErrors>({});
-  const [formFeedback, setFormFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkRemoving, setIsBulkRemoving] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   const loadData = useCallback(() => {
     setIsLoading(true);
@@ -116,11 +116,12 @@ export function ConnectPage() {
         setPartners([]);
         setStores([]);
         setConnections([]);
+        showError(message);
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     loadData();
@@ -253,12 +254,14 @@ export function ConnectPage() {
         await deleteConnection(connectionId);
         setConnections((current) => current.filter((connection) => connection.id !== connectionId));
         setError(null);
+        showSuccess("Conexão removida com sucesso.");
       } catch (err) {
         const message = err instanceof Error ? err.message : "Não foi possível remover a conexão.";
         setError(message);
+        showError(message);
       }
     },
-    [],
+    [showError, showSuccess],
   );
 
   const connectionColumns = useMemo<TableColumn<ConnectionView>[]>(
@@ -319,14 +322,20 @@ export function ConnectPage() {
         setConnections((current) => current.filter((connection) => !idsToRemove.has(connection.id)));
         clearSelection();
         setError(null);
+        const message =
+          selected.length === 1
+            ? "Conexão removida com sucesso."
+            : `${selected.length} conexões removidas com sucesso.`;
+        showSuccess(message);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Não foi possível remover as conexões.";
         setError(message);
+        showError(message);
       } finally {
         setIsBulkRemoving(false);
       }
     },
-    [],
+    [showError, showSuccess],
   );
 
   const renderConnectionSelectionActions = useCallback(
@@ -347,7 +356,6 @@ export function ConnectPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormErrors({});
-    setFormFeedback(null);
 
     const errors: ConnectionFormErrors = {};
     if (!form.partnerId) {
@@ -368,19 +376,19 @@ export function ConnectPage() {
       (connection) => connection.partner?.id === partnerId && connection.store?.id === storeId,
     );
     if (alreadyExists) {
-      setFormErrors({ global: "Essa conexão já existe." });
+      showWarning("Essa conexão já existe.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       await createConnection(partnerId, storeId);
-      setFormFeedback("Conexão criada com sucesso.");
+      showSuccess("Conexão criada com sucesso.");
       setForm({ partnerId: "", storeId: "" });
       loadData();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível criar a conexão.";
-      setFormErrors({ global: message });
+      showError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -455,13 +463,6 @@ export function ConnectPage() {
 
       <Card title="Criar conexão" subtitle="Selecione um parceiro e uma loja para vincular.">
         <form className={styles.form} onSubmit={handleSubmit}>
-          {formErrors.global ? <div className={styles.errorMessage}>{formErrors.global}</div> : null}
-          {formFeedback ? (
-            <div className={styles.successMessage} role="status" aria-live="polite">
-              {formFeedback}
-            </div>
-          ) : null}
-
           <div className={styles.formRow}>
             <FormField label="Parceiro" htmlFor="connection-partner" error={formErrors.partnerId}>
               <SelectInput
@@ -553,7 +554,6 @@ export function ConnectPage() {
       </div>
 
       <Card title="Conexões ativas" subtitle="Gerencie os vínculos já estabelecidos.">
-        {error ? <div className={styles.errorMessage}>{error}</div> : null}
         {isLoading ? <TableSkeleton columns={connectionColumns.length} /> : null}
         {!isLoading && connections.length === 0 && !error ? (
           <div className={styles.emptyState}>Nenhuma conexão ativa.</div>

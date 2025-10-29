@@ -6,6 +6,7 @@ import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { listReportEntries, type ReportEntry } from "@/services/reports";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./ReportsPage.module.css";
 
@@ -142,6 +143,7 @@ export function ReportsPage() {
   const [entries, setEntries] = useState<ReportEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showError } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -160,6 +162,7 @@ export function ReportsPage() {
           const message = err instanceof Error ? err.message : "Não foi possível carregar os relatórios.";
           setError(message);
           setEntries([]);
+          showError(message);
         }
       })
       .finally(() => {
@@ -281,7 +284,6 @@ export function ReportsPage() {
       />
 
       <Card title="Performance consolidada" subtitle="Dados carregados diretamente das rotas Flask.">
-        {error ? <div className={styles.errorMessage}>{error}</div> : null}
         {isLoading ? <TableSkeleton columns={columns.length} /> : null}
 
         {!isLoading && rows.length === 0 && !error ? (

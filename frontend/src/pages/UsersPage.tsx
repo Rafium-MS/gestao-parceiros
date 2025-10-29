@@ -16,6 +16,7 @@ import {
   updateUser,
   updateUserPassword,
 } from "@/services/users";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./UsersPage.module.css";
 
@@ -29,7 +30,6 @@ type CreateUserForm = {
 type CreateUserErrors = {
   username?: string;
   password?: string;
-  global?: string;
 };
 
 export function UsersPage() {
@@ -43,14 +43,12 @@ export function UsersPage() {
     is_active: "true",
   });
   const [formErrors, setFormErrors] = useState<CreateUserErrors>({});
-  const [formFeedback, setFormFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tableMessage, setTableMessage] = useState<string | null>(null);
-  const [tableError, setTableError] = useState<string | null>(null);
   const [passwordUser, setPasswordUser] = useState<UserRecord | null>(null);
   const [passwordValue, setPasswordValue] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const { showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     setIsLoading(true);
@@ -63,11 +61,12 @@ export function UsersPage() {
         const message = err instanceof Error ? err.message : "Não foi possível carregar os usuários.";
         setError(message);
         setUsers([]);
+        showError(message);
       })
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [showError]);
 
   const columns = useMemo<TableColumn<UserRecord>[]>(
     () => [
@@ -78,18 +77,16 @@ export function UsersPage() {
           <SelectInput
             value={user.role}
             onChange={async (event) => {
-              setTableError(null);
-              setTableMessage(null);
               try {
                 const nextRole = event.target.value;
                 await updateUser(user.id, { role: nextRole });
                 setUsers((current) =>
                   current.map((item) => (item.id === user.id ? { ...item, role: nextRole } : item)),
                 );
-                setTableMessage(`Papel de ${user.username} atualizado.`);
+                showSuccess(`Papel de ${user.username} atualizado.`);
               } catch (err) {
                 const message = err instanceof Error ? err.message : "Não foi possível atualizar o usuário.";
-                setTableError(message);
+                showError(message);
               }
             }}
           >
@@ -105,18 +102,16 @@ export function UsersPage() {
           <SelectInput
             value={user.is_active ? "true" : "false"}
             onChange={async (event) => {
-              setTableError(null);
-              setTableMessage(null);
               try {
                 const isActive = event.target.value === "true";
                 await updateUser(user.id, { is_active: isActive });
                 setUsers((current) =>
                   current.map((item) => (item.id === user.id ? { ...item, is_active: isActive } : item)),
                 );
-                setTableMessage(`Status de ${user.username} atualizado.`);
+                showSuccess(`Status de ${user.username} atualizado.`);
               } catch (err) {
                 const message = err instanceof Error ? err.message : "Não foi possível atualizar o usuário.";
-                setTableError(message);
+                showError(message);
               }
             }}
           >
@@ -140,7 +135,7 @@ export function UsersPage() {
         ),
       },
     ],
-    [],
+    [showError, showSuccess],
   );
 
   const openPasswordModal = (user: UserRecord) => {
@@ -160,22 +155,19 @@ export function UsersPage() {
     if (!window.confirm(`Deseja excluir o usuário ${user.username}?`)) {
       return;
     }
-    setTableError(null);
-    setTableMessage(null);
     try {
       await deleteUser(user.id);
       setUsers((current) => current.filter((item) => item.id !== user.id));
-      setTableMessage(`Usuário ${user.username} removido.`);
+      showSuccess(`Usuário ${user.username} removido.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível excluir o usuário.";
-      setTableError(message);
+      showError(message);
     }
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormErrors({});
-    setFormFeedback(null);
 
     const errors: CreateUserErrors = {};
     if (form.username.trim().length < 3) {
@@ -187,6 +179,7 @@ export function UsersPage() {
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+      showWarning("Corrija os campos destacados antes de continuar.");
       return;
     }
 
@@ -198,13 +191,13 @@ export function UsersPage() {
         role: form.role,
         is_active: form.is_active === "true",
       });
-      setFormFeedback("Usuário criado com sucesso.");
+      showSuccess("Usuário criado com sucesso.");
       setForm({ username: "", password: "", role: "operator", is_active: "true" });
       const refreshed = await listUsers();
       setUsers(refreshed);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível criar o usuário.";
-      setFormErrors({ global: message });
+      showError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -217,17 +210,19 @@ export function UsersPage() {
     }
     if (passwordValue.length < 6) {
       setPasswordError("A senha deve ter ao menos 6 caracteres.");
+      showWarning("A nova senha deve ter pelo menos 6 caracteres.");
       return;
     }
     setPasswordError(null);
     setIsUpdatingPassword(true);
     try {
       await updateUserPassword(passwordUser.id, passwordValue);
-      setTableMessage(`Senha de ${passwordUser.username} atualizada.`);
+      showSuccess(`Senha de ${passwordUser.username} atualizada.`);
       closePasswordModal();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível redefinir a senha.";
       setPasswordError(message);
+      showError(message);
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -243,13 +238,6 @@ export function UsersPage() {
       <div className={styles.grid}>
         <Card title="Novo usuário" subtitle="Somente administradores podem gerenciar estas credenciais.">
           <form className={styles.form} onSubmit={handleSubmit}>
-            {formErrors.global ? <div className={styles.errorMessage}>{formErrors.global}</div> : null}
-            {formFeedback ? (
-              <div className={styles.successMessage} role="status" aria-live="polite">
-                {formFeedback}
-              </div>
-            ) : null}
-
             <FormField label="Usuário" htmlFor="user-username" error={formErrors.username}>
               <TextInput
                 id="user-username"
@@ -307,13 +295,6 @@ export function UsersPage() {
         </Card>
 
         <Card title="Contas cadastradas" subtitle="Sincronizado com os dados do Flask.">
-          {error ? <div className={styles.errorMessage}>{error}</div> : null}
-          {tableError ? <div className={styles.errorMessage}>{tableError}</div> : null}
-          {tableMessage ? (
-            <div className={styles.successMessage} role="status" aria-live="polite">
-              {tableMessage}
-            </div>
-          ) : null}
           {isLoading ? <TableSkeleton columns={columns.length} /> : null}
           {!isLoading && users.length === 0 && !error ? (
             <div className={styles.emptyState}>
@@ -347,7 +328,6 @@ export function UsersPage() {
         }
       >
         <form id="password-form" className={styles.form} onSubmit={handlePasswordSubmit}>
-          {passwordError ? <div className={styles.errorMessage}>{passwordError}</div> : null}
           <FormField label="Nova senha" htmlFor="new-password" error={passwordError ?? undefined}>
             <TextInput
               id="new-password"
