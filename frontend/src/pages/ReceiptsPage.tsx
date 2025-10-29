@@ -1,4 +1,4 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -8,12 +8,8 @@ import { Modal } from "@/components/ui/Modal";
 import { SelectInput } from "@/components/ui/SelectInput";
 import { TextInput } from "@/components/ui/TextInput";
 import { listBrands, type BrandRecord } from "@/services/brands";
-import {
-  listReceipts,
-  type ReceiptRecord,
-  updateReceipt,
-  uploadReceipts,
-} from "@/services/receipts";
+import { listReceipts, type ReceiptRecord, updateReceipt } from "@/services/receipts";
+import { env } from "@/config/env";
 import { formatDate } from "@/utils/formatters";
 
 import styles from "./ReceiptsPage.module.css";
@@ -35,6 +31,12 @@ type EditFormErrors = {
   global?: string;
 };
 
+type UploadStatus = {
+  progress: number;
+  status: "pending" | "uploading" | "success" | "error";
+  error?: string;
+};
+
 function formatSize(size: number) {
   const megabytes = size / (1024 * 1024);
   if (megabytes >= 1) {
@@ -44,12 +46,95 @@ function formatSize(size: number) {
   return `${kilobytes.toFixed(1)} KB`;
 }
 
+function normalizeApiResponse<T>(payload: { data?: T } | T | null | undefined): T | null | undefined {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as { data?: T }).data;
+  }
+  return payload as T | null | undefined;
+}
+
+async function uploadReceiptWithProgress(
+  file: File,
+  brandId: number | undefined,
+  onProgress: (value: number) => void,
+) {
+  return new Promise<{
+    saved: Array<{ id: number; filename: string; size_bytes: number; brand_id: number | null }>;
+  }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const baseUrl = env.apiBaseUrl.replace(/\/$/, "");
+    xhr.open("POST", `${baseUrl}/api/upload`);
+    xhr.responseType = "json";
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("Accept", "application/json");
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        onProgress(progress);
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Não foi possível enviar o arquivo."));
+    };
+
+    xhr.onload = () => {
+      const status = xhr.status;
+      const responseBody = xhr.response ?? xhr.responseText;
+
+      if (status < 200 || status >= 300) {
+        let message = "Não foi possível enviar o arquivo.";
+        if (responseBody && typeof responseBody === "object" && "error" in responseBody) {
+          const payload = responseBody as { error?: { message?: string } };
+          message = payload.error?.message ?? message;
+        } else if (typeof responseBody === "string") {
+          try {
+            const parsed = JSON.parse(responseBody);
+            if (parsed && typeof parsed === "object" && "error" in parsed) {
+              message = parsed.error?.message ?? message;
+            }
+          } catch {
+            message = responseBody || message;
+          }
+        }
+        reject(new Error(message));
+        return;
+      }
+
+      try {
+        const parsedResponse =
+          typeof responseBody === "string" && responseBody ? JSON.parse(responseBody) : responseBody;
+        const data = normalizeApiResponse(parsedResponse);
+        if (!data || typeof data !== "object" || !Array.isArray((data as { saved?: unknown }).saved)) {
+          throw new Error("Resposta inválida ao enviar comprovantes.");
+        }
+        onProgress(100);
+        resolve(data as {
+          saved: Array<{ id: number; filename: string; size_bytes: number; brand_id: number | null }>;
+        });
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error("Resposta inválida ao enviar comprovantes."));
+      }
+    };
+
+    const formData = new FormData();
+    formData.append("files", file);
+    if (typeof brandId === "number") {
+      formData.append("brand_id", brandId.toString());
+    }
+
+    xhr.send(formData);
+  });
+}
+
 export function ReceiptsPage() {
   const [step, setStep] = useState<UploadStep>(1);
   const [brands, setBrands] = useState<BrandRecord[]>([]);
   const [brandFilter, setBrandFilter] = useState<string>("");
   const [selectedFiles, setSelectedFiles] = useState<PreviewFile[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState<Record<string, UploadStatus>>({});
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
   const [isLoadingReceipts, setIsLoadingReceipts] = useState(false);
   const [receiptsError, setReceiptsError] = useState<string | null>(null);
@@ -60,6 +145,9 @@ export function ReceiptsPage() {
   const [editForm, setEditForm] = useState<EditFormState>({ filename: "", brand_id: "" });
   const [editErrors, setEditErrors] = useState<EditFormErrors>({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [zoomPreview, setZoomPreview] = useState<PreviewFile | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
+  const dragDepthRef = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -164,12 +252,35 @@ export function ReceiptsPage() {
       return;
     }
     setSelectedFiles((current) => [...current, ...next]);
+    setUploadProgress((current) => {
+      const updated = { ...current };
+      next.forEach((preview) => {
+        updated[preview.previewUrl] = { status: "pending", progress: 0 };
+      });
+      return updated;
+    });
     setUploadError(null);
     setUploadMessage(null);
   };
 
+  const handleDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDragActive(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDragActive(false);
+    }
+  };
+
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDragActive(false);
     if (event.dataTransfer.files?.length) {
       handleFiles(event.dataTransfer.files);
     }
@@ -191,6 +302,11 @@ export function ReceiptsPage() {
       }
       return filtered;
     });
+    setUploadProgress((current) => {
+      const nextState = { ...current };
+      delete nextState[previewUrl];
+      return nextState;
+    });
   };
 
   const goToStep = (nextStep: UploadStep) => {
@@ -199,21 +315,88 @@ export function ReceiptsPage() {
     setUploadMessage(null);
   };
 
+  const updateUploadStatus = (previewUrl: string, partial: Partial<UploadStatus>) => {
+    setUploadProgress((current) => {
+      const previous = current[previewUrl] ?? { progress: 0, status: "pending" };
+      return {
+        ...current,
+        [previewUrl]: {
+          ...previous,
+          ...partial,
+        },
+      };
+    });
+  };
+
   const handleUpload = async () => {
     setIsUploading(true);
     setUploadError(null);
     setUploadMessage(null);
     try {
-      await uploadReceipts({
-        files: selectedFiles.map((item) => item.file),
-        brandId: selectedBrand ? Number(selectedBrand) : undefined,
-      });
-      setUploadMessage("Upload concluído com sucesso.");
-      selectedFiles.forEach((preview) => URL.revokeObjectURL(preview.previewUrl));
-      setSelectedFiles([]);
-      setSelectedBrand("");
-      setStep(4);
-      loadReceipts();
+      const successfulUploads: string[] = [];
+      const failedUploads: string[] = [];
+      const brandId = selectedBrand ? Number(selectedBrand) : undefined;
+
+      for (const preview of selectedFiles) {
+        updateUploadStatus(preview.previewUrl, { status: "uploading", progress: 0, error: undefined });
+        try {
+          await uploadReceiptWithProgress(preview.file, brandId, (progress) => {
+            updateUploadStatus(preview.previewUrl, { progress });
+          });
+          successfulUploads.push(preview.previewUrl);
+          updateUploadStatus(preview.previewUrl, { status: "success", progress: 100 });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Não foi possível enviar o arquivo.";
+          failedUploads.push(preview.previewUrl);
+          updateUploadStatus(preview.previewUrl, { status: "error", error: message });
+        }
+      }
+
+      const hasSuccess = successfulUploads.length > 0;
+      const hasFailure = failedUploads.length > 0;
+
+      if (hasSuccess) {
+        setUploadMessage(
+          hasFailure
+            ? `${successfulUploads.length} arquivo(s) enviado(s) com sucesso.`
+            : "Upload concluído com sucesso.",
+        );
+        loadReceipts();
+      }
+
+      if (hasFailure) {
+        setUploadError(
+          hasSuccess
+            ? "Alguns arquivos não puderam ser enviados. Verifique os detalhes abaixo."
+            : "Não foi possível enviar os arquivos selecionados.",
+        );
+      }
+
+      if (!hasFailure && hasSuccess) {
+        setSelectedFiles([]);
+        setSelectedBrand("");
+        setUploadProgress({});
+        setStep(4);
+      } else if (hasSuccess && hasFailure) {
+        const failedSet = new Set(failedUploads);
+        setSelectedFiles((current) => {
+          current.forEach((preview) => {
+            if (!failedSet.has(preview.previewUrl)) {
+              URL.revokeObjectURL(preview.previewUrl);
+            }
+          });
+          return current.filter((preview) => failedSet.has(preview.previewUrl));
+        });
+        setUploadProgress((current) => {
+          const nextState: Record<string, UploadStatus> = {};
+          failedUploads.forEach((previewUrl) => {
+            if (current[previewUrl]) {
+              nextState[previewUrl] = current[previewUrl];
+            }
+          });
+          return nextState;
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível enviar os arquivos.";
       setUploadError(message);
@@ -288,21 +471,6 @@ export function ReceiptsPage() {
 
         {step === 1 ? (
           <section className={styles.stepContent}>
-            <div
-              className={styles.dropArea}
-              onDragOver={(event) => event.preventDefault()}
-              onDragEnter={(event) => event.preventDefault()}
-              onDrop={handleDrop}
-            >
-              <p>
-                Arraste e solte imagens aqui ou
-                <button type="button" className={styles.browseButton} onClick={() => document.getElementById("file-input")?.click()}>
-                  escolher arquivos
-                </button>
-              </p>
-              <input id="file-input" type="file" accept="image/*" multiple className={styles.hiddenInput} onChange={handleFileInput} />
-            </div>
-
             <FormField label="Marca associada" htmlFor="upload-brand">
               <SelectInput
                 id="upload-brand"
@@ -317,6 +485,31 @@ export function ReceiptsPage() {
                 ))}
               </SelectInput>
             </FormField>
+
+            <p className={styles.brandHint}>
+              A marca selecionada será aplicada a todos os comprovantes enviados neste lote.
+            </p>
+
+            <div
+              className={styles.dropArea}
+              data-active={isDragActive}
+              onDragOver={(event) => event.preventDefault()}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className={styles.dropIcon} aria-hidden>
+                ⬆
+              </div>
+              <p>
+                Arraste e solte imagens aqui ou
+                <button type="button" className={styles.browseButton} onClick={() => document.getElementById("file-input")?.click()}>
+                  escolher arquivos
+                </button>
+              </p>
+              <span className={styles.dropHint}>Formatos suportados: JPG, PNG, GIF e WEBP.</span>
+              <input id="file-input" type="file" accept="image/*" multiple className={styles.hiddenInput} onChange={handleFileInput} />
+            </div>
 
             {selectedFiles.length > 0 ? (
               <ul className={styles.previewList}>
@@ -355,10 +548,18 @@ export function ReceiptsPage() {
                 ? brands.find((brand) => String(brand.id) === selectedBrand)?.marca ?? "N/D"
                 : "Não associada"}
             </p>
+            <p className={styles.previewHint}>Clique em uma imagem para visualizar em tela cheia.</p>
             <div className={styles.previewGrid}>
               {selectedFiles.map((preview) => (
-                <figure key={preview.previewUrl}>
-                  <img src={preview.previewUrl} alt={`Pré-visualização de ${preview.file.name}`} />
+                <figure key={preview.previewUrl} className={styles.previewFigure}>
+                  <button
+                    type="button"
+                    className={styles.previewZoomButton}
+                    onClick={() => setZoomPreview(preview)}
+                    aria-label={`Ampliar ${preview.file.name}`}
+                  >
+                    <img src={preview.previewUrl} alt={`Pré-visualização de ${preview.file.name}`} />
+                  </button>
                   <figcaption>{preview.file.name}</figcaption>
                 </figure>
               ))}
@@ -379,6 +580,40 @@ export function ReceiptsPage() {
             <h2>Importação</h2>
             <p>Confirme o envio dos comprovantes selecionados. Você poderá editar os metadados após o upload.</p>
             {uploadError ? <div className={styles.errorMessage}>{uploadError}</div> : null}
+            <ul className={styles.progressList}>
+              {selectedFiles.map((preview) => {
+                const status = uploadProgress[preview.previewUrl] ?? { status: "pending", progress: 0 };
+                return (
+                  <li key={preview.previewUrl} className={styles.progressItem} data-status={status.status}>
+                    <div className={styles.progressInfo}>
+                      <span className={styles.progressName}>{preview.file.name}</span>
+                      <span className={styles.progressStatus}>
+                        {status.status === "success"
+                          ? "Concluído"
+                          : status.status === "error"
+                          ? "Falhou"
+                          : `${status.progress}%`}
+                      </span>
+                    </div>
+                    <div
+                      className={styles.progressBar}
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.min(100, Math.max(0, status.progress))}
+                    >
+                      <div
+                        className={styles.progressFill}
+                        style={{ width: `${Math.min(100, Math.max(0, status.progress))}%` }}
+                      />
+                    </div>
+                    {status.status === "error" && status.error ? (
+                      <p className={styles.progressError}>{status.error}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
             <div className={styles.stepActions}>
               <Button type="button" variant="secondary" onClick={() => goToStep(2)} disabled={isUploading}>
                 Voltar
@@ -478,6 +713,17 @@ export function ReceiptsPage() {
             </SelectInput>
           </FormField>
         </form>
+      </Modal>
+      <Modal
+        isOpen={Boolean(zoomPreview)}
+        onClose={() => setZoomPreview(null)}
+        title={zoomPreview ? zoomPreview.file.name : "Pré-visualização"}
+      >
+        {zoomPreview ? (
+          <div className={styles.zoomContent}>
+            <img src={zoomPreview.previewUrl} alt={`Versão ampliada de ${zoomPreview.file.name}`} />
+          </div>
+        ) : null}
       </Modal>
     </div>
   );

@@ -54,10 +54,40 @@
   border-radius: var(--radius-lg);
   text-align: center;
   color: var(--color-text-secondary);
+  gap: var(--spacing-sm);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.dropArea[data-active="true"] {
+  border-color: var(--color-primary);
+  background-color: rgba(37, 99, 235, 0.06);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  color: var(--color-text-primary);
 }
 
 .dropArea p {
   margin: 0;
+}
+
+.dropHint {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.dropIcon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background-color: rgba(37, 99, 235, 0.12);
+  font-size: 1.75rem;
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.dropArea[data-active="true"] .dropIcon {
+  transform: scale(1.05);
+  background-color: rgba(37, 99, 235, 0.2);
 }
 
 .browseButton {
@@ -121,11 +151,11 @@
 
 .previewGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--spacing-md);
 }
 
-.previewGrid figure {
+.previewFigure {
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -133,11 +163,30 @@
   align-items: center;
 }
 
-.previewGrid img {
+.previewZoomButton {
+  all: unset;
+  cursor: zoom-in;
   width: 100%;
   border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.previewZoomButton:hover,
+.previewZoomButton:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.previewZoomButton img {
+  width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
+}
+
+.previewHint {
+  color: var(--color-text-secondary);
 }
 
 .successMessage {
@@ -183,4 +232,90 @@
   display: flex;
   gap: var(--spacing-xs);
   justify-content: flex-end;
+}
+
+.progressList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.progressItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  background-color: var(--color-surface-alt);
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  font-size: 0.95rem;
+}
+
+.progressName {
+  font-weight: var(--font-weight-medium);
+  word-break: break-word;
+}
+
+.progressStatus {
+  color: var(--color-text-secondary);
+}
+
+.progressBar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background-color: rgba(148, 163, 184, 0.3);
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(90deg, var(--color-primary), rgba(37, 99, 235, 0.7));
+  transition: width 120ms ease;
+}
+
+.progressItem[data-status="success"] .progressFill {
+  background-image: none;
+  background-color: rgba(22, 163, 74, 0.75);
+}
+
+.progressItem[data-status="error"] .progressFill {
+  background-image: none;
+  background-color: rgba(220, 38, 38, 0.75);
+}
+
+.progressError {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-danger);
+}
+
+.zoomContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: calc(80vh - 4rem);
+}
+
+.zoomContent img {
+  max-width: min(80vw, 800px);
+  max-height: 70vh;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.brandHint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
 }
