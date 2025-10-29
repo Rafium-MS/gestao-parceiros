@@ -35,7 +35,12 @@ def create_app():
     app.config["JSON_SORT_KEYS"] = False
     app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
 
-    default_frontend_origins = {"http://localhost:5173", "http://127.0.0.1:5173"}
+    default_frontend_origins = {
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+    }
     configured_origins = {
         origin.strip()
         for origin in os.environ.get("FRONTEND_ORIGINS", "").split(",")
