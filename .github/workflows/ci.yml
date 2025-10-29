@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Test, build and package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install backend dependencies
+        run: pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build -- --emptyOutDir
+
+      - name: Run tests
+        run: pytest
+
+      - name: Package application
+        run: python scripts/package_app.py
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gestao-parceiros-package
+          path: build/gestao-parceiros.zip
+          if-no-files-found: error
