@@ -5,10 +5,18 @@ import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
 import { Modal } from "@/components/ui/Modal";
+import { SelectInput } from "@/components/ui/SelectInput";
 import { TextInput } from "@/components/ui/TextInput";
 import { useDisclosure } from "@/hooks/useDisclosure";
-import { createPartner, listPartners, PartnerPayload, PartnerRecord } from "@/services/partners";
-import { formatDate } from "@/utils/formatters";
+import {
+  createPartner,
+  deletePartner,
+  listPartners,
+  PartnerPayload,
+  PartnerRecord,
+  updatePartner,
+} from "@/services/partners";
+import { formatCurrency, formatDate } from "@/utils/formatters";
 import { isCnpj, isRequired } from "@/utils/validators";
 
 import styles from "./PartnersTable.module.css";
@@ -21,11 +29,22 @@ type PartnerForm = {
   telefone: string;
   email: string;
   distribuidora: string;
+  dia_pagamento: string;
+  banco: string;
+  agencia_conta: string;
+  pix: string;
+  cx_copo: string;
+  dez_litros: string;
+  vinte_litros: string;
+  mil_quinhentos_ml: string;
+  vasilhame: string;
 };
 
 type FormErrors = Partial<Record<keyof PartnerForm, string>> & {
   global?: string;
 };
+
+type FormMode = "create" | "edit";
 
 const defaultForm: PartnerForm = {
   parceiro: "",
@@ -35,6 +54,15 @@ const defaultForm: PartnerForm = {
   telefone: "",
   email: "",
   distribuidora: "",
+  dia_pagamento: "",
+  banco: "",
+  agencia_conta: "",
+  pix: "",
+  cx_copo: "0",
+  dez_litros: "0",
+  vinte_litros: "0",
+  mil_quinhentos_ml: "0",
+  vasilhame: "0",
 };
 
 const numberFormatter = new Intl.NumberFormat("pt-BR", {
@@ -42,8 +70,58 @@ const numberFormatter = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
+const BRAZIL_STATES: Array<{ value: string; label: string }> = [
+  { value: "AC", label: "Acre" },
+  { value: "AL", label: "Alagoas" },
+  { value: "AP", label: "Amapá" },
+  { value: "AM", label: "Amazonas" },
+  { value: "BA", label: "Bahia" },
+  { value: "CE", label: "Ceará" },
+  { value: "DF", label: "Distrito Federal" },
+  { value: "ES", label: "Espírito Santo" },
+  { value: "GO", label: "Goiás" },
+  { value: "MA", label: "Maranhão" },
+  { value: "MT", label: "Mato Grosso" },
+  { value: "MS", label: "Mato Grosso do Sul" },
+  { value: "MG", label: "Minas Gerais" },
+  { value: "PA", label: "Pará" },
+  { value: "PB", label: "Paraíba" },
+  { value: "PR", label: "Paraná" },
+  { value: "PE", label: "Pernambuco" },
+  { value: "PI", label: "Piauí" },
+  { value: "RJ", label: "Rio de Janeiro" },
+  { value: "RN", label: "Rio Grande do Norte" },
+  { value: "RS", label: "Rio Grande do Sul" },
+  { value: "RO", label: "Rondônia" },
+  { value: "RR", label: "Roraima" },
+  { value: "SC", label: "Santa Catarina" },
+  { value: "SP", label: "São Paulo" },
+  { value: "SE", label: "Sergipe" },
+  { value: "TO", label: "Tocantins" },
+];
+
+const PRICE_FIELDS: Array<keyof PartnerForm> = [
+  "cx_copo",
+  "dez_litros",
+  "vinte_litros",
+  "mil_quinhentos_ml",
+  "vasilhame",
+];
+
 function normalizeText(value: string) {
   return value.trim();
+}
+
+function parseCurrency(value: string) {
+  const parsed = Number.parseFloat(value.replace(",", "."));
+  if (Number.isNaN(parsed)) {
+    return 0;
+  }
+  return parsed;
+}
+
+function computeTotal(form: PartnerForm) {
+  return PRICE_FIELDS.reduce((acc, field) => acc + parseCurrency(form[field]), 0);
 }
 
 export function PartnersTable() {
@@ -53,6 +131,8 @@ export function PartnersTable() {
   const [form, setForm] = useState<PartnerForm>(defaultForm);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mode, setMode] = useState<FormMode>("create");
+  const [editingPartner, setEditingPartner] = useState<PartnerRecord | null>(null);
   const { isOpen, open, close } = useDisclosure();
 
   useEffect(() => {
@@ -148,14 +228,75 @@ export function PartnersTable() {
         header: "Cadastro",
         render: (partner) => (partner.created_at ? formatDate(partner.created_at) : "—"),
       },
+      {
+        header: "Ações",
+        width: "160px",
+        render: (partner) => (
+          <div className={styles.tableActions}>
+            <Button size="sm" variant="secondary" onClick={() => handleEdit(partner)}>
+              Editar
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => handleDelete(partner)}>
+              Excluir
+            </Button>
+          </div>
+        ),
+      },
     ],
-    [],
+    [partners], // eslint-disable-line react-hooks/exhaustive-deps
   );
+
+  const handleDelete = async (partner: PartnerRecord) => {
+    if (!window.confirm(`Deseja excluir o parceiro ${partner.parceiro}?`)) {
+      return;
+    }
+    try {
+      await deletePartner(partner.id);
+      setPartners((current) => current.filter((item) => item.id !== partner.id));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível excluir o parceiro.";
+      setFetchError(message);
+    }
+  };
+
+  const handleEdit = (partner: PartnerRecord) => {
+    setMode("edit");
+    setEditingPartner(partner);
+    setForm({
+      parceiro: partner.parceiro ?? "",
+      cnpj_cpf: partner.cnpj_cpf ?? "",
+      cidade: partner.cidade ?? "",
+      estado: partner.estado ?? "",
+      telefone: partner.telefone ?? "",
+      email: partner.email ?? "",
+      distribuidora: partner.distribuidora ?? "",
+      dia_pagamento: partner.dia_pagamento ? String(partner.dia_pagamento) : "",
+      banco: partner.banco ?? "",
+      agencia_conta: partner.agencia_conta ?? "",
+      pix: partner.pix ?? "",
+      cx_copo: String(partner.cx_copo ?? 0),
+      dez_litros: String(partner.dez_litros ?? 0),
+      vinte_litros: String(partner.vinte_litros ?? 0),
+      mil_quinhentos_ml: String(partner.mil_quinhentos_ml ?? 0),
+      vasilhame: String(partner.vasilhame ?? 0),
+    });
+    setErrors({});
+    open();
+  };
+
+  const handleOpenCreate = () => {
+    setMode("create");
+    setEditingPartner(null);
+    setForm(defaultForm);
+    setErrors({});
+    open();
+  };
 
   const handleClose = () => {
     setForm(defaultForm);
     setErrors({});
     setIsSubmitting(false);
+    setEditingPartner(null);
     close();
   };
 
@@ -180,6 +321,12 @@ export function PartnersTable() {
     if (!isRequired(form.telefone)) {
       validationErrors.telefone = "Informe um telefone de contato.";
     }
+    if (form.dia_pagamento) {
+      const day = Number(form.dia_pagamento);
+      if (Number.isNaN(day) || day < 1 || day > 31) {
+        validationErrors.dia_pagamento = "Informe um dia entre 1 e 31.";
+      }
+    }
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -194,12 +341,28 @@ export function PartnersTable() {
       telefone: normalizeText(form.telefone),
       distribuidora: form.distribuidora ? normalizeText(form.distribuidora) : undefined,
       email: form.email ? normalizeText(form.email) : undefined,
+      dia_pagamento: form.dia_pagamento ? Number(form.dia_pagamento) : undefined,
+      banco: form.banco ? normalizeText(form.banco) : undefined,
+      agencia_conta: form.agencia_conta ? normalizeText(form.agencia_conta) : undefined,
+      pix: form.pix ? normalizeText(form.pix) : undefined,
+      cx_copo: parseCurrency(form.cx_copo),
+      dez_litros: parseCurrency(form.dez_litros),
+      vinte_litros: parseCurrency(form.vinte_litros),
+      mil_quinhentos_ml: parseCurrency(form.mil_quinhentos_ml),
+      vasilhame: parseCurrency(form.vasilhame),
     };
 
     setIsSubmitting(true);
     try {
-      const created = await createPartner(payload);
-      setPartners((current) => [created, ...current]);
+      if (mode === "create") {
+        const created = await createPartner(payload);
+        setPartners((current) => [created, ...current]);
+      } else if (editingPartner) {
+        const updated = await updatePartner(editingPartner.id, payload);
+        setPartners((current) =>
+          current.map((partner) => (partner.id === editingPartner.id ? updated : partner)),
+        );
+      }
       handleClose();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Não foi possível salvar o parceiro.";
@@ -213,7 +376,11 @@ export function PartnersTable() {
     <Card
       title="Parceiros cadastrados"
       subtitle="Acompanhe e cadastre os parceiros que fazem parte da rede de distribuição."
-      actions={<Button onClick={open}>Adicionar parceiro</Button>}
+      actions={
+        <Button onClick={handleOpenCreate} data-testid="open-partner-modal">
+          Adicionar parceiro
+        </Button>
+      }
     >
       <div className={styles.metrics}>
         {metrics.map((metric) => (
@@ -239,14 +406,14 @@ export function PartnersTable() {
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
-        title="Cadastrar novo parceiro"
+        title={mode === "create" ? "Cadastrar novo parceiro" : "Editar parceiro"}
         footer={
           <>
             <Button variant="ghost" onClick={handleClose} type="button">
               Cancelar
             </Button>
             <Button type="submit" form="partner-form" disabled={isSubmitting}>
-              {isSubmitting ? "Salvando..." : "Salvar parceiro"}
+              {isSubmitting ? "Salvando..." : mode === "create" ? "Salvar parceiro" : "Atualizar parceiro"}
             </Button>
           </>
         }
@@ -254,77 +421,198 @@ export function PartnersTable() {
         <form id="partner-form" className={styles.modalForm} onSubmit={handleSubmit}>
           {errors.global ? <div className={styles.errorMessage}>{errors.global}</div> : null}
 
-          <FormField label="Nome fantasia" htmlFor="partner-name" error={errors.parceiro}>
-            <TextInput
-              id="partner-name"
-              placeholder="Ex.: Distribuidora Azul"
-              value={form.parceiro}
-              onChange={(event) => setForm((current) => ({ ...current, parceiro: event.target.value }))}
-              hasError={Boolean(errors.parceiro)}
-            />
-          </FormField>
+          <section className={styles.formSection}>
+            <h2 className={styles.formSectionTitle}>Informações do parceiro</h2>
 
-          <div className={styles.formRow}>
-            <FormField label="CNPJ" htmlFor="partner-cnpj" error={errors.cnpj_cpf}>
+            <FormField label="Nome fantasia" htmlFor="partner-name" error={errors.parceiro}>
               <TextInput
-                id="partner-cnpj"
-                placeholder="00.000.000/0000-00"
-                value={form.cnpj_cpf}
-                onChange={(event) => setForm((current) => ({ ...current, cnpj_cpf: event.target.value }))}
-                hasError={Boolean(errors.cnpj_cpf)}
+                id="partner-name"
+                placeholder="Ex.: Distribuidora Azul"
+                value={form.parceiro}
+                onChange={(event) => setForm((current) => ({ ...current, parceiro: event.target.value }))}
+                hasError={Boolean(errors.parceiro)}
+                required
               />
             </FormField>
 
-            <FormField label="Telefone" htmlFor="partner-phone" error={errors.telefone}>
-              <TextInput
-                id="partner-phone"
-                placeholder="(00) 0000-0000"
-                value={form.telefone}
-                onChange={(event) => setForm((current) => ({ ...current, telefone: event.target.value }))}
-                hasError={Boolean(errors.telefone)}
-              />
-            </FormField>
-          </div>
+            <div className={styles.formRow}>
+              <FormField label="CNPJ" htmlFor="partner-cnpj" error={errors.cnpj_cpf}>
+                <TextInput
+                  id="partner-cnpj"
+                  placeholder="00.000.000/0000-00"
+                  value={form.cnpj_cpf}
+                  onChange={(event) => setForm((current) => ({ ...current, cnpj_cpf: event.target.value }))}
+                  hasError={Boolean(errors.cnpj_cpf)}
+                  required
+                />
+              </FormField>
+              <FormField label="Telefone" htmlFor="partner-phone" error={errors.telefone}>
+                <TextInput
+                  id="partner-phone"
+                  placeholder="(00) 0000-0000"
+                  value={form.telefone}
+                  onChange={(event) => setForm((current) => ({ ...current, telefone: event.target.value }))}
+                  hasError={Boolean(errors.telefone)}
+                  required
+                />
+              </FormField>
+            </div>
 
-          <div className={styles.formRow}>
-            <FormField label="Cidade" htmlFor="partner-city" error={errors.cidade}>
-              <TextInput
-                id="partner-city"
-                placeholder="Ex.: São Paulo"
-                value={form.cidade}
-                onChange={(event) => setForm((current) => ({ ...current, cidade: event.target.value }))}
-                hasError={Boolean(errors.cidade)}
-              />
-            </FormField>
+            <div className={styles.formRow}>
+              <FormField label="Cidade" htmlFor="partner-city" error={errors.cidade}>
+                <TextInput
+                  id="partner-city"
+                  placeholder="Ex.: São Paulo"
+                  value={form.cidade}
+                  onChange={(event) => setForm((current) => ({ ...current, cidade: event.target.value }))}
+                  hasError={Boolean(errors.cidade)}
+                  required
+                />
+              </FormField>
 
-            <FormField label="UF" htmlFor="partner-state" error={errors.estado}>
-              <TextInput
-                id="partner-state"
-                placeholder="SP"
-                value={form.estado}
-                onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value }))}
-                hasError={Boolean(errors.estado)}
-              />
-            </FormField>
-          </div>
+              <FormField label="UF" htmlFor="partner-state" error={errors.estado}>
+                <SelectInput
+                  id="partner-state"
+                  value={form.estado}
+                  onChange={(event) => setForm((current) => ({ ...current, estado: event.target.value }))}
+                  hasError={Boolean(errors.estado)}
+                  required
+                >
+                  <option value="" disabled>
+                    Selecione
+                  </option>
+                  {BRAZIL_STATES.map((uf) => (
+                    <option key={uf.value} value={uf.value}>
+                      {uf.label}
+                    </option>
+                  ))}
+                </SelectInput>
+              </FormField>
+            </div>
 
-          <FormField label="E-mail" htmlFor="partner-email" optional>
-            <TextInput
-              id="partner-email"
-              placeholder="contato@empresa.com"
-              value={form.email}
-              onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-            />
-          </FormField>
+            <div className={styles.formRow}>
+              <FormField label="E-mail" htmlFor="partner-email">
+                <TextInput
+                  id="partner-email"
+                  placeholder="contato@empresa.com"
+                  value={form.email}
+                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                  type="email"
+                />
+              </FormField>
+              <FormField label="Distribuidora" htmlFor="partner-distributor">
+                <TextInput
+                  id="partner-distributor"
+                  placeholder="Nome da distribuidora"
+                  value={form.distribuidora}
+                  onChange={(event) => setForm((current) => ({ ...current, distribuidora: event.target.value }))}
+                />
+              </FormField>
+            </div>
+          </section>
 
-          <FormField label="Distribuidora" htmlFor="partner-distributor" optional>
-            <TextInput
-              id="partner-distributor"
-              placeholder="Nome da distribuidora"
-              value={form.distribuidora}
-              onChange={(event) => setForm((current) => ({ ...current, distribuidora: event.target.value }))}
-            />
-          </FormField>
+          <section className={styles.formSection}>
+            <h2 className={styles.formSectionTitle}>Informações financeiras</h2>
+
+            <div className={styles.formRow}>
+              <FormField label="Dia do pagamento" htmlFor="partner-payday" error={errors.dia_pagamento}>
+                <TextInput
+                  id="partner-payday"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={form.dia_pagamento}
+                  onChange={(event) => setForm((current) => ({ ...current, dia_pagamento: event.target.value }))}
+                  hasError={Boolean(errors.dia_pagamento)}
+                />
+              </FormField>
+              <FormField label="Banco" htmlFor="partner-bank">
+                <TextInput
+                  id="partner-bank"
+                  value={form.banco}
+                  onChange={(event) => setForm((current) => ({ ...current, banco: event.target.value }))}
+                />
+              </FormField>
+              <FormField label="Agência e conta" htmlFor="partner-account">
+                <TextInput
+                  id="partner-account"
+                  value={form.agencia_conta}
+                  onChange={(event) => setForm((current) => ({ ...current, agencia_conta: event.target.value }))}
+                />
+              </FormField>
+              <FormField label="Chave PIX" htmlFor="partner-pix">
+                <TextInput
+                  id="partner-pix"
+                  value={form.pix}
+                  onChange={(event) => setForm((current) => ({ ...current, pix: event.target.value }))}
+                />
+              </FormField>
+            </div>
+          </section>
+
+          <section className={styles.formSection}>
+            <h2 className={styles.formSectionTitle}>Mix de produtos</h2>
+
+            <div className={styles.formRow}>
+              <FormField label="Valor CX Copo" htmlFor="partner-cx_copo">
+                <TextInput
+                  id="partner-cx_copo"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.cx_copo}
+                  onChange={(event) => setForm((current) => ({ ...current, cx_copo: event.target.value }))}
+                />
+              </FormField>
+              <FormField label="Valor 10 litros" htmlFor="partner-dez_litros">
+                <TextInput
+                  id="partner-dez_litros"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.dez_litros}
+                  onChange={(event) => setForm((current) => ({ ...current, dez_litros: event.target.value }))}
+                />
+              </FormField>
+              <FormField label="Valor 20 litros" htmlFor="partner-vinte_litros">
+                <TextInput
+                  id="partner-vinte_litros"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.vinte_litros}
+                  onChange={(event) => setForm((current) => ({ ...current, vinte_litros: event.target.value }))}
+                />
+              </FormField>
+            </div>
+
+            <div className={styles.formRow}>
+              <FormField label="Valor 1500 ml" htmlFor="partner-mil_quinhentos_ml">
+                <TextInput
+                  id="partner-mil_quinhentos_ml"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.mil_quinhentos_ml}
+                  onChange={(event) => setForm((current) => ({ ...current, mil_quinhentos_ml: event.target.value }))}
+                />
+              </FormField>
+              <FormField label="Valor vasilhame" htmlFor="partner-vasilhame">
+                <TextInput
+                  id="partner-vasilhame"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.vasilhame}
+                  onChange={(event) => setForm((current) => ({ ...current, vasilhame: event.target.value }))}
+                />
+              </FormField>
+            </div>
+
+            <div className={styles.totalPreview} aria-live="polite">
+              Total estimado: <strong>{formatCurrency(computeTotal(form))}</strong>
+            </div>
+          </section>
         </form>
       </Modal>
     </Card>
