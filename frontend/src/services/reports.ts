@@ -1,4 +1,4 @@
-import httpClient from "@/services/httpClient";
+import httpClient, { unwrapData, type ApiData } from "@/services/httpClient";
 
 type ReportEntry = {
   id: number;
@@ -10,10 +10,6 @@ type ReportEntry = {
   valor_1500ml: number;
   valor_cx_copo: number;
   valor_vasilhame: number;
-};
-
-type ReportDataResponse = {
-  data: ReportEntry[];
 };
 
 export type ReportDataFilters = {
@@ -35,10 +31,14 @@ export async function listReportEntries(filters: ReportDataFilters = {}) {
   }
 
   const query = params.toString();
-  const response = await httpClient.get<ReportDataResponse>(
+  const response = await httpClient.get<ApiData<ReportEntry[]> | ReportEntry[] | null>(
     `/api/report-data${query ? `?${query}` : ""}`,
   );
-  return response.data;
+  const data = unwrapData<ReportEntry[]>(response);
+  if (!Array.isArray(data)) {
+    throw new Error("Resposta inválida ao listar dados do relatório.");
+  }
+  return data;
 }
 
 export type { ReportEntry };

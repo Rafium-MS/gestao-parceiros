@@ -1,24 +1,10 @@
-import httpClient from "@/services/httpClient";
+import httpClient, { unwrapData, type ApiData } from "@/services/httpClient";
 
 type UserRecord = {
   id: number;
   username: string;
   role: string;
   is_active: boolean;
-};
-
-type UsersResponse = {
-  data: UserRecord[];
-};
-
-type UserResponse = {
-  data: UserRecord;
-};
-
-type MutationResponse = {
-  data: {
-    ok: boolean;
-  };
 };
 
 type CreateUserPayload = {
@@ -31,30 +17,58 @@ type CreateUserPayload = {
 type UpdateUserPayload = Partial<Pick<CreateUserPayload, "role" | "is_active" >>;
 
 export async function listUsers() {
-  const response = await httpClient.get<UsersResponse>("/api/users");
-  return response.data;
+  const response = await httpClient.get<ApiData<UserRecord[]> | UserRecord[] | null>("/api/users");
+  const data = unwrapData<UserRecord[]>(response);
+  if (!Array.isArray(data)) {
+    throw new Error("Resposta inválida ao listar usuários.");
+  }
+  return data;
 }
 
 export async function createUser(payload: CreateUserPayload) {
-  const response = await httpClient.post<UserResponse>("/api/users", payload);
-  return response.data;
+  const response = await httpClient.post<ApiData<UserRecord> | UserRecord | null>("/api/users", payload);
+  const data = unwrapData<UserRecord>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao criar usuário.");
+  }
+  return data;
 }
 
 export async function updateUser(id: number, payload: UpdateUserPayload) {
-  const response = await httpClient.put<MutationResponse>(`/api/users/${id}`, payload);
-  return response.data;
+  const response = await httpClient.put<ApiData<{ ok: boolean }> | { ok: boolean } | null>(
+    `/api/users/${id}`,
+    payload,
+  );
+  const data = unwrapData<{ ok: boolean }>(response);
+  if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
+    throw new Error("Resposta inválida ao atualizar usuário.");
+  }
+  return data;
 }
 
 export async function updateUserPassword(id: number, newPassword: string) {
-  const response = await httpClient.put<MutationResponse>(`/api/users/${id}/password`, {
-    new_password: newPassword,
-  });
-  return response.data;
+  const response = await httpClient.put<ApiData<{ ok: boolean }> | { ok: boolean } | null>(
+    `/api/users/${id}/password`,
+    {
+      new_password: newPassword,
+    },
+  );
+  const data = unwrapData<{ ok: boolean }>(response);
+  if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
+    throw new Error("Resposta inválida ao atualizar senha do usuário.");
+  }
+  return data;
 }
 
 export async function deleteUser(id: number) {
-  const response = await httpClient.delete<MutationResponse>(`/api/users/${id}`);
-  return response.data;
+  const response = await httpClient.delete<ApiData<{ ok: boolean }> | { ok: boolean } | null>(
+    `/api/users/${id}`,
+  );
+  const data = unwrapData<{ ok: boolean }>(response);
+  if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
+    throw new Error("Resposta inválida ao remover usuário.");
+  }
+  return data;
 }
 
 export type { UserRecord, CreateUserPayload, UpdateUserPayload };

@@ -1,4 +1,4 @@
-import httpClient from "@/services/httpClient";
+import httpClient, { unwrapData, type ApiData } from "@/services/httpClient";
 
 export type PartnerRecord = {
   id: number;
@@ -41,36 +41,43 @@ export type PartnerPayload = {
   vasilhame?: number;
 };
 
-type ListPartnersResponse = {
-  data: PartnerRecord[];
-};
-
-type PartnerResponse = {
-  data: PartnerRecord;
-};
-
-type DeletePartnerResponse = {
-  data: {
-    ok: boolean;
-  };
-};
-
 export async function listPartners() {
-  const response = await httpClient.get<ListPartnersResponse>("/api/partners");
-  return response.data;
+  const response = await httpClient.get<ApiData<PartnerRecord[]> | PartnerRecord[] | null>("/api/partners");
+  const data = unwrapData<PartnerRecord[]>(response);
+  if (!Array.isArray(data)) {
+    throw new Error("Resposta inválida ao listar parceiros.");
+  }
+  return data;
 }
 
 export async function createPartner(payload: PartnerPayload) {
-  const response = await httpClient.post<PartnerResponse>("/api/partners", payload);
-  return response.data;
+  const response = await httpClient.post<ApiData<PartnerRecord> | PartnerRecord | null>("/api/partners", payload);
+  const data = unwrapData<PartnerRecord>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao criar parceiro.");
+  }
+  return data;
 }
 
 export async function updatePartner(id: number, payload: Partial<PartnerPayload>) {
-  const response = await httpClient.put<PartnerResponse>(`/api/partners/${id}`, payload);
-  return response.data;
+  const response = await httpClient.put<ApiData<PartnerRecord> | PartnerRecord | null>(
+    `/api/partners/${id}`,
+    payload,
+  );
+  const data = unwrapData<PartnerRecord>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao atualizar parceiro.");
+  }
+  return data;
 }
 
 export async function deletePartner(id: number) {
-  const response = await httpClient.delete<DeletePartnerResponse>(`/api/partners/${id}`);
-  return response.data;
+  const response = await httpClient.delete<ApiData<{ ok: boolean }> | { ok: boolean } | null>(
+    `/api/partners/${id}`,
+  );
+  const data = unwrapData<{ ok: boolean }>(response);
+  if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
+    throw new Error("Resposta inválida ao excluir parceiro.");
+  }
+  return data;
 }

@@ -101,6 +101,15 @@ async function request<TResponse = unknown>(path: string, options: RequestOption
   return payload as TResponse;
 }
 
+export type ApiData<T> = { data: T };
+
+export function unwrapData<T>(payload: ApiData<T> | T | null | undefined): T | null | undefined {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as ApiData<T>).data;
+  }
+  return payload as T | null | undefined;
+}
+
 export const httpClient = {
   request,
   get<TResponse = unknown>(path: string, options?: RequestOptions) {
