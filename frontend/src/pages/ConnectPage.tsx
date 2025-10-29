@@ -132,7 +132,8 @@ export function ConnectPage() {
     window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters));
   }, [filters]);
 
-  const normalizedCity = filters.cidade.trim().toLowerCase();
+  const trimmedCity = filters.cidade.trim();
+  const normalizedCity = trimmedCity.toLowerCase();
 
   const filteredPartners = useMemo(() => {
     return partners.filter((partner) => {
@@ -149,6 +150,25 @@ export function ConnectPage() {
       return matchesState && matchesCity;
     });
   }, [stores, filters.estado, normalizedCity]);
+
+  const hasActiveFilters = Boolean(filters.estado || trimmedCity);
+
+  const clearFilter = useCallback(
+    (filterKey: "estado" | "cidade") => {
+      setFilters((current) => ({ ...current, [filterKey]: "" }));
+    },
+    [],
+  );
+
+  const partnerResultLabel = useMemo(() => {
+    const count = filteredPartners.length;
+    return count === 1 ? "1 parceiro encontrado" : `${count} parceiros encontrados`;
+  }, [filteredPartners.length]);
+
+  const storeResultLabel = useMemo(() => {
+    const count = filteredStores.length;
+    return count === 1 ? "1 loja encontrada" : `${count} lojas encontradas`;
+  }, [filteredStores.length]);
 
   const connectedPartnerIds = useMemo(() => new Set(connections.map((connection) => connection.partner?.id)), [connections]);
   const connectedStoreIds = useMemo(() => new Set(connections.map((connection) => connection.store?.id)), [connections]);
@@ -398,6 +418,39 @@ export function ConnectPage() {
             />
           </FormField>
         </div>
+        {hasActiveFilters ? (
+          <div className={styles.activeFilters}>
+            <span className={styles.activeFiltersLabel}>Filtros ativos:</span>
+            <div className={styles.activeFiltersList}>
+              {filters.estado ? (
+                <button
+                  type="button"
+                  className={styles.filterChip}
+                  onClick={() => clearFilter("estado")}
+                  aria-label={`Remover filtro de UF ${filters.estado}`}
+                >
+                  <span className={styles.filterChipLabel}>UF: {filters.estado}</span>
+                  <span className={styles.filterChipRemove} aria-hidden>
+                    ×
+                  </span>
+                </button>
+              ) : null}
+              {trimmedCity ? (
+                <button
+                  type="button"
+                  className={styles.filterChip}
+                  onClick={() => clearFilter("cidade")}
+                  aria-label={`Remover filtro de cidade ${trimmedCity}`}
+                >
+                  <span className={styles.filterChipLabel}>Cidade: {filters.cidade}</span>
+                  <span className={styles.filterChipRemove} aria-hidden>
+                    ×
+                  </span>
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       <Card title="Criar conexão" subtitle="Selecione um parceiro e uma loja para vincular.">
@@ -454,6 +507,11 @@ export function ConnectPage() {
       <div className={styles.grid}>
         <Card title="Parceiros disponíveis" subtitle="Selecione um parceiro para iniciar a conexão.">
           {isLoading ? <div className={styles.loadingMessage}>Carregando parceiros...</div> : null}
+          {!isLoading ? (
+            <div className={styles.resultCount} role="status" aria-live="polite">
+              {partnerResultLabel}
+            </div>
+          ) : null}
           {!isLoading && filteredPartners.length === 0 ? (
             <div className={styles.emptyState}>Nenhum parceiro encontrado para os filtros aplicados.</div>
           ) : null}
@@ -472,6 +530,11 @@ export function ConnectPage() {
 
         <Card title="Lojas disponíveis" subtitle="Escolha uma loja para vincular ao parceiro selecionado.">
           {isLoading ? <div className={styles.loadingMessage}>Carregando lojas...</div> : null}
+          {!isLoading ? (
+            <div className={styles.resultCount} role="status" aria-live="polite">
+              {storeResultLabel}
+            </div>
+          ) : null}
           {!isLoading && filteredStores.length === 0 ? (
             <div className={styles.emptyState}>Nenhuma loja encontrada para os filtros aplicados.</div>
           ) : null}
