@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -133,6 +133,7 @@ export function PartnersTable() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mode, setMode] = useState<FormMode>("create");
   const [editingPartner, setEditingPartner] = useState<PartnerRecord | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const { isOpen, open, close } = useDisclosure();
 
   useEffect(() => {
@@ -206,60 +207,21 @@ export function PartnersTable() {
     ];
   }, [partners]);
 
-  const columns = useMemo<TableColumn<PartnerRecord>[]>(
-    () => [
-      { header: "Parceiro", accessor: "parceiro" },
-      { header: "Documento", accessor: "cnpj_cpf" },
-      {
-        header: "Localização",
-        render: (partner) => `${partner.cidade} - ${partner.estado}`,
-      },
-      { header: "Telefone", accessor: "telefone" },
-      {
-        header: "E-mail",
-        render: (partner) => partner.email ?? "—",
-      },
-      {
-        header: "Volume total",
-        align: "right",
-        render: (partner) => numberFormatter.format(partner.total),
-      },
-      {
-        header: "Cadastro",
-        render: (partner) => (partner.created_at ? formatDate(partner.created_at) : "—"),
-      },
-      {
-        header: "Ações",
-        width: "160px",
-        render: (partner) => (
-          <div className={styles.tableActions}>
-            <Button size="sm" variant="secondary" onClick={() => handleEdit(partner)}>
-              Editar
-            </Button>
-            <Button size="sm" variant="danger" onClick={() => handleDelete(partner)}>
-              Excluir
-            </Button>
-          </div>
-        ),
-      },
-    ],
-    [partners], // eslint-disable-line react-hooks/exhaustive-deps
-  );
-
-  const handleDelete = async (partner: PartnerRecord) => {
+  const handleDelete = useCallback(async (partner: PartnerRecord) => {
     if (!window.confirm(`Deseja excluir o parceiro ${partner.parceiro}?`)) {
       return;
     }
     try {
       await deletePartner(partner.id);
       setPartners((current) => current.filter((item) => item.id !== partner.id));
+      setFetchError(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Não foi possível excluir o parceiro.";
       setFetchError(message);
     }
-  };
+  }, []);
 
-  const handleEdit = (partner: PartnerRecord) => {
+  const handleEdit = useCallback((partner: PartnerRecord) => {
     setMode("edit");
     setEditingPartner(partner);
     setForm({
@@ -282,7 +244,109 @@ export function PartnersTable() {
     });
     setErrors({});
     open();
-  };
+  }, [open]);
+
+  const handleBulkDelete = useCallback(
+    async (selected: PartnerRecord[], clearSelection: () => void) => {
+      if (selected.length === 0) {
+        return;
+      }
+
+      const confirmationMessage =
+        selected.length === 1
+          ? `Deseja excluir o parceiro ${selected[0].parceiro}?`
+          : `Deseja excluir ${selected.length} parceiros selecionados?`;
+      if (!window.confirm(confirmationMessage)) {
+        return;
+      }
+
+      setIsBulkDeleting(true);
+      try {
+        await Promise.all(selected.map((partner) => deletePartner(partner.id)));
+        const idsToRemove = new Set(selected.map((partner) => partner.id));
+        setPartners((current) => current.filter((partner) => !idsToRemove.has(partner.id)));
+        setFetchError(null);
+        clearSelection();
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível excluir os parceiros selecionados.";
+        setFetchError(message);
+      } finally {
+        setIsBulkDeleting(false);
+      }
+    },
+    [],
+  );
+
+  const renderSelectionActions = useCallback(
+    (selected: PartnerRecord[], clearSelection: () => void) => (
+      <Button
+        size="sm"
+        variant="danger"
+        onClick={() => handleBulkDelete(selected, clearSelection)}
+        disabled={isBulkDeleting}
+      >
+        {isBulkDeleting
+          ? "Excluindo..."
+          : `Excluir ${selected.length > 1 ? "selecionados" : "selecionado"}`}
+      </Button>
+    ),
+    [handleBulkDelete, isBulkDeleting],
+  );
+
+  const columns = useMemo<TableColumn<PartnerRecord>[]>(
+    () => [
+      { header: "Parceiro", accessor: "parceiro", sortable: true },
+      { header: "Documento", accessor: "cnpj_cpf", sortable: true },
+      {
+        header: "Localização",
+        render: (partner) => `${partner.cidade} - ${partner.estado}`,
+        sortable: true,
+        sortValue: (partner) => `${partner.cidade ?? ""} ${partner.estado ?? ""}`,
+        exportValue: (partner) => `${partner.cidade ?? ""} - ${partner.estado ?? ""}`,
+      },
+      { header: "Telefone", accessor: "telefone", sortable: true },
+      {
+        header: "E-mail",
+        render: (partner) => partner.email ?? "—",
+        sortable: true,
+        exportValue: (partner) => partner.email ?? "",
+      },
+      {
+        header: "Volume total",
+        align: "right",
+        render: (partner) => numberFormatter.format(partner.total),
+        sortable: true,
+        sortValue: (partner) => partner.total,
+        exportValue: (partner) => partner.total,
+      },
+      {
+        header: "Cadastro",
+        render: (partner) => (partner.created_at ? formatDate(partner.created_at) : "—"),
+        sortable: true,
+        sortValue: (partner) => (partner.created_at ? new Date(partner.created_at) : null),
+        exportValue: (partner) => partner.created_at ?? "",
+      },
+      {
+        header: "Ações",
+        width: "160px",
+        disableExport: true,
+        render: (partner) => (
+          <div className={styles.tableActions}>
+            <Button size="sm" variant="secondary" onClick={() => handleEdit(partner)}>
+              Editar
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => handleDelete(partner)}>
+              Excluir
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [handleDelete, handleEdit],
+  );
 
   const handleOpenCreate = () => {
     setMode("create");
@@ -400,7 +464,18 @@ export function PartnersTable() {
       ) : null}
 
       {!isLoading && partners.length > 0 ? (
-        <DataTable columns={columns} data={partners} keyExtractor={(partner) => partner.id.toString()} />
+        <DataTable
+          columns={columns}
+          data={partners}
+          keyExtractor={(partner) => partner.id.toString()}
+          enableSorting
+          initialSort={{ columnKey: "parceiro", direction: "asc" }}
+          enablePagination
+          enableSelection
+          selectionActions={renderSelectionActions}
+          enableExport
+          exportFileName="parceiros"
+        />
       ) : null}
 
       <Modal
