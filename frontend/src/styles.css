@@ -50,6 +50,12 @@ button {
   color: var(--color-text-secondary);
 }
 
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
 .section-title {
   margin: 0;
   font-size: 1.125rem;

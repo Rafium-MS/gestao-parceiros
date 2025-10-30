@@ -11,8 +11,8 @@ const QUICK_LINKS = [
 
 export function DashboardPage() {
   return (
-    <div>
-      <header>
+    <div className="page-content">
+      <header className="page-header">
         <h1>Bem-vindo!</h1>
         <p>Gerencie parceiros, lojas, conexões e relatórios em um só lugar.</p>
       </header>
