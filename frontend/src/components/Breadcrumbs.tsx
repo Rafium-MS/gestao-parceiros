@@ -1,22 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { useMemo } from "react";
 
+import { breadcrumbMap } from "@/routes/config";
+
 import styles from "./Breadcrumbs.module.css";
 
-const PATH_LABELS: Record<string, string> = {
-  "": "Início",
-  parceiros: "Parceiros",
-  lojas: "Lojas",
-  conectar: "Conectar",
-  comprovantes: "Comprovantes",
-  relatorios: "Relatórios",
-  usuarios: "Usuários",
-  account: "Minha Conta",
-};
+const ROOT_PATH = "/";
+const ROOT_LABEL = breadcrumbMap[ROOT_PATH] ?? "Início";
 
 const formatSegment = (segment: string) => {
-  if (PATH_LABELS[segment]) {
-    return PATH_LABELS[segment];
+  if (segment === "") {
+    return ROOT_LABEL;
   }
 
   return segment
@@ -41,18 +35,19 @@ export function Breadcrumbs() {
 
     const items: Crumb[] = [
       {
-        path: "/",
-        label: formatSegment("") || "Início",
+        path: ROOT_PATH,
+        label: ROOT_LABEL,
         isCurrent: segments.length === 0,
       },
     ];
 
     segments.forEach((segment, index) => {
       const path = `/${segments.slice(0, index + 1).join("/")}`;
+      const label = breadcrumbMap[path] ?? formatSegment(segment);
 
       items.push({
         path,
-        label: formatSegment(segment) || segment,
+        label,
         isCurrent: index === segments.length - 1,
       });
     });
@@ -65,9 +60,7 @@ export function Breadcrumbs() {
       <nav aria-label="Trilha de navegação" className={styles.wrapper}>
         <ol className={styles.list}>
           <li className={styles.item}>
-            <span className={styles.current} aria-current="page">
-              {PATH_LABELS[""] ?? "Início"}
-            </span>
+            <span className={styles.current} aria-current="page">{ROOT_LABEL}</span>
           </li>
         </ol>
       </nav>
