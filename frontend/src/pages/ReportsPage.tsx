@@ -7,6 +7,7 @@ import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { listReportEntries, type ReportEntry } from "@/services/reports";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { useToast } from "@/contexts/ToastContext";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import styles from "./ReportsPage.module.css";
 
@@ -35,6 +36,16 @@ type DateRange = {
   startDate?: string;
   endDate?: string;
 };
+
+function areFiltersEqual(a: ReportFiltersValue, b: ReportFiltersValue) {
+  return (
+    a.period === b.period &&
+    a.status === b.status &&
+    a.channel === b.channel &&
+    a.partner === b.partner &&
+    a.referenceMonth === b.referenceMonth
+  );
+}
 
 function resolveDateRange(filters: ReportFiltersValue): DateRange {
   const now = new Date();
@@ -144,6 +155,13 @@ export function ReportsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { showError } = useToast();
+  const debouncedFilters = useDebouncedValue(filters, 400);
+
+  useEffect(() => {
+    setAppliedFilters((current) =>
+      areFiltersEqual(current, debouncedFilters) ? current : debouncedFilters,
+    );
+  }, [debouncedFilters]);
 
   useEffect(() => {
     let active = true;
@@ -276,7 +294,9 @@ export function ReportsPage() {
       <ReportFilters
         value={filters}
         onChange={setFilters}
-        onApply={(value) => setAppliedFilters(value)}
+        onApply={(value) =>
+          setAppliedFilters((current) => (areFiltersEqual(current, value) ? current : value))
+        }
         onReset={() => {
           setFilters(initialFilters);
           setAppliedFilters(initialFilters);
@@ -291,7 +311,12 @@ export function ReportsPage() {
         ) : null}
 
         {!isLoading && rows.length > 0 ? (
-          <DataTable columns={columns} data={rows} keyExtractor={(row) => `${row.marca}-${row.loja}`} />
+          <DataTable
+            columns={columns}
+            data={rows}
+            keyExtractor={(row) => `${row.marca}-${row.loja}`}
+            virtualization={{ containerHeight: 520, rowHeight: 56, overscan: 6 }}
+          />
         ) : null}
       </Card>
     </div>
