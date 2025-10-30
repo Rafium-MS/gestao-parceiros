@@ -8,10 +8,9 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.input:focus {
-  outline: none;
+.input:focus-visible {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.35);
 }
 
 .input::placeholder {
@@ -38,10 +37,9 @@ textarea.input {
   background-repeat: no-repeat;
 }
 
-.select:focus {
-  outline: none;
+.select:focus-visible {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.35);
 }
 
 .error {

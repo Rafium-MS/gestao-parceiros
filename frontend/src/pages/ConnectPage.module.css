@@ -48,7 +48,11 @@
 .filterChip:focus-visible {
   background-color: rgba(59, 130, 246, 0.2);
   border-color: rgba(59, 130, 246, 0.5);
-  outline: none;
+}
+
+.filterChip:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .filterChipLabel {

@@ -45,6 +45,11 @@
   line-height: 1;
 }
 
+.closeButton:focus-visible {
+  color: var(--color-text-primary);
+  outline-offset: 2px;
+}
+
 .footer {
   display: flex;
   justify-content: flex-end;
