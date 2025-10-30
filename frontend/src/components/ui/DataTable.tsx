@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, UIEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import styles from "./DataTable.module.css";
 
@@ -30,6 +30,11 @@ export type DataTableProps<T extends Record<string, unknown>> = {
   selectionActions?: (selectedItems: T[], clearSelection: () => void) => ReactNode;
   enableExport?: boolean;
   exportFileName?: string;
+  virtualization?: {
+    containerHeight: number;
+    rowHeight: number;
+    overscan?: number;
+  };
 };
 
 type SortDirection = "asc" | "desc";
@@ -169,6 +174,7 @@ export function DataTable<T extends Record<string, unknown>>({
   selectionActions,
   enableExport = false,
   exportFileName = "dados",
+  virtualization,
 }: DataTableProps<T>) {
   const [sortState, setSortState] = useState<SortState<T> | null>(() => {
     if (!enableSorting || !initialSort) {
@@ -193,6 +199,13 @@ export function DataTable<T extends Record<string, unknown>>({
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedKeys, setSelectedKeys] = useState<Set<string | number>>(new Set());
+  const [scrollTop, setScrollTop] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const virtualizationEnabled = Boolean(virtualization);
+  const rowHeight = virtualization?.rowHeight ?? 0;
+  const overscan = virtualization?.overscan ?? 4;
+  const containerHeight = virtualization?.containerHeight ?? 0;
 
   const keyedData = useMemo<KeyedItem<T>[]>(() => {
     return data.map((item, index) => ({
@@ -236,6 +249,16 @@ export function DataTable<T extends Record<string, unknown>>({
     });
   }, [sortedItems]);
 
+  useEffect(() => {
+    if (!virtualizationEnabled) {
+      return;
+    }
+    setScrollTop(0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [virtualizationEnabled, data, enablePagination, currentPage, pageSize]);
+
   const paginatedItems = useMemo(() => {
     if (!enablePagination) {
       return sortedItems;
@@ -244,6 +267,37 @@ export function DataTable<T extends Record<string, unknown>>({
     const end = start + pageSize;
     return sortedItems.slice(start, end);
   }, [enablePagination, sortedItems, currentPage, pageSize]);
+
+  const { visibleRows, topPadding, bottomPadding } = useMemo(() => {
+    if (!virtualizationEnabled || rowHeight <= 0 || containerHeight <= 0) {
+      return { visibleRows: paginatedItems, topPadding: 0, bottomPadding: 0 };
+    }
+
+    const total = paginatedItems.length;
+    if (total === 0) {
+      return { visibleRows: paginatedItems, topPadding: 0, bottomPadding: 0 };
+    }
+
+    const viewportItems = Math.max(1, Math.ceil(containerHeight / rowHeight));
+    const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+    const endIndex = Math.min(total, startIndex + viewportItems + overscan * 2);
+
+    const paddingBefore = startIndex * rowHeight;
+    const paddingAfter = Math.max(0, (total - endIndex) * rowHeight);
+
+    return {
+      visibleRows: paginatedItems.slice(startIndex, endIndex),
+      topPadding: paddingBefore,
+      bottomPadding: paddingAfter,
+    };
+  }, [
+    virtualizationEnabled,
+    paginatedItems,
+    rowHeight,
+    containerHeight,
+    scrollTop,
+    overscan,
+  ]);
 
   const selectedItems = useMemo(() => {
     if (!enableSelection || selectedKeys.size === 0) {
@@ -299,8 +353,10 @@ export function DataTable<T extends Record<string, unknown>>({
     setSelectedKeys(new Set());
   };
 
+  const visibleRowKeys = useMemo(() => visibleRows.map((row) => row.key), [visibleRows]);
+
   const allVisibleSelected = enableSelection
-    ? paginatedItems.length > 0 && paginatedItems.every((row) => selectedKeys.has(row.key))
+    ? visibleRowKeys.length > 0 && visibleRowKeys.every((key) => selectedKeys.has(key))
     : false;
 
   const handleToggleAllVisible = () => {
@@ -310,9 +366,9 @@ export function DataTable<T extends Record<string, unknown>>({
     setSelectedKeys((previous) => {
       const next = new Set(previous);
       if (allVisibleSelected) {
-        paginatedItems.forEach((row) => next.delete(row.key));
+        visibleRows.forEach((row) => next.delete(row.key));
       } else {
-        paginatedItems.forEach((row) => next.add(row.key));
+        visibleRows.forEach((row) => next.add(row.key));
       }
       return next;
     });
@@ -330,6 +386,16 @@ export function DataTable<T extends Record<string, unknown>>({
   const handleExportExcel = () => {
     exportToExcel(columns, sortedItems.map((row) => row.item), exportFileName);
   };
+
+  const handleScroll = virtualizationEnabled
+    ? (event: UIEvent<HTMLDivElement>) => {
+        setScrollTop(event.currentTarget.scrollTop);
+      }
+    : undefined;
+
+  const tableWrapperStyle = virtualizationEnabled
+    ? { maxHeight: containerHeight, overflowY: "auto" as const }
+    : undefined;
 
   return (
     <div className={styles.tableContainer}>
@@ -362,7 +428,12 @@ export function DataTable<T extends Record<string, unknown>>({
         </div>
       ) : null}
 
-      <div className={styles.tableWrapper}>
+      <div
+        className={styles.tableWrapper}
+        style={tableWrapperStyle}
+        onScroll={handleScroll}
+        ref={virtualizationEnabled ? scrollContainerRef : undefined}
+      >
         <table>
           <thead>
           <tr>
@@ -409,12 +480,18 @@ export function DataTable<T extends Record<string, unknown>>({
               </td>
             </tr>
           ) : (
-            paginatedItems.map(({ item, key }) => {
-              const isSelected = enableSelection ? selectedKeys.has(key) : false;
-              return (
-                <tr key={key} className={isSelected ? styles.selectedRow : undefined}>
-                  {enableSelection ? (
-                    <td className={styles.selectionCell}>
+            <>
+              {virtualizationEnabled && topPadding > 0 ? (
+                <tr className={styles.virtualPaddingRow}>
+                  <td colSpan={columnCount} style={{ height: topPadding }} />
+                </tr>
+              ) : null}
+              {visibleRows.map(({ item, key }) => {
+                const isSelected = enableSelection ? selectedKeys.has(key) : false;
+                return (
+                  <tr key={key} className={isSelected ? styles.selectedRow : undefined}>
+                    {enableSelection ? (
+                      <td className={styles.selectionCell}>
                       <input
                         type="checkbox"
                         aria-label="Selecionar linha"
@@ -441,11 +518,17 @@ export function DataTable<T extends Record<string, unknown>>({
                       <td key={column.header} className={alignClass}>
                         {content}
                       </td>
-                    );
-                  })}
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+              {virtualizationEnabled && bottomPadding > 0 ? (
+                <tr className={styles.virtualPaddingRow}>
+                  <td colSpan={columnCount} style={{ height: bottomPadding }} />
                 </tr>
-              );
-            })
+              ) : null}
+            </>
           )}
           </tbody>
         </table>
