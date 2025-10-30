@@ -4,8 +4,8 @@ export function AccountPage() {
   const { logout } = useAuth();
 
   return (
-    <div>
-      <header>
+    <div className="page-content">
+      <header className="page-header">
         <h1>Minha Conta</h1>
         <p>Atualize dados pessoais e redefina a senha de acesso ao painel.</p>
       </header>
