@@ -1,4 +1,4 @@
-import { MouseEvent, ReactNode, useEffect } from "react";
+import { MouseEvent, ReactNode, useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import styles from "./Modal.module.css";
@@ -12,25 +12,93 @@ type ModalProps = {
 };
 
 export function Modal({ isOpen, onClose, title, footer, children }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || !dialogRef.current) {
       return;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
+    const previouslyFocusedElement = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const getFocusableElements = () => {
+      if (!dialogRef.current) {
+        return [] as HTMLElement[];
+      }
+
+      return Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter(
+        (element) =>
+          !element.hasAttribute("data-focus-guard") &&
+          element.tabIndex !== -1 &&
+          (element.offsetWidth > 0 || element.offsetHeight > 0 || element.getClientRects().length > 0),
+      );
+    };
+
+    const focusFirstElement = () => {
+      const [firstFocusable] = getFocusableElements();
+      if (firstFocusable) {
+        firstFocusable.focus();
+      } else {
+        dialogRef.current?.focus();
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
 
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
+      if (event.key === "Tab") {
+        const focusableElements = getFocusableElements();
+
+        if (focusableElements.length === 0) {
+          event.preventDefault();
+          dialogRef.current?.focus();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        const activeElement = document.activeElement as HTMLElement | null;
+
+        if (!event.shiftKey && activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        } else if (event.shiftKey && activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        }
+      }
+
+      if (event.key === "Enter") {
+        const activeElement = document.activeElement as HTMLElement | null;
+        if (activeElement === dialogRef.current) {
+          const [firstFocusable] = getFocusableElements();
+          firstFocusable?.click();
+        }
+      }
+    };
+
+    const keydownListener = (event: KeyboardEvent) => handleKeyDown(event);
+
+    document.addEventListener("keydown", keydownListener);
+
+    const focusTimer = window.setTimeout(focusFirstElement, 0);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = overflow;
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", keydownListener);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocusedElement?.focus();
     };
   }, [isOpen, onClose]);
 
@@ -47,15 +115,23 @@ export function Modal({ isOpen, onClose, title, footer, children }: ModalProps) 
   return createPortal(
     <div
       className={styles.backdrop}
-      role="dialog"
-      aria-modal
-      aria-label={typeof title === "string" ? title : undefined}
       onMouseDown={handleBackdropClick}
     >
-      <div className={styles.dialog}>
+      <div
+        ref={dialogRef}
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        tabIndex={-1}
+      >
         {(title || onClose) && (
           <div className={styles.header}>
-            {title ? <h3 className={styles.title}>{title}</h3> : null}
+            {title ? (
+              <h3 id={titleId} className={styles.title}>
+                {title}
+              </h3>
+            ) : null}
             <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Fechar">
               ×
             </button>

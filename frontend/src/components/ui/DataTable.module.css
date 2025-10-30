@@ -54,24 +54,24 @@
 }
 
 .exportButton {
-  border: 1px solid rgba(37, 99, 235, 0.4);
-  background-color: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(29, 78, 216, 0.45);
+  background-color: rgba(29, 78, 216, 0.12);
   color: var(--color-primary);
   padding: 0.4rem 0.8rem;
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .exportButton:hover {
-  background-color: rgba(37, 99, 235, 0.16);
-  border-color: rgba(37, 99, 235, 0.6);
+  background-color: rgba(29, 78, 216, 0.18);
+  border-color: rgba(29, 78, 216, 0.6);
 }
 
 .exportButton:active {
-  background-color: rgba(37, 99, 235, 0.24);
+  background-color: rgba(29, 78, 216, 0.28);
 }
 
 table {
@@ -86,7 +86,7 @@ thead {
 thead th {
   text-align: left;
   padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
@@ -106,7 +106,7 @@ thead th {
 
 .sortIndicator,
 .sortIndicatorActive {
-  font-size: 0.7rem;
+  font-size: 0.875rem;
   color: rgba(15, 23, 42, 0.25);
 }
 
@@ -123,11 +123,11 @@ tbody tr:nth-child(even) {
 }
 
 tbody tr:hover {
-  background-color: rgba(37, 99, 235, 0.06);
+  background-color: rgba(29, 78, 216, 0.08);
 }
 
 .selectedRow {
-  background-color: rgba(37, 99, 235, 0.08);
+  background-color: rgba(29, 78, 216, 0.12);
 }
 
 .selectionHeader,
@@ -203,7 +203,7 @@ td {
   padding: 0.4rem 0.8rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -217,6 +217,6 @@ td {
 }
 
 .pageSummary {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--color-text-muted);
 }

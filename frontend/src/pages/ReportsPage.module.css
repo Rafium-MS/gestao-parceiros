@@ -15,7 +15,7 @@
 }
 
 .highlightLabel {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   color: var(--color-text-muted);
   letter-spacing: 0.08em;
@@ -27,7 +27,7 @@
 }
 
 .highlightTrend {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .trendUp {

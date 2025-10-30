@@ -34,6 +34,11 @@
   background-color: rgba(255, 255, 255, 0.12);
 }
 
+.link:focus-visible {
+  outline-offset: 2px;
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
 .linkActive {
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
@@ -53,6 +58,11 @@
 
 .logoutButton:hover {
   background-color: rgba(255, 255, 255, 0.16);
+}
+
+.logoutButton:focus-visible {
+  outline-offset: 2px;
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 @media (max-width: 960px) {

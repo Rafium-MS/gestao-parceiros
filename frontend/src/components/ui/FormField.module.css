@@ -18,16 +18,16 @@
 }
 
 .optional {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
 }
 
 .helper {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
 }
 
 .error {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--color-danger);
 }
