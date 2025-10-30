@@ -275,7 +275,7 @@ export function ReportsPage() {
   );
 
   return (
-    <div>
+    <div className="page-content">
       <header className="page-header">
         <h1>Relatórios</h1>
         <p>Visualize métricas consolidadas das vendas registradas pelo backend em Flask.</p>
