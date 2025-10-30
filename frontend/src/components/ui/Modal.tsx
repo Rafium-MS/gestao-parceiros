@@ -113,10 +113,7 @@ export function Modal({ isOpen, onClose, title, footer, children }: ModalProps) 
   };
 
   return createPortal(
-    <div
-      className={styles.backdrop}
-      onMouseDown={handleBackdropClick}
-    >
+    <div className={styles.backdrop} onMouseDown={handleBackdropClick}>
       <div
         ref={dialogRef}
         className={styles.dialog}
@@ -137,7 +134,7 @@ export function Modal({ isOpen, onClose, title, footer, children }: ModalProps) 
             </button>
           </div>
         )}
-        <div>{children}</div>
+        <div className={styles.content}>{children}</div>
         {footer ? <footer className={styles.footer}>{footer}</footer> : null}
       </div>
     </div>,
