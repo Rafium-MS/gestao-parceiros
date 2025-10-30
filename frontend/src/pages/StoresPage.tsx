@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DataTable, TableColumn } from "@/components/ui/DataTable";
 import { FormField } from "@/components/ui/FormField";
+import { Modal } from "@/components/ui/Modal";
 import { SelectInput } from "@/components/ui/SelectInput";
 import { TableSkeleton } from "@/components/ui/TableSkeleton";
 import { TextInput } from "@/components/ui/TextInput";
@@ -127,13 +128,15 @@ export function StoresPage() {
   const [brandMode, setBrandMode] = useState<FormMode>("create");
   const [editingBrandId, setEditingBrandId] = useState<number | null>(null);
   const [isSubmittingBrand, setIsSubmittingBrand] = useState(false);
+  const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
   const [storeForm, setStoreForm] = useState<StoreFormState>(defaultStoreForm);
   const [storeErrors, setStoreErrors] = useState<StoreFormErrors>({});
   const [storeMode, setStoreMode] = useState<FormMode>("create");
   const [editingStoreId, setEditingStoreId] = useState<number | null>(null);
   const [isSubmittingStore, setIsSubmittingStore] = useState(false);
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [expandedBrands, setExpandedBrands] = useState<Set<number>>(new Set());
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError } = useToast();
   const { confirm: requestConfirmation, dialog: confirmDialog } = useConfirmDialog();
 
   const loadAll = useCallback(() => {
@@ -230,6 +233,30 @@ export function StoresPage() {
     [],
   );
 
+  const resetBrandForm = () => {
+    setBrandForm({ marca: "", cod_disagua: "" });
+    setBrandMode("create");
+    setEditingBrandId(null);
+    setBrandErrors({});
+  };
+
+  const resetStoreForm = () => {
+    setStoreForm({ ...defaultStoreForm });
+    setStoreMode("create");
+    setEditingStoreId(null);
+    setStoreErrors({});
+  };
+
+  const handleCloseBrandModal = () => {
+    setIsBrandModalOpen(false);
+    resetBrandForm();
+  };
+
+  const handleCloseStoreModal = () => {
+    setIsStoreModalOpen(false);
+    resetStoreForm();
+  };
+
   const handleBrandSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBrandErrors({});
@@ -254,10 +281,8 @@ export function StoresPage() {
         });
         showSuccess("Marca atualizada com sucesso.");
       }
-      setBrandForm({ marca: "", cod_disagua: "" });
-      setBrandMode("create");
-      setEditingBrandId(null);
       await loadAll();
+      handleCloseBrandModal();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível salvar a marca.";
       showError(message);
@@ -266,19 +291,12 @@ export function StoresPage() {
     }
   };
 
-  const handleBrandReset = () => {
-    setBrandForm({ marca: "", cod_disagua: "" });
-    setBrandMode("create");
-    setEditingBrandId(null);
-    setBrandErrors({});
-  };
-
   const startEditBrand = (brand: BrandRecord) => {
     setBrandForm({ marca: brand.marca, cod_disagua: brand.cod_disagua ?? "" });
     setBrandMode("edit");
     setEditingBrandId(brand.id);
     setBrandErrors({});
-    showWarning("Editando marca. Salve ou cancele para concluir.");
+    setIsBrandModalOpen(true);
   };
 
   const handleDeleteBrand = async (brand: BrandRecord) => {
@@ -352,23 +370,14 @@ export function StoresPage() {
         await updateStore(editingStoreId, payload);
         showSuccess("Loja atualizada com sucesso.");
       }
-      setStoreForm(defaultStoreForm);
-      setStoreMode("create");
-      setEditingStoreId(null);
       await loadAll();
+      handleCloseStoreModal();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Não foi possível salvar a loja.";
       showError(message);
     } finally {
       setIsSubmittingStore(false);
     }
-  };
-
-  const handleStoreReset = () => {
-    setStoreForm(defaultStoreForm);
-    setStoreMode("create");
-    setEditingStoreId(null);
-    setStoreErrors({});
   };
 
   const startEditStore = (store: StoreRecord) => {
@@ -389,7 +398,7 @@ export function StoresPage() {
     setStoreMode("edit");
     setEditingStoreId(store.id);
     setStoreErrors({});
-    showWarning("Editando loja. Salve ou cancele para concluir.");
+    setIsStoreModalOpen(true);
   };
 
   const handleDeleteStore = async (store: StoreRecord) => {
@@ -414,12 +423,11 @@ export function StoresPage() {
   };
 
   const handleAddStoreToBrand = (brandId: number) => {
-    setStoreForm((current) => ({ ...current, marca_id: String(brandId) }));
+    setStoreForm({ ...defaultStoreForm, marca_id: String(brandId) });
     setStoreMode("create");
     setEditingStoreId(null);
     setStoreErrors({});
-    showWarning("Preencha os dados da nova loja.");
-    document.getElementById("store-form")?.scrollIntoView({ behavior: "smooth" });
+    setIsStoreModalOpen(true);
   };
 
   const toggleBrand = (brandId: number, open: boolean) => {
@@ -438,6 +446,16 @@ export function StoresPage() {
     () => [...brands].sort((a, b) => a.marca.localeCompare(b.marca, "pt-BR")),
     [brands],
   );
+
+  const handleOpenCreateBrand = () => {
+    resetBrandForm();
+    setIsBrandModalOpen(true);
+  };
+
+  const handleOpenCreateStore = () => {
+    resetStoreForm();
+    setIsStoreModalOpen(true);
+  };
 
   return (
     <>
@@ -459,198 +477,34 @@ export function StoresPage() {
       </section>
 
       <div className={styles.managementGrid}>
-        <Card title={brandMode === "create" ? "Cadastro de marcas" : "Editar marca"}>
-          <form className={styles.form} onSubmit={handleBrandSubmit} onReset={handleBrandReset}>
-            <FormField label="Nome da marca" htmlFor="brand-name" error={brandErrors.marca}>
-              <TextInput
-                id="brand-name"
-                value={brandForm.marca}
-                onChange={(event) => setBrandForm((current) => ({ ...current, marca: event.target.value }))}
-                hasError={Boolean(brandErrors.marca)}
-                required
-              />
-            </FormField>
-
-            <FormField label="Código Diságua" htmlFor="brand-code">
-              <TextInput
-                id="brand-code"
-                value={brandForm.cod_disagua ?? ""}
-                onChange={(event) => setBrandForm((current) => ({ ...current, cod_disagua: event.target.value }))}
-                placeholder="Opcional"
-              />
-            </FormField>
-
-              <div className={styles.formActions}>
-                <Button type="submit" isLoading={isSubmittingBrand} loadingText="Salvando...">
-                  {brandMode === "create" ? "Cadastrar marca" : "Atualizar marca"}
-                </Button>
-                <Button type="reset" variant="ghost">
-                  Limpar
-                </Button>
-              </div>
-          </form>
+        <Card
+          title="Cadastro de marcas"
+          subtitle="Gerencie o portfólio de marcas da rede."
+          actions={
+            <Button type="button" onClick={handleOpenCreateBrand}>
+              Nova marca
+            </Button>
+          }
+        >
+          <p className={styles.cardDescription}>
+            Cadastre novas marcas ou edite registros existentes utilizando os atalhos na listagem
+            abaixo.
+          </p>
         </Card>
 
-        <Card title={storeMode === "create" ? "Cadastro de lojas" : "Editar loja"}>
-          <form
-            id="store-form"
-            className={styles.form}
-            onSubmit={handleStoreSubmit}
-            onReset={handleStoreReset}
-          >
-            <FormField label="Marca" htmlFor="store-brand" error={storeErrors.marca_id}>
-              <SelectInput
-                id="store-brand"
-                value={storeForm.marca_id}
-                onChange={(event) => setStoreForm((current) => ({ ...current, marca_id: event.target.value }))}
-                hasError={Boolean(storeErrors.marca_id)}
-                required
-              >
-                <option value="" disabled>
-                  Selecione
-                </option>
-                {orderedBrands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.marca}
-                  </option>
-                ))}
-              </SelectInput>
-            </FormField>
-
-            <FormField label="Nome da loja" htmlFor="store-name" error={storeErrors.loja}>
-              <TextInput
-                id="store-name"
-                value={storeForm.loja}
-                onChange={(event) => setStoreForm((current) => ({ ...current, loja: event.target.value }))}
-                hasError={Boolean(storeErrors.loja)}
-                required
-              />
-            </FormField>
-
-            <FormField label="Código Diságua" htmlFor="store-code">
-              <TextInput
-                id="store-code"
-                value={storeForm.cod_disagua}
-                onChange={(event) => setStoreForm((current) => ({ ...current, cod_disagua: event.target.value }))}
-                placeholder="Opcional"
-              />
-            </FormField>
-
-            <FormField label="Local da entrega" htmlFor="store-delivery" error={storeErrors.local_entrega}>
-              <TextInput
-                id="store-delivery"
-                value={storeForm.local_entrega}
-                onChange={(event) => setStoreForm((current) => ({ ...current, local_entrega: event.target.value }))}
-                hasError={Boolean(storeErrors.local_entrega)}
-                required
-              />
-            </FormField>
-
-            <FormField label="Endereço" htmlFor="store-address">
-              <TextInput
-                id="store-address"
-                value={storeForm.endereco}
-                onChange={(event) => setStoreForm((current) => ({ ...current, endereco: event.target.value }))}
-                placeholder="Opcional"
-              />
-            </FormField>
-
-            <div className={styles.formRow}>
-              <FormField label="Município" htmlFor="store-city" error={storeErrors.municipio}>
-                <TextInput
-                  id="store-city"
-                  value={storeForm.municipio}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, municipio: event.target.value }))}
-                  hasError={Boolean(storeErrors.municipio)}
-                  required
-                />
-              </FormField>
-
-              <FormField label="UF" htmlFor="store-uf" error={storeErrors.uf}>
-                <SelectInput
-                  id="store-uf"
-                  value={storeForm.uf}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, uf: event.target.value }))}
-                  hasError={Boolean(storeErrors.uf)}
-                  required
-                >
-                  <option value="" disabled>
-                    Selecione
-                  </option>
-                  {BRAZIL_STATES.map((uf) => (
-                    <option key={uf.value} value={uf.value}>
-                      {uf.label}
-                    </option>
-                  ))}
-                </SelectInput>
-              </FormField>
-            </div>
-
-            <div className={styles.formRow}>
-              <FormField label="Valor 20 litros" htmlFor="store-valor-20">
-                <TextInput
-                  id="store-valor-20"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={storeForm.valor_20l}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, valor_20l: event.target.value }))}
-                />
-              </FormField>
-              <FormField label="Valor 10 litros" htmlFor="store-valor-10">
-                <TextInput
-                  id="store-valor-10"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={storeForm.valor_10l}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, valor_10l: event.target.value }))}
-                />
-              </FormField>
-              <FormField label="Valor 1500 ml" htmlFor="store-valor-1500">
-                <TextInput
-                  id="store-valor-1500"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={storeForm.valor_1500ml}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, valor_1500ml: event.target.value }))}
-                />
-              </FormField>
-            </div>
-
-            <div className={styles.formRow}>
-              <FormField label="Valor CX copo" htmlFor="store-valor-copo">
-                <TextInput
-                  id="store-valor-copo"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={storeForm.valor_cx_copo}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, valor_cx_copo: event.target.value }))}
-                />
-              </FormField>
-              <FormField label="Valor vasilhame" htmlFor="store-valor-vasilhame">
-                <TextInput
-                  id="store-valor-vasilhame"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={storeForm.valor_vasilhame}
-                  onChange={(event) => setStoreForm((current) => ({ ...current, valor_vasilhame: event.target.value }))}
-                />
-              </FormField>
-            </div>
-
-            <div className={styles.formActions}>
-              <Button type="submit" isLoading={isSubmittingStore} loadingText="Salvando...">
-                {storeMode === "create" ? "Cadastrar loja" : "Atualizar loja"}
-              </Button>
-              <Button type="reset" variant="ghost">
-                Limpar
-              </Button>
-            </div>
-          </form>
+        <Card
+          title="Cadastro de lojas"
+          subtitle="Adicione pontos de venda associados a cada marca."
+          actions={
+            <Button type="button" variant="secondary" onClick={handleOpenCreateStore}>
+              Nova loja
+            </Button>
+          }
+        >
+          <p className={styles.cardDescription}>
+            Utilize o botão para incluir novas lojas ou escolha uma marca para criar e editar suas
+            unidades vinculadas.
+          </p>
         </Card>
       </div>
 
@@ -757,6 +611,199 @@ export function StoresPage() {
         ) : null}
       </Card>
     </div>
+
+      <Modal
+        isOpen={isBrandModalOpen}
+        onClose={handleCloseBrandModal}
+        title={brandMode === "create" ? "Cadastrar marca" : "Editar marca"}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={handleCloseBrandModal}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="brand-form"
+              isLoading={isSubmittingBrand}
+              loadingText="Salvando..."
+            >
+              {brandMode === "create" ? "Cadastrar marca" : "Atualizar marca"}
+            </Button>
+          </>
+        }
+      >
+        <form id="brand-form" className={styles.form} onSubmit={handleBrandSubmit}>
+          <FormField label="Nome da marca" htmlFor="brand-name" error={brandErrors.marca}>
+            <TextInput
+              id="brand-name"
+              value={brandForm.marca}
+              onChange={(event) => setBrandForm((current) => ({ ...current, marca: event.target.value }))}
+              hasError={Boolean(brandErrors.marca)}
+              required
+            />
+          </FormField>
+
+          <FormField label="Código Diságua" htmlFor="brand-code">
+            <TextInput
+              id="brand-code"
+              value={brandForm.cod_disagua ?? ""}
+              onChange={(event) => setBrandForm((current) => ({ ...current, cod_disagua: event.target.value }))}
+              placeholder="Opcional"
+            />
+          </FormField>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={isStoreModalOpen}
+        onClose={handleCloseStoreModal}
+        title={storeMode === "create" ? "Cadastrar loja" : "Editar loja"}
+        footer={
+          <>
+            <Button type="button" variant="ghost" onClick={handleCloseStoreModal}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="store-form"
+              isLoading={isSubmittingStore}
+              loadingText="Salvando..."
+            >
+              {storeMode === "create" ? "Cadastrar loja" : "Atualizar loja"}
+            </Button>
+          </>
+        }
+      >
+        <form id="store-form" className={styles.form} onSubmit={handleStoreSubmit}>
+          <FormField label="Marca" htmlFor="store-brand" error={storeErrors.marca_id}>
+            <SelectInput
+              id="store-brand"
+              value={storeForm.marca_id}
+              onChange={(event) => setStoreForm((current) => ({ ...current, marca_id: event.target.value }))}
+              hasError={Boolean(storeErrors.marca_id)}
+              required
+            >
+              <option value="" disabled>
+                Selecione
+              </option>
+              {orderedBrands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.marca}
+                </option>
+              ))}
+            </SelectInput>
+          </FormField>
+
+          <FormField label="Nome da loja" htmlFor="store-name" error={storeErrors.loja}>
+            <TextInput
+              id="store-name"
+              value={storeForm.loja}
+              onChange={(event) => setStoreForm((current) => ({ ...current, loja: event.target.value }))}
+              hasError={Boolean(storeErrors.loja)}
+              required
+            />
+          </FormField>
+
+          <FormField label="Código Diságua" htmlFor="store-code">
+            <TextInput
+              id="store-code"
+              value={storeForm.cod_disagua}
+              onChange={(event) => setStoreForm((current) => ({ ...current, cod_disagua: event.target.value }))}
+              placeholder="Opcional"
+            />
+          </FormField>
+
+          <FormField label="Local da entrega" htmlFor="store-delivery" error={storeErrors.local_entrega}>
+            <TextInput
+              id="store-delivery"
+              value={storeForm.local_entrega}
+              onChange={(event) => setStoreForm((current) => ({ ...current, local_entrega: event.target.value }))}
+              hasError={Boolean(storeErrors.local_entrega)}
+              required
+            />
+          </FormField>
+
+          <FormField label="Endereço" htmlFor="store-address">
+            <TextInput
+              id="store-address"
+              value={storeForm.endereco}
+              onChange={(event) => setStoreForm((current) => ({ ...current, endereco: event.target.value }))}
+              placeholder="Opcional"
+            />
+          </FormField>
+
+          <FormField label="Município" htmlFor="store-city" error={storeErrors.municipio}>
+            <TextInput
+              id="store-city"
+              value={storeForm.municipio}
+              onChange={(event) => setStoreForm((current) => ({ ...current, municipio: event.target.value }))}
+              hasError={Boolean(storeErrors.municipio)}
+              required
+            />
+          </FormField>
+
+          <FormField label="UF" htmlFor="store-state" error={storeErrors.uf}>
+            <SelectInput
+              id="store-state"
+              value={storeForm.uf}
+              onChange={(event) => setStoreForm((current) => ({ ...current, uf: event.target.value }))}
+              hasError={Boolean(storeErrors.uf)}
+              required
+            >
+              <option value="" disabled>
+                Selecione
+              </option>
+              {BRAZIL_STATES.map((state) => (
+                <option key={state.value} value={state.value}>
+                  {state.label}
+                </option>
+              ))}
+            </SelectInput>
+          </FormField>
+
+          <div className={styles.grid}>
+            <FormField label="Valor 20 litros" htmlFor="store-price-20l">
+              <TextInput
+                id="store-price-20l"
+                value={storeForm.valor_20l}
+                onChange={(event) => setStoreForm((current) => ({ ...current, valor_20l: event.target.value }))}
+              />
+            </FormField>
+
+            <FormField label="Valor 10 litros" htmlFor="store-price-10l">
+              <TextInput
+                id="store-price-10l"
+                value={storeForm.valor_10l}
+                onChange={(event) => setStoreForm((current) => ({ ...current, valor_10l: event.target.value }))}
+              />
+            </FormField>
+
+            <FormField label="Valor 1500ml" htmlFor="store-price-1500ml">
+              <TextInput
+                id="store-price-1500ml"
+                value={storeForm.valor_1500ml}
+                onChange={(event) => setStoreForm((current) => ({ ...current, valor_1500ml: event.target.value }))}
+              />
+            </FormField>
+
+            <FormField label="Valor CX copo" htmlFor="store-price-cup">
+              <TextInput
+                id="store-price-cup"
+                value={storeForm.valor_cx_copo}
+                onChange={(event) => setStoreForm((current) => ({ ...current, valor_cx_copo: event.target.value }))}
+              />
+            </FormField>
+
+            <FormField label="Valor vasilhame" htmlFor="store-price-vessel">
+              <TextInput
+                id="store-price-vessel"
+                value={storeForm.valor_vasilhame}
+                onChange={(event) => setStoreForm((current) => ({ ...current, valor_vasilhame: event.target.value }))}
+              />
+            </FormField>
+          </div>
+        </form>
+      </Modal>
     </>
   );
 }

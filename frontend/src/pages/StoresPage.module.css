@@ -59,10 +59,16 @@
   }
 }
 
-.form {
+.form { 
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+
+.cardDescription {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 .formActions {
