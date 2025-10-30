@@ -1,0 +1,125 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.instructions {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  background-color: var(--color-surface-alt);
+}
+
+.instructions h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.instructionsList {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.fileInput {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.fileInput input[type="file"] {
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-surface);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.errorMessage {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  background-color: rgba(220, 38, 38, 0.1);
+  color: var(--color-danger, #dc2626);
+}
+
+.summary {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  background-color: rgba(59, 130, 246, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summaryItem span {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.summaryValue {
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.errorList {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-height: 180px;
+  overflow-y: auto;
+  color: var(--color-danger, #dc2626);
+}
+
+.errorList li {
+  margin-bottom: 0.35rem;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.columnsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2xs);
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.columnsList code {
+  background-color: rgba(15, 23, 42, 0.05);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-sm);
+}

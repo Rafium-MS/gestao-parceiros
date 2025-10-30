@@ -14,6 +14,7 @@ import {
   listBrands,
   type BrandPayload,
   type BrandRecord,
+  type BrandStoreImportSummary,
   updateBrand,
 } from "@/services/brands";
 import {
@@ -27,6 +28,7 @@ import {
 import { formatCurrency } from "@/utils/formatters";
 import { useToast } from "@/contexts/ToastContext";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { StoresImportModal } from "@/components/stores/StoresImportModal";
 
 import styles from "./StoresPage.module.css";
 
@@ -146,6 +148,7 @@ export function StoresPage() {
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"brands" | "stores">("brands");
   const [expandedBrands, setExpandedBrands] = useState<Set<number>>(new Set());
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { showSuccess, showError } = useToast();
   const { confirm: requestConfirmation, dialog: confirmDialog } = useConfirmDialog();
 
@@ -153,7 +156,7 @@ export function StoresPage() {
     setIsLoading(true);
     setError(null);
 
-    Promise.all([listBrands(), listStores()])
+    return Promise.all([listBrands(), listStores()])
       .then(([brandList, storeList]) => {
         setBrands(brandList);
         setStores(storeList);
@@ -173,6 +176,59 @@ export function StoresPage() {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
+
+  const handleOpenImport = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleCloseImport = useCallback(() => {
+    setIsImportModalOpen(false);
+  }, []);
+
+  const handleImportCompleted = useCallback(
+    async (result: BrandStoreImportSummary) => {
+      await loadAll();
+
+      const parts: string[] = [];
+      if (result.created_brands > 0) {
+        parts.push(
+          `${result.created_brands} marca${result.created_brands > 1 ? "s" : ""} nova${
+            result.created_brands > 1 ? "s" : ""
+          }`,
+        );
+      }
+      if (result.updated_brands > 0) {
+        parts.push(
+          `${result.updated_brands} marca${result.updated_brands > 1 ? "s" : ""} atualizada${
+            result.updated_brands > 1 ? "s" : ""
+          }`,
+        );
+      }
+      if (result.created_stores > 0) {
+        parts.push(
+          `${result.created_stores} loja${result.created_stores > 1 ? "s" : ""} nova${
+            result.created_stores > 1 ? "s" : ""
+          }`,
+        );
+      }
+      if (result.updated_stores > 0) {
+        parts.push(
+          `${result.updated_stores} loja${result.updated_stores > 1 ? "s" : ""} atualizada${
+            result.updated_stores > 1 ? "s" : ""
+          }`,
+        );
+      }
+
+      const summaryMessage = parts.length > 0 ? parts.join(", ") : "nenhuma alteração aplicada";
+      const errorNote =
+        result.error_count > 0
+          ? ` (houve ${result.error_count} erro${result.error_count > 1 ? "s" : ""})`
+          : "";
+
+      showSuccess(`Importação concluída: ${summaryMessage}${errorNote}.`);
+    },
+    [loadAll, showSuccess],
+  );
 
   const metrics = useMemo<SummaryMetric[]>(() => {
     const totalBrands = brands.length;
@@ -556,9 +612,14 @@ export function StoresPage() {
             title="Portfólio de marcas"
             subtitle="Cadastre marcas e visualize as lojas vinculadas a cada portfólio."
             actions={
-              <Button type="button" onClick={handleOpenCreateBrand}>
-                Nova marca
-              </Button>
+              <div className={styles.cardActions}>
+                <Button type="button" variant="secondary" onClick={handleOpenImport}>
+                  Importar planilha
+                </Button>
+                <Button type="button" onClick={handleOpenCreateBrand}>
+                  Nova marca
+                </Button>
+              </div>
             }
           >
             <p className={styles.cardDescription}>
@@ -912,6 +973,12 @@ export function StoresPage() {
           </div>
         </form>
       </Modal>
+
+      <StoresImportModal
+        isOpen={isImportModalOpen}
+        onClose={handleCloseImport}
+        onCompleted={handleImportCompleted}
+      />
     </>
   );
 }

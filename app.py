@@ -1,5 +1,7 @@
 
 import os
+import re
+import unicodedata
 from functools import wraps
 from datetime import datetime, date
 from flask import (
@@ -16,12 +18,13 @@ from flask import (
 )
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, select, text, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, scoped_session
 from jinja2 import TemplateNotFound
 from models import Base, Partner, Brand, Store, Connection, ReportEntry, ReceiptImage, User
 from export_utils import ExportManager
+import pandas as pd
 
 BASE_DIR = os.path.dirname(__file__)
 DB_PATH = os.path.join(BASE_DIR, "disagua.db")
@@ -111,6 +114,76 @@ def create_app():
     ensure_schema(engine)
     Session = scoped_session(sessionmaker(bind=engine, autoflush=False, future=True))
 
+    def normalize_decimal_input(value):
+        if value is None:
+            return value
+        if isinstance(value, str):
+            normalized = value.strip()
+            if not normalized:
+                return ""
+            normalized = normalized.replace("\u00a0", "")
+            normalized = normalized.replace(" ", "")
+            # Remove thousand separators and normalize decimal separator
+            normalized = normalized.replace(".", "").replace(",", ".")
+            return normalized
+        return value
+
+    def only_digits(value):
+        if value is None:
+            return ""
+        if not isinstance(value, str):
+            value = str(value)
+        return re.sub(r"\D", "", value)
+
+    def normalize_header_name(value):
+        normalized = unicodedata.normalize("NFKD", str(value or ""))
+        normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+        normalized = normalized.lower()
+        normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
+        return normalized.strip("_")
+
+    def load_tabular_file(upload_file):
+        filename = (upload_file.filename or "").lower()
+        if not filename:
+            raise ValueError("Selecione um arquivo válido para importar.")
+
+        upload_file.stream.seek(0)
+        try:
+            if filename.endswith((".xlsx", ".xls")):
+                frame = pd.read_excel(upload_file, dtype=str, keep_default_na=False)
+            else:
+                frame = pd.read_csv(
+                    upload_file,
+                    dtype=str,
+                    keep_default_na=False,
+                    sep=None,
+                    engine="python",
+                )
+        except Exception as exc:  # pragma: no cover - leitura de arquivo depende da entrada
+            raise ValueError("Não foi possível ler o arquivo. Use um CSV ou Excel válido.") from exc
+        finally:
+            upload_file.stream.seek(0)
+
+        frame = frame.fillna("")
+        columns = [str(col).strip() for col in frame.columns if str(col).strip()]
+        records = []
+        for raw in frame.to_dict(orient="records"):
+            normalized_row = {}
+            for key, raw_value in raw.items():
+                header = str(key).strip()
+                if not header:
+                    continue
+                if isinstance(raw_value, str):
+                    value = raw_value.strip()
+                elif raw_value is None:
+                    value = ""
+                else:
+                    value = str(raw_value).strip()
+                normalized_row[header] = value
+            if normalized_row:
+                records.append(normalized_row)
+        return columns, records
+
     partner_fields = {
         "cidade", "estado", "parceiro", "distribuidora", "cnpj_cpf", "telefone", "email",
         "dia_pagamento", "banco", "agencia_conta", "pix",
@@ -118,6 +191,43 @@ def create_app():
     }
     partner_float_fields = {"cx_copo", "dez_litros", "vinte_litros", "mil_quinhentos_ml", "vasilhame"}
     partner_required = {"cidade", "estado", "parceiro", "cnpj_cpf", "telefone"}
+
+    partner_header_aliases = {
+        "cidade": "cidade",
+        "municipio": "cidade",
+        "estado": "estado",
+        "uf": "estado",
+        "parceiro": "parceiro",
+        "nome": "parceiro",
+        "nome_parceiro": "parceiro",
+        "distribuidora": "distribuidora",
+        "cnpj_cpf": "cnpj_cpf",
+        "cnpj": "cnpj_cpf",
+        "cpf": "cnpj_cpf",
+        "documento": "cnpj_cpf",
+        "telefone": "telefone",
+        "telefone_contato": "telefone",
+        "contato": "telefone",
+        "email": "email",
+        "email_contato": "email",
+        "dia_pagamento": "dia_pagamento",
+        "dia_de_pagamento": "dia_pagamento",
+        "pagamento_dia": "dia_pagamento",
+        "banco": "banco",
+        "agencia_conta": "agencia_conta",
+        "agencia": "agencia_conta",
+        "conta": "agencia_conta",
+        "pix": "pix",
+        "cx_copo": "cx_copo",
+        "caixa_copo": "cx_copo",
+        "dez_litros": "dez_litros",
+        "10l": "dez_litros",
+        "vinte_litros": "vinte_litros",
+        "20l": "vinte_litros",
+        "mil_quinhentos_ml": "mil_quinhentos_ml",
+        "1500ml": "mil_quinhentos_ml",
+        "vasilhame": "vasilhame",
+    }
 
     def parse_partner_payload(data):
         payload = {}
@@ -127,6 +237,8 @@ def create_app():
             value = data[field]
             if isinstance(value, str):
                 value = value.strip()
+                if field in partner_float_fields:
+                    value = normalize_decimal_input(value)
             if field in partner_float_fields:
                 if value in (None, ""):
                     payload[field] = 0.0
@@ -143,6 +255,14 @@ def create_app():
                         payload[field] = int(value)
                     except (TypeError, ValueError):
                         raise ValueError("Campo 'dia_pagamento' deve ser um número inteiro.")
+            elif field == "estado":
+                payload[field] = value.upper() if value else None
+            elif field == "cnpj_cpf":
+                digits = only_digits(value)
+                payload[field] = digits if digits else None
+            elif field == "telefone":
+                digits = only_digits(value)
+                payload[field] = digits if digits else None
             else:
                 payload[field] = value if value != "" else None
         return payload
@@ -213,6 +333,44 @@ def create_app():
     store_float_fields = {"valor_20l", "valor_10l", "valor_1500ml", "valor_cx_copo", "valor_vasilhame"}
     store_required = {"marca_id", "loja", "local_entrega", "municipio", "uf"}
 
+    brand_header_aliases = {
+        "marca": "marca",
+        "nome_marca": "marca",
+        "nome": "marca",
+        "cod_disagua_marca": "cod_disagua",
+        "codigo_marca": "cod_disagua",
+        "cod_marca": "cod_disagua",
+        "codigo_disagua": "cod_disagua",
+    }
+
+    store_header_aliases = {
+        "loja": "loja",
+        "nome_loja": "loja",
+        "cod_disagua": "cod_disagua",
+        "cod_disagua_loja": "cod_disagua",
+        "codigo_loja": "cod_disagua",
+        "local_entrega": "local_entrega",
+        "local_de_entrega": "local_entrega",
+        "ponto_entrega": "local_entrega",
+        "endereco": "endereco",
+        "municipio": "municipio",
+        "cidade": "municipio",
+        "uf": "uf",
+        "estado": "uf",
+        "valor_20l": "valor_20l",
+        "valor20l": "valor_20l",
+        "preco_20l": "valor_20l",
+        "valor_10l": "valor_10l",
+        "valor10l": "valor_10l",
+        "preco_10l": "valor_10l",
+        "valor_1500ml": "valor_1500ml",
+        "preco_1500ml": "valor_1500ml",
+        "valor_cx_copo": "valor_cx_copo",
+        "preco_cx_copo": "valor_cx_copo",
+        "valor_vasilhame": "valor_vasilhame",
+        "preco_vasilhame": "valor_vasilhame",
+    }
+
     def parse_store_payload(data):
         payload = {}
         for field in store_fields:
@@ -221,6 +379,8 @@ def create_app():
             value = data[field]
             if isinstance(value, str):
                 value = value.strip()
+                if field in store_float_fields:
+                    value = normalize_decimal_input(value)
             if field == "marca_id":
                 try:
                     payload[field] = int(value)
@@ -234,6 +394,8 @@ def create_app():
                         payload[field] = float(value)
                     except (TypeError, ValueError):
                         raise ValueError(f"Campo '{field}' deve ser numérico.")
+            elif field == "uf":
+                payload[field] = value.upper() if value else None
             else:
                 payload[field] = value if value != "" else None
         return payload
@@ -512,6 +674,150 @@ def create_app():
             s.refresh(p)
             return success_response(serialize_partner(p), status=201)
 
+    @app.post("/api/partners/import")
+    @login_required
+    @roles_allowed("operator")
+    def import_partners():
+        upload = request.files.get("file")
+        if not upload or not upload.filename:
+            return error_response("Selecione um arquivo para importar.")
+
+        try:
+            columns, rows = load_tabular_file(upload)
+        except ValueError as exc:
+            return error_response(str(exc))
+
+        if not columns:
+            return error_response("Não foi possível identificar o cabeçalho do arquivo.")
+
+        column_map = {}
+        for header in columns:
+            normalized = normalize_header_name(header)
+            target = partner_header_aliases.get(normalized)
+            if target:
+                column_map[header] = target
+
+        missing_columns = [field for field in partner_required if field not in column_map.values()]
+        if missing_columns:
+            return error_response(
+                "Arquivo de importação não possui todas as colunas obrigatórias.",
+                details={"missing_columns": sorted(missing_columns)},
+            )
+
+        processed_rows = 0
+        errors = []
+        created_ids = set()
+        updated_ids = set()
+        successful_rows = set()
+        prepared_rows = []
+
+        for index, raw_row in enumerate(rows, start=2):
+            mapped = {}
+            for original, value in raw_row.items():
+                target_field = column_map.get(original)
+                if not target_field:
+                    continue
+                mapped[target_field] = value
+
+            if not any(mapped.values()):
+                continue
+
+            processed_rows += 1
+            mapped["__row_number"] = index
+            prepared_rows.append(mapped)
+
+        if not prepared_rows:
+            return success_response(
+                {
+                    "total": 0,
+                    "created": 0,
+                    "updated": 0,
+                    "skipped": 0,
+                    "error_count": 0,
+                    "errors": [],
+                }
+            )
+
+        with Session() as s:
+            existing_by_document = {}
+            for partner in s.query(Partner).all():
+                key = only_digits(partner.cnpj_cpf)
+                if key and key not in existing_by_document:
+                    existing_by_document[key] = partner
+
+            for row in prepared_rows:
+                row_number = row.pop("__row_number", None)
+                if row_number is None:
+                    row_number = processed_rows
+                doc_key = only_digits(row.get("cnpj_cpf"))
+                if not doc_key:
+                    errors.append({"row": row_number, "message": "Informe o CPF ou CNPJ do parceiro."})
+                    continue
+
+                payload_source = {key: value for key, value in row.items() if key in partner_fields}
+                try:
+                    payload = parse_partner_payload(payload_source)
+                except ValueError as exc:
+                    errors.append({"row": row_number, "message": str(exc)})
+                    continue
+
+                missing = normalize_required(payload, partner_required)
+                if missing:
+                    errors.append(
+                        {
+                            "row": row_number,
+                            "message": "Campos obrigatórios ausentes: " + ", ".join(sorted(missing)),
+                        }
+                    )
+                    continue
+
+                estado = payload.get("estado")
+                if estado and len(estado) != 2:
+                    errors.append({"row": row_number, "message": "Informe a UF com dois caracteres."})
+                    continue
+
+                dia_pagamento = payload.get("dia_pagamento")
+                if dia_pagamento is not None and (dia_pagamento < 1 or dia_pagamento > 31):
+                    errors.append({"row": row_number, "message": "Campo 'dia_pagamento' deve estar entre 1 e 31."})
+                    continue
+
+                for field in partner_float_fields:
+                    payload.setdefault(field, 0.0)
+
+                partner = existing_by_document.get(doc_key)
+                if partner:
+                    for key, value in payload.items():
+                        setattr(partner, key, value)
+                    if partner.id not in created_ids:
+                        if partner.id not in updated_ids:
+                            updated_ids.add(partner.id)
+                    existing_by_document[doc_key] = partner
+                    if row_number is not None:
+                        successful_rows.add(row_number)
+                else:
+                    partner = Partner(**payload)
+                    s.add(partner)
+                    s.flush()
+                    existing_by_document[doc_key] = partner
+                    created_ids.add(partner.id)
+                    if row_number is not None:
+                        successful_rows.add(row_number)
+
+            s.commit()
+
+        skipped_rows = max(processed_rows - len(successful_rows) - len(errors), 0)
+
+        summary = {
+            "total": processed_rows,
+            "created": len(created_ids),
+            "updated": len(updated_ids),
+            "skipped": skipped_rows,
+            "error_count": len(errors),
+            "errors": errors,
+        }
+
+        return success_response(summary)
+
     @app.put("/api/partners/<int:pid>")
     @login_required
     @roles_allowed("operator")
@@ -695,6 +1001,220 @@ def create_app():
             s.delete(st)
             s.commit()
             return success_response({"ok": True})
+
+    @app.post("/api/brands/import")
+    @login_required
+    @roles_allowed("operator")
+    def import_brands_and_stores():
+        upload = request.files.get("file")
+        if not upload or not upload.filename:
+            return error_response("Selecione um arquivo para importar.")
+
+        try:
+            columns, rows = load_tabular_file(upload)
+        except ValueError as exc:
+            return error_response(str(exc))
+
+        if not columns:
+            return error_response("Não foi possível identificar o cabeçalho do arquivo.")
+
+        column_map = {}
+        for header in columns:
+            normalized = normalize_header_name(header)
+            if normalized in brand_header_aliases:
+                column_map[header] = ("brand", brand_header_aliases[normalized])
+            elif normalized in store_header_aliases:
+                column_map[header] = ("store", store_header_aliases[normalized])
+
+        if not any(bucket == "brand" and field == "marca" for bucket, field in column_map.values()):
+            return error_response("O arquivo precisa conter a coluna 'marca'.")
+
+        processed_rows = 0
+        errors = []
+        created_brand_ids = set()
+        updated_brand_ids = set()
+        created_store_ids = set()
+        updated_store_ids = set()
+        successful_rows = set()
+        prepared_rows = []
+
+        for index, raw_row in enumerate(rows, start=2):
+            brand_data = {}
+            store_data = {}
+            for original, value in raw_row.items():
+                mapped = column_map.get(original)
+                if not mapped:
+                    continue
+                bucket, field = mapped
+                if bucket == "brand":
+                    brand_data[field] = value
+                else:
+                    store_data[field] = value
+
+            if not any(brand_data.values()) and not any(store_data.values()):
+                continue
+
+            processed_rows += 1
+            prepared_rows.append({"brand": brand_data, "store": store_data, "__row_number": index})
+
+        if not prepared_rows:
+            return success_response(
+                {
+                    "total": 0,
+                    "created_brands": 0,
+                    "updated_brands": 0,
+                    "created_stores": 0,
+                    "updated_stores": 0,
+                    "skipped": 0,
+                    "error_count": 0,
+                    "errors": [],
+                }
+            )
+
+        with Session() as s:
+            brand_cache_by_name = {}
+            brand_cache_by_code = {}
+
+            for row in prepared_rows:
+                row_number = row.pop("__row_number", None)
+                if row_number is None:
+                    row_number = processed_rows
+
+                brand_raw = row.get("brand", {})
+                store_raw = row.get("store", {})
+
+                brand_name = (brand_raw.get("marca") or "").strip()
+                if not brand_name:
+                    errors.append({"row": row_number, "message": "Informe o nome da marca."})
+                    continue
+
+                brand_code_value = (brand_raw.get("cod_disagua") or "").strip()
+                brand_code = brand_code_value or None
+                normalized_brand_key = brand_name.lower()
+
+                brand = brand_cache_by_name.get(normalized_brand_key)
+                if not brand:
+                    brand = (
+                        s.query(Brand)
+                        .filter(func.lower(Brand.marca) == normalized_brand_key)
+                        .first()
+                    )
+                if not brand and brand_code:
+                    brand = brand_cache_by_code.get(brand_code)
+                    if not brand:
+                        brand = s.query(Brand).filter(Brand.cod_disagua == brand_code).first()
+
+                brand_changed = False
+                previous_code = None
+                previous_name_key = None
+                if brand:
+                    previous_code = brand.cod_disagua
+                    previous_name_key = brand.marca.lower()
+                    if brand.marca != brand_name:
+                        brand.marca = brand_name
+                        brand_changed = True
+                    if brand_code is not None:
+                        if brand.cod_disagua != brand_code:
+                            brand.cod_disagua = brand_code
+                            brand_changed = True
+                    else:
+                        if brand.cod_disagua is not None:
+                            brand.cod_disagua = None
+                            brand_changed = True
+                    if brand_changed and brand.id not in created_brand_ids and brand.id not in updated_brand_ids:
+                        updated_brand_ids.add(brand.id)
+                else:
+                    brand = Brand(marca=brand_name, cod_disagua=brand_code)
+                    s.add(brand)
+                    s.flush()
+                    created_brand_ids.add(brand.id)
+                    brand_changed = True
+
+                brand_cache_by_name[normalized_brand_key] = brand
+                if previous_name_key and previous_name_key != normalized_brand_key:
+                    brand_cache_by_name.pop(previous_name_key, None)
+                if previous_code and previous_code != brand_code:
+                    brand_cache_by_code.pop(previous_code, None)
+                if brand_code:
+                    brand_cache_by_code[brand_code] = brand
+
+                has_store_data = any(store_raw.values())
+                store_changed = False
+
+                if has_store_data:
+                    store_source = {key: (value.strip() if isinstance(value, str) else value) for key, value in store_raw.items()}
+                    store_source["marca_id"] = brand.id
+                    store_source["loja"] = (store_source.get("loja") or "").strip()
+                    store_source["uf"] = (store_source.get("uf") or "").strip().upper()
+
+                    try:
+                        parsed_store = parse_store_payload(store_source)
+                    except ValueError as exc:
+                        errors.append({"row": row_number, "message": str(exc)})
+                        continue
+
+                    missing_store = normalize_required(parsed_store, store_required)
+                    if missing_store:
+                        errors.append(
+                            {
+                                "row": row_number,
+                                "message": "Campos obrigatórios da loja ausentes: " + ", ".join(sorted(missing_store)),
+                            }
+                        )
+                        continue
+
+                    for field in store_float_fields:
+                        parsed_store.setdefault(field, 0.0)
+
+                    store_code = parsed_store.get("cod_disagua")
+                    store = None
+                    if store_code:
+                        store = s.query(Store).filter(Store.cod_disagua == store_code).first()
+                    if not store:
+                        store = (
+                            s.query(Store)
+                            .filter(Store.marca_id == brand.id)
+                            .filter(func.lower(Store.loja) == parsed_store["loja"].lower())
+                            .first()
+                        )
+
+                    if store:
+                        current_changes = False
+                        for key, value in parsed_store.items():
+                            current_value = getattr(store, key)
+                            if current_value != value:
+                                current_changes = True
+                            setattr(store, key, value)
+                        if current_changes and store.id not in created_store_ids and store.id not in updated_store_ids:
+                            updated_store_ids.add(store.id)
+                        if current_changes:
+                            store_changed = True
+                    else:
+                        store = Store(**parsed_store)
+                        s.add(store)
+                        s.flush()
+                        created_store_ids.add(store.id)
+                        store_changed = True
+
+                if (brand_changed or store_changed) and row_number is not None:
+                    successful_rows.add(row_number)
+
+            s.commit()
+
+        skipped_rows = max(processed_rows - len(successful_rows) - len(errors), 0)
+
+        summary = {
+            "total": processed_rows,
+            "created_brands": len(created_brand_ids),
+            "updated_brands": len(updated_brand_ids),
+            "created_stores": len(created_store_ids),
+            "updated_stores": len(updated_store_ids),
+            "skipped": skipped_rows,
+            "error_count": len(errors),
+            "errors": errors,
+        }
+
+        return success_response(summary)
 
     # Connections
     @app.get("/api/connections")
