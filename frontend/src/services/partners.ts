@@ -41,6 +41,20 @@ export type PartnerPayload = {
   vasilhame?: number;
 };
 
+export type ImportErrorSummary = {
+  row: number | null;
+  message: string;
+};
+
+export type PartnerImportSummary = {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  error_count: number;
+  errors: ImportErrorSummary[];
+};
+
 export async function listPartners() {
   const response = await httpClient.get<ApiData<PartnerRecord[]> | PartnerRecord[] | null>("/api/partners");
   const data = unwrapData<PartnerRecord[]>(response);
@@ -79,5 +93,22 @@ export async function deletePartner(id: number) {
   if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
     throw new Error("Resposta inválida ao excluir parceiro.");
   }
+  return data;
+}
+
+export async function importPartners(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await httpClient.post<ApiData<PartnerImportSummary> | PartnerImportSummary | null>(
+    "/api/partners/import",
+    formData,
+  );
+
+  const data = unwrapData<PartnerImportSummary>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao importar parceiros.");
+  }
+
   return data;
 }

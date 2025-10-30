@@ -1,4 +1,5 @@
 import httpClient, { unwrapData, type ApiData } from "@/services/httpClient";
+import { type ImportErrorSummary } from "@/services/partners";
 
 type BrandRecord = {
   id: number;
@@ -10,6 +11,17 @@ type BrandRecord = {
 type BrandPayload = {
   marca: string;
   cod_disagua?: string | null;
+};
+
+export type BrandStoreImportSummary = {
+  total: number;
+  created_brands: number;
+  updated_brands: number;
+  created_stores: number;
+  updated_stores: number;
+  skipped: number;
+  error_count: number;
+  errors: ImportErrorSummary[];
 };
 
 export async function listBrands() {
@@ -50,6 +62,22 @@ export async function deleteBrand(id: number) {
   if (!data || typeof data !== "object" || typeof data.ok !== "boolean") {
     throw new Error("Resposta inválida ao excluir marca.");
   }
+  return data;
+}
+
+export async function importBrandsAndStores(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await httpClient.post<
+    ApiData<BrandStoreImportSummary> | BrandStoreImportSummary | null
+  >("/api/brands/import", formData);
+
+  const data = unwrapData<BrandStoreImportSummary>(response);
+  if (!data || typeof data !== "object") {
+    throw new Error("Resposta inválida ao importar marcas e lojas.");
+  }
+
   return data;
 }
 

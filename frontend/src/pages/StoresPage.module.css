@@ -90,6 +90,13 @@
   gap: var(--spacing-xl);
 }
 
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
 .form {
   display: flex;
   flex-direction: column;

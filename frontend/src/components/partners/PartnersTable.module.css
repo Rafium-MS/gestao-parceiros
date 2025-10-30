@@ -62,6 +62,13 @@
   color: var(--color-danger, #dc2626);
 }
 
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
 .modalForm {
   display: flex;
   flex-direction: column;

@@ -8,9 +8,15 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useDisclosure } from "@/hooks/useDisclosure";
 import { PartnerForm, PartnerFormMode } from "@/components/partners/PartnerForm";
 import { PartnersMetrics } from "@/components/partners/PartnersMetrics";
+import { PartnerImportModal } from "@/components/partners/PartnerImportModal";
 import { usePartnersData } from "@/components/partners/hooks/usePartnersData";
-import { PartnerPayload, PartnerRecord } from "@/services/partners";
+import {
+  PartnerPayload,
+  PartnerRecord,
+  type PartnerImportSummary,
+} from "@/services/partners";
 import { formatDate } from "@/utils/formatters";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./PartnersTable.module.css";
 
@@ -25,6 +31,7 @@ export function PartnersTable() {
   const [mode, setMode] = useState<PartnerFormMode>("create");
   const [editingPartner, setEditingPartner] = useState<PartnerRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const {
     partners,
@@ -56,6 +63,47 @@ export function PartnersTable() {
     close();
     setEditingPartner(null);
   }, [close]);
+
+  const handleOpenImport = () => {
+    setIsImportModalOpen(true);
+    setActionError(null);
+  };
+
+  const handleCloseImport = useCallback(() => {
+    setIsImportModalOpen(false);
+  }, []);
+
+  const { showSuccess, showError } = useToast();
+
+  const handleImportCompleted = useCallback(
+    async (result: PartnerImportSummary) => {
+      const refetchResult = await partnersQuery.refetch();
+      if (refetchResult.error) {
+        const message =
+          refetchResult.error instanceof Error
+            ? refetchResult.error.message
+            : "Não foi possível atualizar a lista de parceiros.";
+        showError(message);
+        return;
+      }
+
+      const parts: string[] = [];
+      if (result.created > 0) {
+        parts.push(`${result.created} novo${result.created > 1 ? "s" : ""}`);
+      }
+      if (result.updated > 0) {
+        parts.push(`${result.updated} atualizado${result.updated > 1 ? "s" : ""}`);
+      }
+      const summaryMessage = parts.length > 0 ? parts.join(" e ") : "nenhuma alteração aplicada";
+      const errorNote =
+        result.error_count > 0
+          ? ` (houve ${result.error_count} erro${result.error_count > 1 ? "s" : ""})`
+          : "";
+
+      showSuccess(`Importação concluída: ${summaryMessage}${errorNote}.`);
+    },
+    [partnersQuery, showError, showSuccess],
+  );
 
   const handleEdit = useCallback(
     (partner: PartnerRecord) => {
@@ -222,9 +270,14 @@ export function PartnersTable() {
         title="Parceiros cadastrados"
         subtitle="Acompanhe e cadastre os parceiros que fazem parte da rede de distribuição."
         actions={
-          <Button onClick={handleOpenCreate} data-testid="open-partner-modal">
-            Adicionar parceiro
-          </Button>
+          <div className={styles.cardActions}>
+            <Button type="button" variant="secondary" onClick={handleOpenImport}>
+              Importar planilha
+            </Button>
+            <Button onClick={handleOpenCreate} data-testid="open-partner-modal">
+              Adicionar parceiro
+            </Button>
+          </div>
         }
       >
         <PartnersMetrics partners={partners} />
@@ -261,6 +314,11 @@ export function PartnersTable() {
           partner={editingPartner}
           partners={partners}
           isSubmitting={isSubmittingForm}
+        />
+        <PartnerImportModal
+          isOpen={isImportModalOpen}
+          onClose={handleCloseImport}
+          onCompleted={handleImportCompleted}
         />
       </Card>
     </>
